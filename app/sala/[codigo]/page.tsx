@@ -408,6 +408,7 @@ export default function RoomPage() {
   const currentParticipant = participants.find(
     (p) => p.id === currentParticipantId
   );
+  const leaderItems = participants[0]?.items_eaten ?? 0;
 
   const renderParticipantCard = (
     participant: Participant,
@@ -417,6 +418,9 @@ export default function RoomPage() {
     const isLeader = index === 0 && participant.items_eaten > 0;
     const avatar = getAvatar(participant.avatar);
     const isVip = participant.id === vipParticipantId;
+    const progressRatio =
+      leaderItems > 0 ? participant.items_eaten / leaderItems : index === 0 ? 1 : 0;
+    const progressPercent = Math.min(100, Math.max(0, Math.round(progressRatio * 100)));
     return (
       <Card
         className={`overflow-hidden border-none transition-all duration-300 ${
@@ -472,6 +476,27 @@ export default function RoomPage() {
                   {participant.items_eaten}{" "}
                   {getItemLabel(race.food_type, participant.items_eaten)}
                 </p>
+                <div className="mt-3">
+                  <div className="relative h-2 rounded-full bg-muted/40 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-primary/40 via-primary to-primary transition-all duration-700 ease-out"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                    <span
+                      className="absolute -top-5 text-lg transition-all duration-700 ease-out"
+                      style={{
+                        left: progressPercent === 0 ? "0%" : `calc(${progressPercent}% - 0.6rem)`,
+                      }}
+                      aria-hidden="true"
+                    >
+                      {avatar}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[10px] uppercase tracking-widest text-muted-foreground mt-2">
+                    <span>Largada</span>
+                    <span>Chegada</span>
+                  </div>
+                </div>
                 {participant.id === currentParticipantId && isPersonal && (
                   <div className="flex flex-wrap gap-2 pt-2">
                     {avatarOptions.map((option) => (
