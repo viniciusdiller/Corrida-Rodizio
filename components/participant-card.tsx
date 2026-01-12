@@ -8,6 +8,7 @@ import { Trophy, Minus, Plus } from "lucide-react"
 import type { Participant } from "@/types/database"
 import { FoodIcon } from "./food-icon"
 import type { FoodType } from "@/types/database"
+import { getAvatar } from "@/lib/utils/avatars"
 
 interface ParticipantCardProps {
   participant: Participant
@@ -29,6 +30,7 @@ export function ParticipantCard({ participant, rank, foodType }: ParticipantCard
   }
 
   const isWinner = rank === 1 && participant.items_eaten > 0
+  const avatar = getAvatar(participant.avatar)
 
   return (
     <Card
@@ -49,7 +51,12 @@ export function ParticipantCard({ participant, rank, foodType }: ParticipantCard
               {isWinner ? <Trophy className="h-5 w-5" /> : rank}
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-lg leading-none mb-1">{participant.name}</h3>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xl" aria-hidden="true">
+                  {avatar}
+                </span>
+                <h3 className="font-semibold text-lg leading-none">{participant.name}</h3>
+              </div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <FoodIcon type={foodType} className="h-4 w-4" />
                 <span className="text-sm">{participant.items_eaten} eaten</span>
