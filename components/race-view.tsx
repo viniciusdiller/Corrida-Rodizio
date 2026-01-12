@@ -72,7 +72,6 @@ export function RaceView({ race, onBack }: RaceViewProps) {
     sushi: "Sushi Pieces",
     burger: "Burgers",
   }
-  const leaderItems = participants[0]?.items_eaten ?? 0
 
   return (
     <div className="space-y-6">
@@ -126,7 +125,6 @@ export function RaceView({ race, onBack }: RaceViewProps) {
               participant={participant}
               rank={index + 1}
               foodType={race.food_type}
-              leaderItems={leaderItems}
             />
           ))
         )}
