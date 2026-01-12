@@ -14,9 +14,10 @@ interface ParticipantCardProps {
   participant: Participant
   rank: number
   foodType: FoodType
+  leaderItems: number
 }
 
-export function ParticipantCard({ participant, rank, foodType }: ParticipantCardProps) {
+export function ParticipantCard({ participant, rank, foodType, leaderItems }: ParticipantCardProps) {
   const [isUpdating, setIsUpdating] = useState(false)
 
   const updateCount = async (increment: boolean) => {
@@ -31,6 +32,9 @@ export function ParticipantCard({ participant, rank, foodType }: ParticipantCard
 
   const isWinner = rank === 1 && participant.items_eaten > 0
   const avatar = getAvatar(participant.avatar)
+  const progressRatio = leaderItems > 0 ? participant.items_eaten / leaderItems : rank === 1 ? 1 : 0
+  const progressPercent = Math.min(100, Math.max(0, Math.round(progressRatio * 100)))
+  const lanePercent = Math.min(98, Math.max(2, progressPercent))
 
   return (
     <Card
@@ -60,6 +64,20 @@ export function ParticipantCard({ participant, rank, foodType }: ParticipantCard
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <FoodIcon type={foodType} className="h-4 w-4" />
                 <span className="text-sm">{participant.items_eaten} eaten</span>
+              </div>
+              <div className="mt-3">
+                <div className="race-lane">
+                  <div className="race-lane__fill" style={{ width: `${progressPercent}%` }} />
+                  <div className="race-lane__shine" />
+                  <span className="race-lane__spark" style={{ left: `${lanePercent}%` }} aria-hidden="true" />
+                  <span className="race-lane__avatar" style={{ left: `${lanePercent}%` }} aria-hidden="true">
+                    {avatar}
+                  </span>
+                </div>
+                <div className="flex justify-between text-[10px] uppercase tracking-widest text-muted-foreground mt-2">
+                  <span>Largada</span>
+                  <span>Chegada</span>
+                </div>
               </div>
             </div>
           </div>

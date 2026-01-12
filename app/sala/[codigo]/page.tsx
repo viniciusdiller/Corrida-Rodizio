@@ -408,6 +408,7 @@ export default function RoomPage() {
   const currentParticipant = participants.find(
     (p) => p.id === currentParticipantId
   );
+  const leaderItems = participants[0]?.items_eaten ?? 0;
 
   const renderParticipantCard = (
     participant: Participant,
@@ -417,6 +418,10 @@ export default function RoomPage() {
     const isLeader = index === 0 && participant.items_eaten > 0;
     const avatar = getAvatar(participant.avatar);
     const isVip = participant.id === vipParticipantId;
+    const progressRatio =
+      leaderItems > 0 ? participant.items_eaten / leaderItems : index === 0 ? 1 : 0;
+    const progressPercent = Math.min(100, Math.max(0, Math.round(progressRatio * 100)));
+    const lanePercent = Math.min(98, Math.max(2, progressPercent));
     return (
       <Card
         className={`overflow-hidden border-none transition-all duration-300 ${
@@ -472,6 +477,20 @@ export default function RoomPage() {
                   {participant.items_eaten}{" "}
                   {getItemLabel(race.food_type, participant.items_eaten)}
                 </p>
+                <div className="mt-3">
+                  <div className="race-lane">
+                    <div className="race-lane__fill" style={{ width: `${progressPercent}%` }} />
+                    <div className="race-lane__shine" />
+                    <span className="race-lane__spark" style={{ left: `${lanePercent}%` }} aria-hidden="true" />
+                    <span className="race-lane__avatar" style={{ left: `${lanePercent}%` }} aria-hidden="true">
+                      {avatar}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[10px] uppercase tracking-widest text-muted-foreground mt-2">
+                    <span>Largada</span>
+                    <span>Chegada</span>
+                  </div>
+                </div>
                 {participant.id === currentParticipantId && isPersonal && (
                   <div className="flex flex-wrap gap-2 pt-2">
                     {avatarOptions.map((option) => (
