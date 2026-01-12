@@ -58,6 +58,17 @@ export default function RoomPage() {
   const [currentParticipantId, setCurrentParticipantId] = useState<
     string | null
   >(null);
+  const vipParticipant = participants.reduce<Participant | null>(
+    (vip, participant) => {
+      if (!vip) return participant;
+      return new Date(participant.created_at) < new Date(vip.created_at)
+        ? participant
+        : vip;
+    },
+    null
+  );
+  const vipParticipantId = vipParticipant?.id ?? null;
+  const isCurrentParticipantVip = currentParticipantId === vipParticipantId;
 
   const getItemLabel = (foodType: FoodType, count: number) => {
     const labels = {
@@ -144,7 +155,7 @@ export default function RoomPage() {
   };
 
   const endRace = async () => {
-    if (!race) return;
+    if (!race || !isCurrentParticipantVip) return;
     setIsEnding(true);
     try {
       const supabase = createClient();
@@ -280,6 +291,7 @@ export default function RoomPage() {
           <div className="space-y-4">
             {participants.map((p, i) => {
               const isWinner = p.items_eaten === maxScore && maxScore > 0;
+              const isVip = p.id === vipParticipantId;
               return (
                 <div
                   key={p.id}
@@ -319,6 +331,14 @@ export default function RoomPage() {
                               i % MOTIVATIONAL_PHRASES.length
                             ]}
                       </p>
+                      {isVip && (
+                        <Badge
+                          variant="outline"
+                          className="mt-2 text-[9px] uppercase tracking-widest border-yellow-500 text-yellow-500"
+                        >
+                          VIP
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <div className="text-right z-10">
@@ -370,6 +390,7 @@ export default function RoomPage() {
     isPersonal = false
   ) => {
     const isLeader = index === 0 && participant.items_eaten > 0;
+    const isVip = participant.id === vipParticipantId;
     return (
       <Card
         className={`overflow-hidden border-none transition-all duration-300 ${
@@ -410,6 +431,11 @@ export default function RoomPage() {
                   {participant.id === currentParticipantId && !isPersonal && (
                     <Badge className="bg-primary/10 text-primary border-none text-[10px] h-5 uppercase">
                       Você
+                    </Badge>
+                  )}
+                  {isVip && (
+                    <Badge className="bg-yellow-500/10 text-yellow-600 border-none text-[10px] h-5 uppercase">
+                      VIP
                     </Badge>
                   )}
                 </div>
@@ -473,7 +499,7 @@ export default function RoomPage() {
             size="sm"
             className="rounded-xl font-bold gap-2 shadow-lg shadow-destructive/20"
             onClick={endRace}
-            disabled={isEnding}
+            disabled={isEnding || !isCurrentParticipantVip}
           >
             <Flag className="h-4 w-4" />{" "}
             {isEnding ? "Encerrando..." : "Encerrar Competição"}
