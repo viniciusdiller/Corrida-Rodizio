@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Pizza, Fish, Beef, Utensils, ArrowRight } from "lucide-react"
 import type { FoodType } from "@/types/database"
 import { generateRoomCode } from "@/lib/utils/room-code"
+import { getParticipantStorageKey } from "@/lib/utils/participant-storage"
 
 export default function Home() {
   const router = useRouter()
@@ -48,13 +49,21 @@ export default function Home() {
       if (raceError) throw raceError
 
       // Add creator as first participant
-      const { error: participantError } = await supabase.from("participants").insert({
-        race_id: race.id,
-        name: playerName,
-        items_eaten: 0,
-      })
+      const { data: participant, error: participantError } = await supabase
+        .from("participants")
+        .insert({
+          race_id: race.id,
+          name: playerName,
+          items_eaten: 0,
+        })
+        .select()
+        .single()
 
       if (participantError) throw participantError
+
+      if (participant) {
+        localStorage.setItem(getParticipantStorageKey(code), participant.id)
+      }
 
       // Redirect to room
       router.push(`/sala/${code}`)
@@ -88,13 +97,24 @@ export default function Home() {
       }
 
       // Add participant
-      const { error: participantError } = await supabase.from("participants").insert({
-        race_id: race.id,
-        name: playerName,
-        items_eaten: 0,
-      })
+      const { data: participant, error: participantError } = await supabase
+        .from("participants")
+        .insert({
+          race_id: race.id,
+          name: playerName,
+          items_eaten: 0,
+        })
+        .select()
+        .single()
 
       if (participantError) throw participantError
+
+      if (participant) {
+        localStorage.setItem(
+          getParticipantStorageKey(roomCode.toUpperCase()),
+          participant.id
+        )
+      }
 
       // Redirect to room
       router.push(`/sala/${roomCode.toUpperCase()}`)
@@ -138,29 +158,33 @@ export default function Home() {
               />
             </div>
 
-            {/* Food Type Selection */}
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">Tipo de rodízio</Label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {foodTypes.map(({ type, label, icon: Icon, emoji }) => (
-                  <Card
-                    key={type}
-                    className={`cursor-pointer transition-all hover:scale-105 ${
-                      selectedFood === type ? "ring-2 ring-primary bg-primary/5" : "hover:border-primary/50"
-                    }`}
-                    onClick={() => setSelectedFood(type)}
-                  >
-                    <CardContent className="p-6 text-center space-y-2">
-                      <div className="text-4xl">{emoji}</div>
-                      <div className="flex items-center justify-center gap-2">
-                        <Icon className="h-5 w-5" />
-                        <span className="font-semibold">{label}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
+            {!showJoinRoom && (
+              <>
+                {/* Food Type Selection */}
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">Tipo de rodízio</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {foodTypes.map(({ type, label, icon: Icon, emoji }) => (
+                      <Card
+                        key={type}
+                        className={`cursor-pointer transition-all hover:scale-105 ${
+                          selectedFood === type ? "ring-2 ring-primary bg-primary/5" : "hover:border-primary/50"
+                        }`}
+                        onClick={() => setSelectedFood(type)}
+                      >
+                        <CardContent className="p-6 text-center space-y-2">
+                          <div className="text-4xl">{emoji}</div>
+                          <div className="flex items-center justify-center gap-2">
+                            <Icon className="h-5 w-5" />
+                            <span className="font-semibold">{label}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Action Buttons */}
             {!showJoinRoom ? (
@@ -179,7 +203,7 @@ export default function Home() {
                   variant="outline"
                   className="w-full text-lg h-14 bg-transparent"
                   onClick={() => setShowJoinRoom(true)}
-                  disabled={!playerName.trim() || !selectedFood}
+                  disabled={!playerName.trim()}
                 >
                   Entrar em Sala
                 </Button>
