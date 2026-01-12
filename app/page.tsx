@@ -33,24 +33,6 @@ export default function Home() {
   // ESTADOS DO MODO EQUIPE
   const [isTeamMode, setIsTeamMode] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<"A" | "B">("A");
-  const isMissingColumn = (error: unknown, column: string) => {
-    if (!error || typeof error !== "object") return false;
-    const maybeError = error as {
-      code?: string;
-      message?: string;
-      details?: string;
-      hint?: string;
-    };
-    const haystack = [
-      maybeError.message,
-      maybeError.details,
-      maybeError.hint,
-    ].filter(Boolean);
-    return (
-      maybeError.code === "42703" ||
-      haystack.some((text) => text?.includes(column))
-    );
-  };
 
   const foodTypes = [
     { type: "pizza" as FoodType, label: "Pizza", icon: Pizza },
@@ -67,8 +49,7 @@ export default function Home() {
       const code = generateRoomCode();
 
       // Criar a corrida com a nova flag is_team_mode
-      let teamModeEnabled = isTeamMode;
-      let { data: race, error: raceError } = await supabase
+      const { data: race, error: raceError } = await supabase
         .from("races")
         .insert({
           name: `Sala de ${playerName}`,
@@ -80,60 +61,19 @@ export default function Home() {
         .select()
         .single();
 
-      if (raceError && isMissingColumn(raceError, "is_team_mode")) {
-        teamModeEnabled = false;
-        const fallback = await supabase
-          .from("races")
-          .insert({
-            name: `Sala de ${playerName}`,
-            food_type: selectedFood,
-            room_code: code,
-            is_active: true,
-          })
-          .select()
-          .single();
-        race = fallback.data;
-        raceError = fallback.error;
-        if (isTeamMode) {
-          alert(
-            "Modo equipes indisponível: coluna 'is_team_mode' não encontrada. Criando sala sem equipes."
-          );
-        }
-      }
-
       if (raceError) throw raceError;
 
-      let { data: participant, error: participantError } = await supabase
+      const { data: participant, error: participantError } = await supabase
         .from("participants")
         .insert({
           race_id: race.id,
           name: playerName,
           avatar: defaultAvatar,
           items_eaten: 0,
-          team: teamModeEnabled ? selectedTeam : null,
+          team: isTeamMode ? selectedTeam : null,
         })
         .select()
         .single();
-
-      if (participantError && isMissingColumn(participantError, "team")) {
-        const fallback = await supabase
-          .from("participants")
-          .insert({
-            race_id: race.id,
-            name: playerName,
-            avatar: defaultAvatar,
-            items_eaten: 0,
-          })
-          .select()
-          .single();
-        participant = fallback.data;
-        participantError = fallback.error;
-        if (teamModeEnabled) {
-          alert(
-            "Modo equipes indisponível: coluna 'team' não encontrada. Entrando sem time."
-          );
-        }
-      }
 
       if (participantError) throw participantError;
 
@@ -192,43 +132,18 @@ export default function Home() {
         return;
       }
 
-      const raceIsTeamMode =
-        typeof (race as { is_team_mode?: boolean }).is_team_mode === "boolean"
-          ? (race as { is_team_mode?: boolean }).is_team_mode
-          : false;
-
       // Adicionar participante com o time selecionado (caso a sala seja modo equipe)
-      let { data: participant, error: participantError } = await supabase
+      const { data: participant, error: participantError } = await supabase
         .from("participants")
         .insert({
           race_id: race.id,
           name: playerName,
           avatar: defaultAvatar,
           items_eaten: 0,
-          team: raceIsTeamMode ? selectedTeam : null,
+          team: race.is_team_mode ? selectedTeam : null,
         })
         .select()
         .single();
-
-      if (participantError && isMissingColumn(participantError, "team")) {
-        const fallback = await supabase
-          .from("participants")
-          .insert({
-            race_id: race.id,
-            name: playerName,
-            avatar: defaultAvatar,
-            items_eaten: 0,
-          })
-          .select()
-          .single();
-        participant = fallback.data;
-        participantError = fallback.error;
-        if (raceIsTeamMode) {
-          alert(
-            "Modo equipes indisponível: coluna 'team' não encontrada. Entrando sem time."
-          );
-        }
-      }
 
       if (participantError) throw participantError;
 
