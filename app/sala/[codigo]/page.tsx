@@ -165,6 +165,13 @@ export default function RoomPage() {
         .from("participants")
         .update({ avatar })
         .eq("id", participantId);
+      setParticipants((prev) =>
+        prev.map((participant) =>
+          participant.id === participantId
+            ? { ...participant, avatar }
+            : participant
+        )
+      );
     } catch (error) {
       console.error(error);
     } finally {
@@ -465,7 +472,7 @@ export default function RoomPage() {
                   {participant.items_eaten}{" "}
                   {getItemLabel(race.food_type, participant.items_eaten)}
                 </p>
-                {participant.id === currentParticipantId && (
+                {participant.id === currentParticipantId && isPersonal && (
                   <div className="flex flex-wrap gap-2 pt-2">
                     {avatarOptions.map((option) => (
                       <Button
@@ -534,16 +541,18 @@ export default function RoomPage() {
             <ArrowLeft className="h-4 w-4 mr-2" /> Sair
           </Button>
 
-          <Button
-            variant="destructive"
-            size="sm"
-            className="rounded-xl font-bold gap-2 shadow-lg shadow-destructive/20"
-            onClick={endRace}
-            disabled={isEnding || !isCurrentParticipantVip}
-          >
-            <Flag className="h-4 w-4" />{" "}
-            {isEnding ? "Encerrando..." : "Encerrar Competição"}
-          </Button>
+          {isCurrentParticipantVip && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="rounded-xl font-bold gap-2 shadow-lg shadow-destructive/20"
+              onClick={endRace}
+              disabled={isEnding}
+            >
+              <Flag className="h-4 w-4" />{" "}
+              {isEnding ? "Encerrando..." : "Encerrar Competição"}
+            </Button>
+          )}
 
           <div className="flex items-center gap-2">
             <div className="text-right hidden sm:block">
