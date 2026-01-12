@@ -20,6 +20,7 @@ import type { FoodType } from "@/types/database";
 import { generateRoomCode } from "@/lib/utils/room-code";
 import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { DEFAULT_AVATAR } from "@/lib/avatars";
 
 export default function Home() {
   const router = useRouter();
@@ -107,20 +108,27 @@ export default function Home() {
         .insert({
           race_id: race.id,
           name: playerName,
+          avatar: DEFAULT_AVATAR,
           items_eaten: 0,
           team: teamModeEnabled ? selectedTeam : null,
         })
         .select()
         .single();
 
-      if (participantError && isMissingColumn(participantError, "team")) {
+      if (participantError) {
+        const isMissingTeam = isMissingColumn(participantError, "team");
+        const isMissingAvatar = isMissingColumn(participantError, "avatar");
+        if (!isMissingTeam && !isMissingAvatar) throw participantError;
         const fallback = await supabase
           .from("participants")
           .insert({
             race_id: race.id,
             name: playerName,
-            avatar: defaultAvatar,
+            ...(isMissingAvatar ? {} : { avatar: DEFAULT_AVATAR }),
             items_eaten: 0,
+            ...(isMissingTeam
+              ? {}
+              : { team: teamModeEnabled ? selectedTeam : null }),
           })
           .select()
           .single();
@@ -201,20 +209,27 @@ export default function Home() {
         .insert({
           race_id: race.id,
           name: playerName,
+          avatar: DEFAULT_AVATAR,
           items_eaten: 0,
           team: raceIsTeamMode ? selectedTeam : null,
         })
         .select()
         .single();
 
-      if (participantError && isMissingColumn(participantError, "team")) {
+      if (participantError) {
+        const isMissingTeam = isMissingColumn(participantError, "team");
+        const isMissingAvatar = isMissingColumn(participantError, "avatar");
+        if (!isMissingTeam && !isMissingAvatar) throw participantError;
         const fallback = await supabase
           .from("participants")
           .insert({
             race_id: race.id,
             name: playerName,
-            avatar: defaultAvatar,
+            ...(isMissingAvatar ? {} : { avatar: DEFAULT_AVATAR }),
             items_eaten: 0,
+            ...(isMissingTeam
+              ? {}
+              : { team: raceIsTeamMode ? selectedTeam : null }),
           })
           .select()
           .single();

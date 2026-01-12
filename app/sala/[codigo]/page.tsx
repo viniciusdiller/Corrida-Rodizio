@@ -24,6 +24,7 @@ import {
 import type { Race, Participant, FoodType } from "@/types/database";
 import { FoodIcon } from "@/components/food-icon";
 import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
+import { AVATAR_OPTIONS, DEFAULT_AVATAR } from "@/lib/avatars";
 import confetti from "canvas-confetti";
 
 const MOTIVATIONAL_PHRASES = [
@@ -58,6 +59,7 @@ export default function RoomPage() {
   const [currentParticipantId, setCurrentParticipantId] = useState<
     string | null
   >(null);
+  const [updatingAvatar, setUpdatingAvatar] = useState<string | null>(null);
 
   const getItemLabel = (foodType: FoodType, count: number) => {
     const labels = {
@@ -90,6 +92,25 @@ export default function RoomPage() {
         origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
       });
     }, 250);
+  };
+
+  const isMissingColumn = (error: unknown, column: string) => {
+    if (!error || typeof error !== "object") return false;
+    const maybeError = error as {
+      code?: string;
+      message?: string;
+      details?: string;
+      hint?: string;
+    };
+    const haystack = [
+      maybeError.message,
+      maybeError.details,
+      maybeError.hint,
+    ].filter(Boolean);
+    return (
+      maybeError.code === "42703" ||
+      haystack.some((text) => text?.includes(column))
+    );
   };
 
   const loadRoomData = async () => {
@@ -126,6 +147,47 @@ export default function RoomPage() {
     }
   };
 
+  const updateAvatar = async (avatar: string) => {
+    if (!currentParticipantId) return;
+    const current = participants.find((p) => p.id === currentParticipantId);
+    if (!current || current.avatar === avatar) return;
+    const previousAvatar = current.avatar ?? DEFAULT_AVATAR;
+    setUpdatingAvatar(avatar);
+    setParticipants((prev) =>
+      prev.map((participant) =>
+        participant.id === currentParticipantId
+          ? { ...participant, avatar }
+          : participant
+      )
+    );
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("participants")
+        .update({ avatar })
+        .eq("id", currentParticipantId);
+      if (error) {
+        if (isMissingColumn(error, "avatar")) {
+          alert(
+            "Avatar indisponível: coluna 'avatar' não encontrada no banco."
+          );
+        }
+        throw error;
+      }
+    } catch (error) {
+      console.error(error);
+      setParticipants((prev) =>
+        prev.map((participant) =>
+          participant.id === currentParticipantId
+            ? { ...participant, avatar: previousAvatar }
+            : participant
+        )
+      );
+    } finally {
+      setUpdatingAvatar(null);
+    }
+  };
+
   const updateCount = async (participantId: string, change: number) => {
     if (participantId !== currentParticipantId || !race?.is_active) return;
     const participant = participants.find((p) => p.id === participantId);
@@ -144,7 +206,7 @@ export default function RoomPage() {
   };
 
   const endRace = async () => {
-    if (!race) return;
+    if (!race || !isCurrentVip) return;
     setIsEnding(true);
     try {
       const supabase = createClient();
@@ -221,6 +283,22 @@ export default function RoomPage() {
     participants.length > 0
       ? Math.max(...participants.map((p) => p.items_eaten))
       : 0;
+  const getParticipantTimestamp = (participant: Participant) => {
+    const timestamp = Date.parse(participant.created_at ?? "");
+    return Number.isNaN(timestamp) ? Number.POSITIVE_INFINITY : timestamp;
+  };
+  const vipParticipantId =
+    participants.reduce<Participant | null>((vip, participant) => {
+      if (!vip) return participant;
+      return getParticipantTimestamp(participant) < getParticipantTimestamp(vip)
+        ? participant
+        : vip;
+    }, null)?.id ?? null;
+  const isCurrentVip = Boolean(
+    currentParticipantId && vipParticipantId === currentParticipantId
+  );
+  const resolveAvatar = (participant: Participant) =>
+    participant.avatar ?? DEFAULT_AVATAR;
 
   // VIEW: TELA DE RESULTADOS (HALL OF FAME)
   if (!race.is_active) {
@@ -299,6 +377,9 @@ export default function RoomPage() {
                     </span>
                     <div>
                       <p className="font-bold text-xl leading-tight flex items-center gap-2">
+                        <span className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 text-lg">
+                          {resolveAvatar(p)}
+                        </span>
                         {p.name}
                         {race.is_team_mode && (
                           <span
@@ -306,9 +387,14 @@ export default function RoomPage() {
                               p.team === "A"
                                 ? "bg-primary/30 text-primary"
                                 : "bg-destructive/30 text-destructive"
-                            }`}
+                              }`}
                           >
                             {p.team === "A" ? "ALPHA" : "BETA"}
+                          </span>
+                        )}
+                        {p.id === vipParticipantId && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400">
+                            VIP
                           </span>
                         )}
                       </p>
@@ -392,6 +478,9 @@ export default function RoomPage() {
               >
                 {isLeader ? <Trophy className="h-5 w-5" /> : index + 1}
               </div>
+              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-background text-2xl shadow-inner border border-muted">
+                {resolveAvatar(participant)}
+              </div>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-lg">{participant.name}</span>
@@ -410,6 +499,11 @@ export default function RoomPage() {
                   {participant.id === currentParticipantId && !isPersonal && (
                     <Badge className="bg-primary/10 text-primary border-none text-[10px] h-5 uppercase">
                       Você
+                    </Badge>
+                  )}
+                  {participant.id === vipParticipantId && (
+                    <Badge className="bg-yellow-500/10 text-yellow-600 border-none text-[10px] h-5 uppercase">
+                      VIP
                     </Badge>
                   )}
                 </div>
@@ -451,6 +545,32 @@ export default function RoomPage() {
               )}
             </div>
           </div>
+          {isPersonal && participant.id === currentParticipantId && (
+            <div className="mt-4 border-t border-muted pt-4">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">
+                Escolha seu Avatar
+              </Label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {AVATAR_OPTIONS.map((avatar) => {
+                  const isSelected = resolveAvatar(participant) === avatar;
+                  return (
+                    <Button
+                      key={avatar}
+                      type="button"
+                      variant={isSelected ? "default" : "outline"}
+                      className={`h-10 w-10 rounded-xl text-xl ${
+                        isSelected ? "ring-2 ring-primary ring-offset-2" : ""
+                      }`}
+                      onClick={() => updateAvatar(avatar)}
+                      disabled={updatingAvatar === avatar}
+                    >
+                      {avatar}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -468,16 +588,18 @@ export default function RoomPage() {
             <ArrowLeft className="h-4 w-4 mr-2" /> Sair
           </Button>
 
-          <Button
-            variant="destructive"
-            size="sm"
-            className="rounded-xl font-bold gap-2 shadow-lg shadow-destructive/20"
-            onClick={endRace}
-            disabled={isEnding}
-          >
-            <Flag className="h-4 w-4" />{" "}
-            {isEnding ? "Encerrando..." : "Encerrar Competição"}
-          </Button>
+          {isCurrentVip && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="rounded-xl font-bold gap-2 shadow-lg shadow-destructive/20"
+              onClick={endRace}
+              disabled={isEnding}
+            >
+              <Flag className="h-4 w-4" />{" "}
+              {isEnding ? "Encerrando..." : "Encerrar Competição"}
+            </Button>
+          )}
 
           <div className="flex items-center gap-2">
             <div className="text-right hidden sm:block">
