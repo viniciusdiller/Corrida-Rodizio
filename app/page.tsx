@@ -82,18 +82,59 @@ export default function Home() {
     setLoading(true)
     try {
       const supabase = createClient()
+      const normalizedRoomCode = roomCode.toUpperCase()
 
       // Find room by code
       const { data: race, error: raceError } = await supabase
         .from("races")
         .select()
-        .eq("room_code", roomCode.toUpperCase())
+        .eq("room_code", normalizedRoomCode)
         .eq("is_active", true)
         .single()
 
       if (raceError || !race) {
         alert("Sala não encontrada. Verifique o código.")
         setLoading(false)
+        return
+      }
+
+      const storageKey = getParticipantStorageKey(normalizedRoomCode)
+      const storedParticipantId = localStorage.getItem(storageKey)
+      let existingParticipant: { id: string } | null = null
+
+      if (storedParticipantId) {
+        const { data: storedParticipant, error: storedParticipantError } =
+          await supabase
+            .from("participants")
+            .select("id")
+            .eq("id", storedParticipantId)
+            .eq("race_id", race.id)
+            .single()
+
+        if (!storedParticipantError && storedParticipant) {
+          existingParticipant = storedParticipant
+        }
+      }
+
+      if (!existingParticipant) {
+        const { data: matchingParticipant, error: matchingParticipantError } =
+          await supabase
+            .from("participants")
+            .select("id")
+            .eq("race_id", race.id)
+            .eq("name", playerName.trim())
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single()
+
+        if (!matchingParticipantError && matchingParticipant) {
+          existingParticipant = matchingParticipant
+        }
+      }
+
+      if (existingParticipant) {
+        localStorage.setItem(storageKey, existingParticipant.id)
+        router.push(`/sala/${normalizedRoomCode}`)
         return
       }
 
@@ -112,13 +153,13 @@ export default function Home() {
 
       if (participant) {
         localStorage.setItem(
-          getParticipantStorageKey(roomCode.toUpperCase()),
+          getParticipantStorageKey(normalizedRoomCode),
           participant.id
         )
       }
 
       // Redirect to room
-      router.push(`/sala/${roomCode.toUpperCase()}`)
+      router.push(`/sala/${normalizedRoomCode}`)
     } catch (error) {
       console.error("Erro ao entrar na sala:", error)
       alert("Erro ao entrar na sala. Tente novamente.")
