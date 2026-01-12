@@ -15,11 +15,24 @@ import {
   Plus,
   Minus,
   Check,
-  Hash,
+  Flag,
+  Instagram,
+  Home,
 } from "lucide-react";
 import type { Race, Participant, FoodType } from "@/types/database";
 import { FoodIcon } from "@/components/food-icon";
 import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
+import confetti from "canvas-confetti";
+
+const MOTIVATIONAL_PHRASES = [
+  "O importante é que a barriga está cheia!",
+  "Na próxima você pede reforço! ",
+  "Faltou um espacinho para a sobremesa? ",
+  "O estômago é o limite, mas hoje você parou antes!",
+  "O vice-campeão também ganha... a conta!",
+  "Treino é treino, rodízio é jogo!",
+  "Guerreiro(a), mas o estômago não ajudou!",
+];
 
 export default function RoomPage() {
   const params = useParams();
@@ -30,6 +43,7 @@ export default function RoomPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [isEnding, setIsEnding] = useState(false);
   const [currentParticipantId, setCurrentParticipantId] = useState<
     string | null
   >(null);
@@ -43,6 +57,30 @@ export default function RoomPage() {
     return labels[foodType];
   };
 
+  const triggerConfetti = () => {
+    const duration = 3 * 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+    const randomInRange = (min: number, max: number) =>
+      Math.random() * (max - min) + min;
+
+    const interval: any = setInterval(function () {
+      const timeLeft = animationEnd - Date.now();
+      if (timeLeft <= 0) return clearInterval(interval);
+      const particleCount = 50 * (timeLeft / duration);
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+      });
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+      });
+    }, 250);
+  };
+
   const loadRoomData = async () => {
     try {
       const supabase = createClient();
@@ -50,13 +88,17 @@ export default function RoomPage() {
         .from("races")
         .select()
         .eq("room_code", roomCode.toUpperCase())
-        .eq("is_active", true)
         .single();
 
       if (raceError || !raceData) {
         router.push("/");
         return;
       }
+
+      if (race && race.is_active && !raceData.is_active) {
+        triggerConfetti();
+      }
+
       setRace(raceData);
 
       const { data: participantsData } = await supabase
@@ -74,7 +116,7 @@ export default function RoomPage() {
   };
 
   const updateCount = async (participantId: string, change: number) => {
-    if (participantId !== currentParticipantId) return;
+    if (participantId !== currentParticipantId || !race?.is_active) return;
     const participant = participants.find((p) => p.id === participantId);
     if (!participant) return;
 
@@ -85,15 +127,27 @@ export default function RoomPage() {
         .from("participants")
         .update({ items_eaten: newCount })
         .eq("id", participantId);
-      setParticipants((prev) =>
-        prev
-          .map((p) =>
-            p.id === participantId ? { ...p, items_eaten: newCount } : p
-          )
-          .sort((a, b) => b.items_eaten - a.items_eaten)
-      );
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const endRace = async () => {
+    if (!race) return;
+    setIsEnding(true);
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("races")
+        .update({ is_active: false, ended_at: new Date().toISOString() })
+        .eq("id", race.id);
+
+      triggerConfetti();
+      await loadRoomData();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsEnding(false);
     }
   };
 
@@ -113,7 +167,13 @@ export default function RoomPage() {
         { event: "*", schema: "public", table: "participants" },
         () => loadRoomData()
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "races" },
+        () => loadRoomData()
+      )
       .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
     };
@@ -139,6 +199,106 @@ export default function RoomPage() {
 
   if (!race) return null;
 
+  // VIEW: TELA DE RESULTADOS (HALL OF FAME / INSTAGRAM)
+  if (!race.is_active) {
+    const maxScore =
+      participants.length > 0
+        ? Math.max(...participants.map((p) => p.items_eaten))
+        : 0;
+
+    return (
+      <div className="min-h-screen bg-zinc-950 text-white p-6 flex flex-col items-center justify-center animate-in fade-in duration-1000">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center space-y-4">
+            <div className="inline-block p-3 bg-orange-500 rounded-2xl rotate-3 shadow-2xl shadow-orange-500/20">
+              <Trophy className="h-10 w-10 text-zinc-950" />
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-4xl font-black italic tracking-tighter uppercase">
+                Hall of Fame
+              </h1>
+              <p className="text-orange-500 font-mono text-sm tracking-widest">
+                SALA: {race.room_code}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {participants.map((p, i) => {
+              const isWinner = p.items_eaten === maxScore && maxScore > 0;
+
+              return (
+                <div
+                  key={p.id}
+                  className={`relative overflow-hidden flex items-center justify-between p-5 rounded-3xl border-2 transition-all ${
+                    isWinner
+                      ? "border-orange-500 bg-orange-500/10 scale-105 shadow-[0_0_30px_rgba(249,115,22,0.2)]"
+                      : "border-white/5 bg-white/5"
+                  }`}
+                >
+                  <div className="flex items-center gap-4 z-10">
+                    <span
+                      className={`text-2xl font-black ${
+                        isWinner ? "text-orange-500" : "text-zinc-700"
+                      }`}
+                    >
+                      #{i + 1}
+                    </span>
+                    <div>
+                      <p className="font-bold text-xl leading-tight">
+                        {p.name}
+                      </p>
+                      <p className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                        {isWinner
+                          ? "🏆 Lendário Comilão"
+                          : MOTIVATIONAL_PHRASES[
+                              i % MOTIVATIONAL_PHRASES.length
+                            ]}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right z-10">
+                    <p className="text-3xl font-black leading-none">
+                      {p.items_eaten}
+                    </p>
+                    <p className="text-[10px] uppercase font-bold text-zinc-500 mt-1">
+                      {getItemLabel(race.food_type, p.items_eaten)}
+                    </p>
+                  </div>
+                  {isWinner && (
+                    <div className="absolute right-[-10px] top-[-10px] opacity-10 rotate-12">
+                      <Trophy size={100} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-col items-center gap-6 pt-4">
+            <div className="flex items-center gap-2 text-zinc-500 animate-bounce">
+              <Instagram className="h-4 w-4" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+                Print & Post
+              </span>
+            </div>
+
+            <div className="flex gap-3 w-full">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10"
+                onClick={() => router.push("/")}
+              >
+                <Home className="h-4 w-4 mr-2" /> Início
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // VIEW: SALA ATIVA (O código original abaixo permanece o mesmo para a competição em curso)
   const currentParticipant = participants.find(
     (p) => p.id === currentParticipantId
   );
@@ -149,7 +309,6 @@ export default function RoomPage() {
     isPersonal = false
   ) => {
     const isLeader = index === 0 && participant.items_eaten > 0;
-
     return (
       <Card
         className={`overflow-hidden border-none transition-all duration-300 ${
@@ -187,7 +346,6 @@ export default function RoomPage() {
                 </p>
               </div>
             </div>
-
             <div className="flex items-center gap-3">
               {participant.id === currentParticipantId && (
                 <div className="flex items-center gap-1 bg-background/50 p-1 rounded-2xl border border-muted">
@@ -228,20 +386,30 @@ export default function RoomPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-orange-950/10 p-4 md:p-8">
       <div className="mx-auto max-w-2xl space-y-8">
-        {/* Header Superior */}
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
             onClick={() => router.push("/")}
             className="text-muted-foreground hover:text-primary"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Sair da Sala
+            <ArrowLeft className="h-4 w-4 mr-2" /> Sair
           </Button>
+
+          <Button
+            variant="destructive"
+            size="sm"
+            className="rounded-xl font-bold gap-2 shadow-lg shadow-destructive/20"
+            onClick={endRace}
+            disabled={isEnding}
+          >
+            <Flag className="h-4 w-4" />
+            {isEnding ? "Encerrando..." : "Encerrar Competição"}
+          </Button>
+
           <div className="flex items-center gap-2">
-            <div className="text-right">
+            <div className="text-right hidden sm:block">
               <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                Código da Sala
+                Sala
               </p>
               <p className="font-mono font-bold text-lg leading-none">
                 {race.room_code}
@@ -262,7 +430,6 @@ export default function RoomPage() {
           </div>
         </div>
 
-        {/* Card Principal da Sala */}
         <div className="text-center space-y-4 py-4">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-card shadow-xl border border-muted mb-2">
             <FoodIcon
@@ -287,7 +454,6 @@ export default function RoomPage() {
           </div>
         </div>
 
-        {/* Contador Pessoal (Sticky Bottom em Mobile) */}
         {currentParticipant && (
           <div className="space-y-4">
             <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">
@@ -301,7 +467,6 @@ export default function RoomPage() {
           </div>
         )}
 
-        {/* Ranking */}
         <div className="space-y-4 pt-4">
           <div className="flex items-center justify-between px-1">
             <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
@@ -309,7 +474,6 @@ export default function RoomPage() {
             </Label>
             <Trophy className="h-4 w-4 text-yellow-500" />
           </div>
-
           <div className="space-y-3">
             {participants.length <= 1 && (
               <div className="py-12 text-center bg-card/40 rounded-3xl border border-dashed border-muted">
