@@ -186,6 +186,81 @@ export default function RoomPage() {
   if (!race) return null;
 
   const leader = participants[0];
+  const currentParticipantIndex = participants.findIndex(
+    (participant) => participant.id === currentParticipantId
+  );
+  const currentParticipant =
+    currentParticipantIndex >= 0 ? participants[currentParticipantIndex] : null;
+
+  const renderParticipantCard = (
+    participant: Participant,
+    index: number,
+    options?: {
+      badgeLabel?: string;
+      containerClassName?: string;
+    }
+  ) => (
+    <Card
+      className={`transition-all ${
+        index === 0
+          ? "border-yellow-500 border-2 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20"
+          : ""
+      } ${options?.containerClassName ?? ""}`}
+    >
+      <CardContent className="p-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-bold text-muted-foreground">
+                {index + 1}º
+              </span>
+              {index === 0 && <Trophy className="h-6 w-6 text-yellow-500" />}
+            </div>
+            <div>
+              <div className="text-xl font-semibold">{participant.name}</div>
+              <div className="text-sm text-muted-foreground">
+                {participant.items_eaten}{" "}
+                {getItemLabel(race.food_type, participant.items_eaten)}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {options?.badgeLabel ? (
+              <Badge variant="secondary">{options.badgeLabel}</Badge>
+            ) : (
+              participant.id === currentParticipantId && (
+                <Badge variant="secondary">Você</Badge>
+              )
+            )}
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => updateCount(participant.id, -1)}
+              disabled={
+                participant.items_eaten === 0 ||
+                participant.id !== currentParticipantId
+              }
+            >
+              <Minus className="h-5 w-5" />
+            </Button>
+            <div className="w-16 text-center">
+              <span className="text-3xl font-bold">
+                {participant.items_eaten}
+              </span>
+            </div>
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+              onClick={() => updateCount(participant.id, 1)}
+              disabled={participant.id !== currentParticipantId}
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-yellow-50 dark:from-orange-950/20 dark:via-red-950/20 dark:to-yellow-950/20 p-4 md:p-8">
@@ -248,6 +323,19 @@ export default function RoomPage() {
 
         {/* Participants List */}
         <div className="space-y-4">
+          {currentParticipant && (
+            <div className="sticky top-4 z-10">
+              {renderParticipantCard(
+                currentParticipant,
+                currentParticipantIndex,
+                {
+                  badgeLabel: "Seu contador",
+                  containerClassName:
+                    "border-primary/30 bg-white/90 backdrop-blur dark:bg-background/90",
+                }
+              )}
+            </div>
+          )}
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Trophy className="h-6 w-6 text-yellow-500" />
             Ranking
@@ -262,70 +350,9 @@ export default function RoomPage() {
           ) : (
             <div className="space-y-3">
               {participants.map((participant, index) => (
-                <Card
-                  key={participant.id}
-                  className={`transition-all ${
-                    index === 0
-                      ? "border-yellow-500 border-2 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20"
-                      : ""
-                  }`}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl font-bold text-muted-foreground">
-                            {index + 1}º
-                          </span>
-                          {index === 0 && (
-                            <Trophy className="h-6 w-6 text-yellow-500" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="text-xl font-semibold">
-                            {participant.name}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {participant.items_eaten}{" "}
-                            {getItemLabel(
-                              race.food_type,
-                              participant.items_eaten
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {participant.id === currentParticipantId && (
-                          <Badge variant="secondary">Você</Badge>
-                        )}
-                        <Button
-                          size="lg"
-                          variant="outline"
-                          onClick={() => updateCount(participant.id, -1)}
-                          disabled={
-                            participant.items_eaten === 0 ||
-                            participant.id !== currentParticipantId
-                          }
-                        >
-                          <Minus className="h-5 w-5" />
-                        </Button>
-                        <div className="w-16 text-center">
-                          <span className="text-3xl font-bold">
-                            {participant.items_eaten}
-                          </span>
-                        </div>
-                        <Button
-                          size="lg"
-                          className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-                          onClick={() => updateCount(participant.id, 1)}
-                          disabled={participant.id !== currentParticipantId}
-                        >
-                          <Plus className="h-5 w-5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div key={participant.id}>
+                  {renderParticipantCard(participant, index)}
+                </div>
               ))}
             </div>
           )}
