@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { Race, Participant, FoodType } from "@/types/database";
 import { FoodIcon } from "@/components/food-icon";
+import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
 
 export default function RoomPage() {
   const params = useParams();
@@ -27,6 +28,9 @@ export default function RoomPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [currentParticipantId, setCurrentParticipantId] = useState<string | null>(
+    null
+  );
 
   const getItemLabel = (foodType: FoodType, count: number) => {
     const labels = {
@@ -75,6 +79,7 @@ export default function RoomPage() {
   };
 
   const updateCount = async (participantId: string, change: number) => {
+    if (participantId !== currentParticipantId) return;
     const participant = participants.find((p) => p.id === participantId);
     if (!participant) return;
 
@@ -160,6 +165,12 @@ export default function RoomPage() {
     return () => {
       supabase.removeChannel(channel);
     };
+  }, [roomCode]);
+
+  useEffect(() => {
+    setCurrentParticipantId(
+      localStorage.getItem(getParticipantStorageKey(roomCode))
+    );
   }, [roomCode]);
 
   if (loading) {
@@ -284,11 +295,17 @@ export default function RoomPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        {participant.id === currentParticipantId && (
+                          <Badge variant="secondary">Você</Badge>
+                        )}
                         <Button
                           size="lg"
                           variant="outline"
                           onClick={() => updateCount(participant.id, -1)}
-                          disabled={participant.items_eaten === 0}
+                          disabled={
+                            participant.items_eaten === 0 ||
+                            participant.id !== currentParticipantId
+                          }
                         >
                           <Minus className="h-5 w-5" />
                         </Button>
@@ -301,6 +318,7 @@ export default function RoomPage() {
                           size="lg"
                           className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
                           onClick={() => updateCount(participant.id, 1)}
+                          disabled={participant.id !== currentParticipantId}
                         >
                           <Plus className="h-5 w-5" />
                         </Button>
