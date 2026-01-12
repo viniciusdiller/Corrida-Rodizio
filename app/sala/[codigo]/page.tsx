@@ -24,6 +24,7 @@ import {
 import type { Race, Participant, FoodType } from "@/types/database";
 import { FoodIcon } from "@/components/food-icon";
 import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
+import { avatarOptions, getAvatar } from "@/lib/utils/avatars";
 import confetti from "canvas-confetti";
 
 const MOTIVATIONAL_PHRASES = [
@@ -55,6 +56,7 @@ export default function RoomPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
+  const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
   const [currentParticipantId, setCurrentParticipantId] = useState<
     string | null
   >(null);
@@ -140,6 +142,22 @@ export default function RoomPage() {
         .eq("id", participantId);
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const updateAvatar = async (participantId: string, avatar: string) => {
+    if (participantId !== currentParticipantId) return;
+    setIsUpdatingAvatar(true);
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("participants")
+        .update({ avatar })
+        .eq("id", participantId);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsUpdatingAvatar(false);
     }
   };
 
@@ -370,6 +388,7 @@ export default function RoomPage() {
     isPersonal = false
   ) => {
     const isLeader = index === 0 && participant.items_eaten > 0;
+    const avatar = getAvatar(participant.avatar);
     return (
       <Card
         className={`overflow-hidden border-none transition-all duration-300 ${
@@ -394,6 +413,9 @@ export default function RoomPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
+                  <span className="text-xl" aria-hidden="true">
+                    {avatar}
+                  </span>
                   <span className="font-bold text-lg">{participant.name}</span>
                   {race.is_team_mode && (
                     <Badge
@@ -417,6 +439,24 @@ export default function RoomPage() {
                   {participant.items_eaten}{" "}
                   {getItemLabel(race.food_type, participant.items_eaten)}
                 </p>
+                {participant.id === currentParticipantId && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {avatarOptions.map((option) => (
+                      <Button
+                        key={option}
+                        type="button"
+                        variant={option === avatar ? "default" : "outline"}
+                        size="icon"
+                        onClick={() => updateAvatar(participant.id, option)}
+                        disabled={isUpdatingAvatar}
+                        className="h-9 w-9 rounded-xl text-lg"
+                        aria-label={`Selecionar avatar ${option}`}
+                      >
+                        {option}
+                      </Button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3">
