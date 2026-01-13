@@ -38,21 +38,21 @@ export function ParticipantCard({ participant, rank, foodType }: ParticipantCard
           : ""
       }`}
     >
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between gap-4">
+      <CardContent className="px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1">
             <div
-              className={`flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold ${
+              className={`flex h-9 w-9 items-center justify-center rounded-full text-base font-bold ${
                 isWinner ? "bg-yellow-500 text-white" : "bg-muted text-muted-foreground"
               }`}
             >
-              {isWinner ? <Trophy className="h-5 w-5" /> : rank}
+              {isWinner ? <Trophy className="h-4 w-4" /> : rank}
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-lg leading-none mb-1">{participant.name}</h3>
+              <h3 className="font-semibold text-base leading-none mb-1">{participant.name}</h3>
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <FoodIcon type={foodType} className="h-4 w-4" />
-                <span className="text-sm">{participant.items_eaten} eaten</span>
+                <span className="text-xs">{participant.items_eaten} eaten</span>
               </div>
             </div>
           </div>
@@ -65,7 +65,7 @@ export function ParticipantCard({ participant, rank, foodType }: ParticipantCard
             >
               <Minus className="h-4 w-4" />
             </Button>
-            <div className="text-3xl font-bold min-w-12 text-center text-primary">{participant.items_eaten}</div>
+            <div className="text-2xl font-bold min-w-10 text-center text-primary">{participant.items_eaten}</div>
             <Button size="icon" variant="outline" onClick={() => updateCount(true)} disabled={isUpdating}>
               <Plus className="h-4 w-4" />
             </Button>

@@ -440,22 +440,22 @@ export default function RoomPage() {
           isLeader ? "bg-gradient-to-r from-yellow-500/5 to-orange-500/5" : ""
         }`}
       >
-        <CardContent className="p-5">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+        <CardContent className="px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
               <div
-                className={`flex items-center justify-center w-10 h-10 rounded-xl font-black ${
+                className={`flex items-center justify-center w-9 h-9 rounded-xl font-black ${
                   isLeader
                     ? "bg-yellow-500 text-white"
                     : "bg-muted text-muted-foreground"
                 }`}
               >
-                {isLeader ? <Trophy className="h-5 w-5" /> : index + 1}
+                {isLeader ? <Trophy className="h-4 w-4" /> : index + 1}
               </div>
-              <div className="text-3xl">{avatar}</div>
+              <div className="text-2xl">{avatar}</div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-lg">{participant.name}</span>
+                  <span className="font-bold text-base">{participant.name}</span>
                   {participant.is_vip && (
                     <Badge className="bg-yellow-500/20 text-yellow-600 border-none text-[9px] h-4 uppercase">
                       VIP
@@ -491,19 +491,19 @@ export default function RoomPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10 rounded-xl hover:bg-destructive/10 hover:text-destructive"
+                    className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive"
                     onClick={() => updateCount(participant.id, -1)}
                     disabled={participant.items_eaten === 0}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
-                  <div className="w-12 text-center text-2xl font-black">
+                  <div className="w-10 text-center text-xl font-black">
                     {participant.items_eaten}
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary"
+                    className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary"
                     onClick={() => updateCount(participant.id, 1)}
                   >
                     <Plus className="h-4 w-4" />
@@ -511,7 +511,7 @@ export default function RoomPage() {
                 </div>
               )}
               {participant.id !== currentParticipantId && (
-                <div className="text-3xl font-black text-muted-foreground/30 pr-2">
+                <div className="text-2xl font-black text-muted-foreground/30 pr-1">
                   {participant.items_eaten}
                 </div>
               )}
