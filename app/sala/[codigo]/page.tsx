@@ -58,8 +58,8 @@ const TEAM_OPTIONS = [
   },
   {
     id: "VERMELHA",
-    label: "Time Vermelha",
-    shortLabel: "Vermelha",
+    label: "Time Vermelho",
+    shortLabel: "Vermelho",
     badgeClass: "border-red-500/40 text-red-500",
     pillClass: "bg-red-500/20 text-red-300",
     cardClass: "border-l-4 border-l-red-500 bg-red-500/5",
@@ -76,8 +76,8 @@ const TEAM_OPTIONS = [
   },
   {
     id: "AMARELA",
-    label: "Time Amarela",
-    shortLabel: "Amarela",
+    label: "Time Amarelo",
+    shortLabel: "Amarelo",
     badgeClass: "border-yellow-500/40 text-yellow-400",
     pillClass: "bg-yellow-500/20 text-yellow-300",
     cardClass: "border-l-4 border-l-yellow-500 bg-yellow-500/5",
@@ -310,6 +310,22 @@ export default function RoomPage() {
       .filter((p) => p.team === team.id)
       .reduce((acc, p) => acc + p.items_eaten, 0),
   }));
+  const teamRankings = TEAM_OPTIONS.map((team) => {
+    const members = participants
+      .filter((participant) => participant.team === team.id)
+      .sort((a, b) => b.items_eaten - a.items_eaten);
+    const topScore = members[0]?.items_eaten ?? 0;
+    return {
+      ...team,
+      total: members.reduce((acc, participant) => acc + participant.items_eaten, 0),
+      members,
+      topScore,
+    };
+  });
+  const unassignedMembers = participants
+    .filter((participant) => !participant.team)
+    .sort((a, b) => b.items_eaten - a.items_eaten);
+  const unassignedTopScore = unassignedMembers[0]?.items_eaten ?? 0;
   const maxScore =
     participants.length > 0
       ? Math.max(...participants.map((p) => p.items_eaten))
@@ -643,27 +659,6 @@ export default function RoomPage() {
           </div>
         </div>
 
-        {/* PLACAR COLETIVO (Modo Equipe) */}
-        {race.is_team_mode && (
-          <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top duration-500">
-            {teamScores.map((team) => (
-              <Card key={team.id} className={team.cardClass}>
-                <CardContent className="p-4 flex flex-col items-center">
-                  <div className={`flex items-center gap-2 mb-1 ${team.scoreClass}`}>
-                    <Sword className="h-3 w-3" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">
-                      {team.label}
-                    </span>
-                  </div>
-                  <span className="text-4xl font-black tracking-tighter">
-                    {team.score}
-                  </span>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
         <div className="text-center space-y-4 py-4">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-card shadow-xl border border-muted mb-2">
             <FoodIcon
@@ -733,7 +728,7 @@ export default function RoomPage() {
         <div className="space-y-4 pt-4">
           <div className="flex items-center justify-between px-1">
             <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
-              Ranking Geral
+              {race.is_team_mode ? "Ranking por Time" : "Ranking Geral"}
             </Label>
             <Trophy className="h-4 w-4 text-yellow-500" />
           </div>
@@ -745,15 +740,142 @@ export default function RoomPage() {
                 </p>
               </div>
             )}
-            {participants.map((participant, index) => (
-              <div
-                key={participant.id}
-                className="animate-in fade-in slide-in-from-bottom-2 duration-500"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                {renderParticipantCard(participant, index)}
+            {race.is_team_mode ? (
+              <div className="space-y-4">
+                {teamRankings.map((team, teamIndex) => (
+                  <Card
+                    key={team.id}
+                    className={`overflow-hidden border-none shadow-md ${team.cardClass}`}
+                    style={{ animationDelay: `${teamIndex * 60}ms` }}
+                  >
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className={`flex items-center gap-2 ${team.scoreClass}`}>
+                          <Sword className="h-4 w-4" />
+                          <span className="text-[11px] font-black uppercase tracking-widest">
+                            {team.label}
+                          </span>
+                        </div>
+                        <span className="text-sm font-black uppercase tracking-widest text-muted-foreground">
+                          Total {team.total}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {team.members.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-muted/60 p-4 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                            Sem jogadores
+                          </div>
+                        ) : (
+                          team.members.map((member, memberIndex) => {
+                            const isMvp =
+                              team.topScore > 0 &&
+                              member.items_eaten === team.topScore;
+                            return (
+                              <div
+                                key={member.id}
+                                className="flex items-center justify-between rounded-2xl bg-background/70 px-3 py-2"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg">
+                                    {getAvatar(member)}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-semibold">
+                                      {member.name}
+                                    </span>
+                                    {member.id === currentParticipantId && (
+                                      <Badge className="bg-primary/10 text-primary border-none text-[9px] h-4 uppercase">
+                                        Você
+                                      </Badge>
+                                    )}
+                                    {isMvp && (
+                                      <Badge className="bg-yellow-500/20 text-yellow-700 border-none text-[9px] h-4 uppercase">
+                                        MVP
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-sm font-black text-muted-foreground">
+                                  {member.items_eaten}
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {unassignedMembers.length > 0 && (
+                  <Card className="overflow-hidden border-none shadow-md bg-muted/40">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Users2 className="h-4 w-4" />
+                          <span className="text-[11px] font-black uppercase tracking-widest">
+                            Sem time
+                          </span>
+                        </div>
+                        <span className="text-sm font-black uppercase tracking-widest text-muted-foreground">
+                          Total{" "}
+                          {unassignedMembers.reduce(
+                            (acc, participant) => acc + participant.items_eaten,
+                            0
+                          )}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {unassignedMembers.map((member) => {
+                          const isMvp =
+                            unassignedTopScore > 0 &&
+                            member.items_eaten === unassignedTopScore;
+                          return (
+                            <div
+                              key={member.id}
+                              className="flex items-center justify-between rounded-2xl bg-background/70 px-3 py-2"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg">
+                                  {getAvatar(member)}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-semibold">
+                                    {member.name}
+                                  </span>
+                                  {member.id === currentParticipantId && (
+                                    <Badge className="bg-primary/10 text-primary border-none text-[9px] h-4 uppercase">
+                                      Você
+                                    </Badge>
+                                  )}
+                                  {isMvp && (
+                                    <Badge className="bg-yellow-500/20 text-yellow-700 border-none text-[9px] h-4 uppercase">
+                                      MVP
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-sm font-black text-muted-foreground">
+                                {member.items_eaten}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
-            ))}
+            ) : (
+              participants.map((participant, index) => (
+                <div
+                  key={participant.id}
+                  className="animate-in fade-in slide-in-from-bottom-2 duration-500"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  {renderParticipantCard(participant, index)}
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
