@@ -636,11 +636,11 @@ export default function RoomPage() {
           )}
 
           <div className="flex items-center gap-2">
-            <div className="text-right hidden sm:block">
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            <div className="text-right">
+              <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 Sala
               </p>
-              <p className="font-mono font-bold text-lg leading-none">
+              <p className="font-mono font-bold text-base sm:text-lg leading-none">
                 {race.room_code}
               </p>
             </div>
