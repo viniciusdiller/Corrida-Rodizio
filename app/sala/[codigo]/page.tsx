@@ -60,6 +60,7 @@ export default function RoomPage() {
     string | null
   >(null);
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
+  const [isUpdatingTeam, setIsUpdatingTeam] = useState(false);
 
   const getItemLabel = (foodType: FoodType, count: number) => {
     const labels = {
@@ -168,6 +169,29 @@ export default function RoomPage() {
       console.error(error);
     } finally {
       setIsUpdatingAvatar(false);
+    }
+  };
+
+  const updateTeam = async (team: "A" | "B") => {
+    if (!currentParticipantId || isUpdatingTeam || !race?.is_team_mode) return;
+    setIsUpdatingTeam(true);
+    setParticipants((prev) =>
+      prev.map((participant) =>
+        participant.id === currentParticipantId
+          ? { ...participant, team }
+          : participant
+      )
+    );
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("participants")
+        .update({ team })
+        .eq("id", currentParticipantId);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsUpdatingTeam(false);
     }
   };
 
@@ -437,7 +461,7 @@ export default function RoomPage() {
                       VIP
                     </Badge>
                   )}
-                  {race.is_team_mode && (
+                  {race.is_team_mode && participant.team && (
                     <Badge
                       variant="outline"
                       className={`text-[9px] h-4 px-1.5 ${
@@ -629,6 +653,41 @@ export default function RoomPage() {
             <span className="text-primary animate-pulse">● Ao Vivo</span>
           </div>
         </div>
+
+        {race.is_team_mode && currentParticipant && !currentParticipant.team && (
+          <Card className="border-none shadow-lg shadow-black/5 bg-card/70">
+            <CardContent className="p-6 space-y-4">
+              <div className="space-y-1">
+                <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
+                  Escolha seu time
+                </Label>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Entre no placar selecionando seu time agora.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  variant="default"
+                  className="h-11 rounded-xl font-bold"
+                  onClick={() => updateTeam("A")}
+                  disabled={isUpdatingTeam}
+                >
+                  Time Alpha
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="h-11 rounded-xl font-bold"
+                  onClick={() => updateTeam("B")}
+                  disabled={isUpdatingTeam}
+                >
+                  Time Beta
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {currentParticipant && (
           <div className="space-y-4">

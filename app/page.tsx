@@ -32,7 +32,6 @@ export default function Home() {
 
   // ESTADOS DO MODO EQUIPE
   const [isTeamMode, setIsTeamMode] = useState(false);
-  const [selectedTeam, setSelectedTeam] = useState<"A" | "B">("A");
   const isMissingColumn = (error: unknown, column: string) => {
     if (!error || typeof error !== "object") return false;
     const maybeError = error as {
@@ -177,7 +176,7 @@ export default function Home() {
           race_id: race.id,
           name: playerName,
           items_eaten: 0,
-          team: teamModeEnabled ? selectedTeam : null,
+          team: null,
           avatar: DEFAULT_AVATAR,
           is_vip: true,
         })
@@ -194,7 +193,7 @@ export default function Home() {
           race_id: race.id,
           name: playerName,
           items_eaten: 0,
-          team: teamModeEnabled ? selectedTeam : null,
+          team: null,
           avatar: DEFAULT_AVATAR,
           is_vip: true,
         });
@@ -279,14 +278,14 @@ export default function Home() {
           ? (race as { is_team_mode?: boolean }).is_team_mode
           : false;
 
-      // Adicionar participante com o time selecionado (caso a sala seja modo equipe)
+      // Adicionar participante sem time (seleção acontece dentro da sala)
       let { data: participant, error: participantError } = await supabase
         .from("participants")
         .insert({
           race_id: race.id,
           name: playerName,
           items_eaten: 0,
-          team: raceIsTeamMode ? selectedTeam : null,
+          team: null,
           avatar: DEFAULT_AVATAR,
           is_vip: false,
         })
@@ -303,7 +302,7 @@ export default function Home() {
           race_id: race.id,
           name: playerName,
           items_eaten: 0,
-          team: raceIsTeamMode ? selectedTeam : null,
+          team: null,
           avatar: DEFAULT_AVATAR,
           is_vip: false,
         });
@@ -377,45 +376,6 @@ export default function Home() {
                 className="bg-background/50 border-muted focus:ring-primary/20 h-14 text-lg font-medium"
               />
             </div>
-
-            {(isTeamMode || showJoinRoom) && (
-              <div className="space-y-3 animate-in fade-in duration-500">
-                <Label className="text-xs uppercase tracking-widest font-bold text-muted-foreground px-1">
-                  Escolha seu Time
-                </Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    type="button"
-                    variant={selectedTeam === "A" ? "default" : "outline"}
-                    className={`h-12 rounded-xl font-bold transition-all ${
-                      selectedTeam === "A"
-                        ? "ring-2 ring-primary ring-offset-2"
-                        : ""
-                    }`}
-                    onClick={() => setSelectedTeam("A")}
-                  >
-                    Time Alpha
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={selectedTeam === "B" ? "destructive" : "outline"}
-                    className={`h-12 rounded-xl font-bold transition-all ${
-                      selectedTeam === "B"
-                        ? "ring-2 ring-destructive ring-offset-2"
-                        : ""
-                    }`}
-                    onClick={() => setSelectedTeam("B")}
-                  >
-                    Time Beta
-                  </Button>
-                </div>
-                {showJoinRoom && (
-                  <p className="text-[10px] text-center text-muted-foreground uppercase font-medium">
-                    Nota: Se a sala não for em equipe, seu time será ignorado.
-                  </p>
-                )}
-              </div>
-            )}
 
             {!showJoinRoom ? (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
