@@ -46,6 +46,47 @@ const MOTIVATIONAL_PHRASES = [
   "Derrota honrosa: saiu andando, não rolando!",
 ];
 
+const TEAM_OPTIONS = [
+  {
+    id: "AZUL",
+    label: "Time Azul",
+    shortLabel: "Azul",
+    badgeClass: "border-blue-500/40 text-blue-500",
+    pillClass: "bg-blue-500/20 text-blue-300",
+    cardClass: "border-l-4 border-l-blue-500 bg-blue-500/5",
+    scoreClass: "text-blue-500",
+  },
+  {
+    id: "VERMELHA",
+    label: "Time Vermelha",
+    shortLabel: "Vermelha",
+    badgeClass: "border-red-500/40 text-red-500",
+    pillClass: "bg-red-500/20 text-red-300",
+    cardClass: "border-l-4 border-l-red-500 bg-red-500/5",
+    scoreClass: "text-red-500",
+  },
+  {
+    id: "VERDE",
+    label: "Time Verde",
+    shortLabel: "Verde",
+    badgeClass: "border-emerald-500/40 text-emerald-400",
+    pillClass: "bg-emerald-500/20 text-emerald-300",
+    cardClass: "border-l-4 border-l-emerald-500 bg-emerald-500/5",
+    scoreClass: "text-emerald-400",
+  },
+  {
+    id: "AMARELA",
+    label: "Time Amarela",
+    shortLabel: "Amarela",
+    badgeClass: "border-yellow-500/40 text-yellow-400",
+    pillClass: "bg-yellow-500/20 text-yellow-300",
+    cardClass: "border-l-4 border-l-yellow-500 bg-yellow-500/5",
+    scoreClass: "text-yellow-400",
+  },
+] as const;
+
+type TeamId = (typeof TEAM_OPTIONS)[number]["id"];
+
 export default function RoomPage() {
   const params = useParams();
   const router = useRouter();
@@ -172,7 +213,7 @@ export default function RoomPage() {
     }
   };
 
-  const updateTeam = async (team: "A" | "B") => {
+  const updateTeam = async (team: TeamId) => {
     if (!currentParticipantId || isUpdatingTeam || !race?.is_team_mode) return;
     setIsUpdatingTeam(true);
     setParticipants((prev) =>
@@ -263,12 +304,12 @@ export default function RoomPage() {
   if (!race) return null;
 
   // CALCULOS DE EQUIPE E RANKING
-  const teamAScore = participants
-    .filter((p) => p.team === "A")
-    .reduce((acc, p) => acc + p.items_eaten, 0);
-  const teamBScore = participants
-    .filter((p) => p.team === "B")
-    .reduce((acc, p) => acc + p.items_eaten, 0);
+  const teamScores = TEAM_OPTIONS.map((team) => ({
+    ...team,
+    score: participants
+      .filter((p) => p.team === team.id)
+      .reduce((acc, p) => acc + p.items_eaten, 0),
+  }));
   const maxScore =
     participants.length > 0
       ? Math.max(...participants.map((p) => p.items_eaten))
@@ -276,8 +317,11 @@ export default function RoomPage() {
 
   // VIEW: TELA DE RESULTADOS (HALL OF FAME)
   if (!race.is_active) {
-    const winningTeam =
-      teamAScore > teamBScore ? "A" : teamBScore > teamAScore ? "B" : "Empate";
+    const highestTeamScore = Math.max(...teamScores.map((team) => team.score));
+    const winningTeams = teamScores.filter(
+      (team) => team.score === highestTeamScore && highestTeamScore > 0
+    );
+    const winningTeam = winningTeams.length === 1 ? winningTeams[0] : null;
 
     return (
       <div className="min-h-screen bg-zinc-950 text-white p-6 flex flex-col items-center justify-center animate-in fade-in duration-1000">
@@ -300,10 +344,8 @@ export default function RoomPage() {
           {race.is_team_mode && (
             <Card
               className={`border-none ${
-                winningTeam === "A"
+                winningTeam
                   ? "bg-primary/20"
-                  : winningTeam === "B"
-                  ? "bg-destructive/20"
                   : "bg-muted/20"
               }`}
             >
@@ -315,15 +357,16 @@ export default function RoomPage() {
                   Resultado por Equipe
                 </Badge>
                 <h2 className="text-2xl font-black italic">
-                  {winningTeam === "Empate"
-                    ? "EMPATE TÉCNICO!"
-                    : winningTeam === "A"
-                    ? "TIME ALPHA VENCEU!"
-                    : "TIME BETA VENCEU!"}
+                  {winningTeam
+                    ? `TIME ${winningTeam.shortLabel.toUpperCase()} VENCEU!`
+                    : "EMPATE TÉCNICO!"}
                 </h2>
-                <div className="flex justify-center gap-8 text-sm font-bold opacity-70">
-                  <span>ALPHA: {teamAScore}</span>
-                  <span>BETA: {teamBScore}</span>
+                <div className="flex flex-wrap justify-center gap-4 text-sm font-bold opacity-70">
+                  {teamScores.map((team) => (
+                    <span key={team.id}>
+                      {team.shortLabel.toUpperCase()}: {team.score}
+                    </span>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -361,12 +404,12 @@ export default function RoomPage() {
                         {race.is_team_mode && (
                           <span
                             className={`text-[10px] px-1.5 py-0.5 rounded ${
-                              p.team === "A"
-                                ? "bg-primary/30 text-primary"
-                                : "bg-destructive/30 text-destructive"
+                              TEAM_OPTIONS.find((team) => team.id === p.team)
+                                ?.pillClass ?? "bg-muted/30 text-muted-foreground"
                             }`}
                           >
-                            {p.team === "A" ? "ALPHA" : "BETA"}
+                            {TEAM_OPTIONS.find((team) => team.id === p.team)
+                              ?.shortLabel ?? "Sem time"}
                           </span>
                         )}
                       </p>
@@ -465,12 +508,14 @@ export default function RoomPage() {
                     <Badge
                       variant="outline"
                       className={`text-[9px] h-4 px-1.5 ${
-                        participant.team === "A"
-                          ? "border-primary text-primary"
-                          : "border-destructive text-destructive"
+                        TEAM_OPTIONS.find(
+                          (team) => team.id === participant.team
+                        )?.badgeClass ?? "border-muted text-muted-foreground"
                       }`}
                     >
-                      {participant.team === "A" ? "ALPHA" : "BETA"}
+                      {TEAM_OPTIONS.find(
+                        (team) => team.id === participant.team
+                      )?.shortLabel ?? "Sem time"}
                     </Badge>
                   )}
                   {participant.id === currentParticipantId && !isPersonal && (
@@ -550,7 +595,7 @@ export default function RoomPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-orange-950/10 p-4 md:p-8">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black p-4 md:p-8">
       <div className="mx-auto max-w-2xl space-y-8">
         <div className="flex items-center justify-between">
           <Button
@@ -601,32 +646,21 @@ export default function RoomPage() {
         {/* PLACAR COLETIVO (Modo Equipe) */}
         {race.is_team_mode && (
           <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top duration-500">
-            <Card className="border-l-4 border-l-primary bg-primary/5">
-              <CardContent className="p-4 flex flex-col items-center">
-                <div className="flex items-center gap-2 text-primary mb-1">
-                  <Sword className="h-3 w-3" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">
-                    Time Alpha
+            {teamScores.map((team) => (
+              <Card key={team.id} className={team.cardClass}>
+                <CardContent className="p-4 flex flex-col items-center">
+                  <div className={`flex items-center gap-2 mb-1 ${team.scoreClass}`}>
+                    <Sword className="h-3 w-3" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">
+                      {team.label}
+                    </span>
+                  </div>
+                  <span className="text-4xl font-black tracking-tighter">
+                    {team.score}
                   </span>
-                </div>
-                <span className="text-4xl font-black tracking-tighter">
-                  {teamAScore}
-                </span>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-l-destructive bg-destructive/5">
-              <CardContent className="p-4 flex flex-col items-center">
-                <div className="flex items-center gap-2 text-destructive mb-1">
-                  <Sword className="h-3 w-3" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">
-                    Time Beta
-                  </span>
-                </div>
-                <span className="text-4xl font-black tracking-tighter">
-                  {teamBScore}
-                </span>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
 
@@ -666,24 +700,18 @@ export default function RoomPage() {
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  variant="default"
-                  className="h-11 rounded-xl font-bold"
-                  onClick={() => updateTeam("A")}
-                  disabled={isUpdatingTeam}
-                >
-                  Time Alpha
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  className="h-11 rounded-xl font-bold"
-                  onClick={() => updateTeam("B")}
-                  disabled={isUpdatingTeam}
-                >
-                  Time Beta
-                </Button>
+                {TEAM_OPTIONS.map((team) => (
+                  <Button
+                    key={team.id}
+                    type="button"
+                    variant="outline"
+                    className={`h-11 rounded-xl font-bold ${team.badgeClass}`}
+                    onClick={() => updateTeam(team.id)}
+                    disabled={isUpdatingTeam}
+                  >
+                    {team.label}
+                  </Button>
+                ))}
               </div>
             </CardContent>
           </Card>
