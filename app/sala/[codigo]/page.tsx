@@ -729,6 +729,17 @@ export default function RoomPage() {
           </div>
         </div>
       </div>
+      {currentParticipant && (
+        <Button
+          type="button"
+          size="icon"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl shadow-primary/30"
+          onClick={() => updateCount(currentParticipant.id, 1)}
+          aria-label="Adicionar item ao contador"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      )}
     </div>
   );
 }
