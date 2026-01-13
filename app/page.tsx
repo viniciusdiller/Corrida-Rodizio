@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,16 +15,12 @@ import {
   ArrowRight,
   Hash,
   Users2,
-  LogIn,
-  LogOut,
 } from "lucide-react";
-import type { FoodType, Race } from "@/types/database";
+import type { FoodType } from "@/types/database";
 import { generateRoomCode } from "@/lib/utils/room-code";
 import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { DEFAULT_AVATAR } from "@/lib/utils/avatars";
-
-const LOGIN_STORAGE_KEY = "rodizio-race-login";
 
 export default function Home() {
   const router = useRouter();
@@ -33,16 +29,6 @@ export default function Home() {
   const [flow, setFlow] = useState<"create" | "join" | null>(null);
   const [roomCode, setRoomCode] = useState("");
   const [loading, setLoading] = useState(false);
-  const [accountFlow, setAccountFlow] = useState<"login" | "create" | null>(
-    null
-  );
-  const [accountCodeInput, setAccountCodeInput] = useState("");
-  const [accountPassword, setAccountPassword] = useState("");
-  const [loginCode, setLoginCode] = useState<string | null>(null);
-  const [accountLoading, setAccountLoading] = useState(false);
-  const [myGroups, setMyGroups] = useState<Race[]>([]);
-  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
-  const [groupsError, setGroupsError] = useState<string | null>(null);
 
   // ESTADOS DO MODO EQUIPE
   const [isTeamMode, setIsTeamMode] = useState(false);
@@ -74,7 +60,6 @@ export default function Home() {
       team: "AZUL" | "VERMELHA" | "VERDE" | "AMARELA" | null;
       avatar: string;
       is_vip: boolean;
-      login_code: string | null;
     }
   ) => {
     let { data, error } = await supabase
@@ -87,8 +72,7 @@ export default function Home() {
       error &&
       (isMissingColumn(error, "team") ||
         isMissingColumn(error, "avatar") ||
-        isMissingColumn(error, "is_vip") ||
-        isMissingColumn(error, "login_code"))
+        isMissingColumn(error, "is_vip"))
     ) {
       const fallbackPayload: Record<string, unknown> = {
         race_id: payload.race_id,
@@ -104,9 +88,6 @@ export default function Home() {
       if (!isMissingColumn(error, "is_vip")) {
         fallbackPayload.is_vip = payload.is_vip;
       }
-      if (!isMissingColumn(error, "login_code")) {
-        fallbackPayload.login_code = payload.login_code;
-      }
       const fallback = await supabase
         .from("participants")
         .insert(fallbackPayload)
@@ -120,8 +101,7 @@ export default function Home() {
       error &&
       (isMissingColumn(error, "team") ||
         isMissingColumn(error, "avatar") ||
-        isMissingColumn(error, "is_vip") ||
-        isMissingColumn(error, "login_code"))
+        isMissingColumn(error, "is_vip"))
     ) {
       const minimal = await supabase
         .from("participants")
@@ -144,131 +124,6 @@ export default function Home() {
     { type: "sushi" as FoodType, label: "Japa", icon: Fish },
     { type: "burger" as FoodType, label: "Burger", icon: Beef },
   ];
-
-  useEffect(() => {
-    const storedLogin = localStorage.getItem(LOGIN_STORAGE_KEY);
-    if (storedLogin) {
-      setLoginCode(storedLogin);
-    }
-  }, []);
-
-  const handleCreateLogin = async () => {
-    if (!accountPassword.trim()) return;
-    setAccountLoading(true);
-    setGroupsError(null);
-    try {
-      const supabase = createClient();
-      let generatedCode = generateRoomCode();
-      let attempts = 0;
-      while (attempts < 5) {
-        const { error } = await supabase.rpc("create_login", {
-          p_code: generatedCode,
-          p_password: accountPassword,
-        });
-
-        if (!error) {
-          const normalizedCode = generatedCode.toUpperCase();
-          setLoginCode(normalizedCode);
-          localStorage.setItem(LOGIN_STORAGE_KEY, normalizedCode);
-          setAccountFlow(null);
-          setAccountPassword("");
-          return;
-        }
-
-        if (error.code === "23505") {
-          generatedCode = generateRoomCode();
-          attempts += 1;
-          continue;
-        }
-
-        throw error;
-      }
-      alert("Não foi possível gerar um código agora. Tente novamente.");
-    } catch (error) {
-      console.error("Erro ao criar conta:", error);
-      alert("Erro ao criar conta. Tente novamente.");
-    } finally {
-      setAccountLoading(false);
-    }
-  };
-
-  const handleLogin = async () => {
-    if (!accountCodeInput.trim() || !accountPassword.trim()) return;
-    setAccountLoading(true);
-    setGroupsError(null);
-    try {
-      const supabase = createClient();
-      const normalizedCode = accountCodeInput.trim().toUpperCase();
-      const { data, error } = await supabase.rpc("verify_login", {
-        p_code: normalizedCode,
-        p_password: accountPassword,
-      });
-
-      if (error || !data) {
-        alert("Código ou senha inválidos.");
-        return;
-      }
-
-      setLoginCode(normalizedCode);
-      localStorage.setItem(LOGIN_STORAGE_KEY, normalizedCode);
-      setAccountFlow(null);
-      setAccountPassword("");
-      setAccountCodeInput("");
-    } catch (error) {
-      console.error("Erro ao entrar:", error);
-      alert("Erro ao entrar. Tente novamente.");
-    } finally {
-      setAccountLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    setLoginCode(null);
-    setMyGroups([]);
-    setGroupsError(null);
-    localStorage.removeItem(LOGIN_STORAGE_KEY);
-  };
-
-  const handleLoadGroups = async () => {
-    if (!loginCode) return;
-    setIsLoadingGroups(true);
-    setGroupsError(null);
-    try {
-      const supabase = createClient();
-      const { data: participantRows, error: participantError } = await supabase
-        .from("participants")
-        .select("race_id")
-        .eq("login_code", loginCode);
-
-      if (participantError) throw participantError;
-
-      const raceIds = Array.from(
-        new Set((participantRows || []).map((row) => row.race_id))
-      );
-
-      if (raceIds.length === 0) {
-        setMyGroups([]);
-        return;
-      }
-
-      const { data: racesData, error: racesError } = await supabase
-        .from("races")
-        .select()
-        .in("id", raceIds)
-        .order("created_at", { ascending: false });
-
-      if (racesError) throw racesError;
-
-      setMyGroups(racesData || []);
-    } catch (error) {
-      console.error("Erro ao carregar grupos:", error);
-      setGroupsError(
-        "Não foi possível carregar seus grupos. Tente novamente."
-      );
-    } finally {
-      setIsLoadingGroups(false);
-    }
-  };
 
   const handleCreateRoom = async () => {
     if (!playerName.trim() || !selectedFood) return;
@@ -324,7 +179,6 @@ export default function Home() {
           team: null,
           avatar: DEFAULT_AVATAR,
           is_vip: true,
-          login_code: loginCode,
         })
         .select()
         .single();
@@ -333,8 +187,7 @@ export default function Home() {
         participantError &&
         (isMissingColumn(participantError, "team") ||
           isMissingColumn(participantError, "avatar") ||
-          isMissingColumn(participantError, "is_vip") ||
-          isMissingColumn(participantError, "login_code"))
+          isMissingColumn(participantError, "is_vip"))
       ) {
         const fallback = await insertParticipantWithFallback(supabase, {
           race_id: race.id,
@@ -343,7 +196,6 @@ export default function Home() {
           team: null,
           avatar: DEFAULT_AVATAR,
           is_vip: true,
-          login_code: loginCode,
         });
         participant = fallback.data;
         participantError = fallback.error;
@@ -436,7 +288,6 @@ export default function Home() {
           team: null,
           avatar: DEFAULT_AVATAR,
           is_vip: false,
-          login_code: loginCode,
         })
         .select()
         .single();
@@ -445,8 +296,7 @@ export default function Home() {
         participantError &&
         (isMissingColumn(participantError, "team") ||
           isMissingColumn(participantError, "avatar") ||
-          isMissingColumn(participantError, "is_vip") ||
-          isMissingColumn(participantError, "login_code"))
+          isMissingColumn(participantError, "is_vip"))
       ) {
         const fallback = await insertParticipantWithFallback(supabase, {
           race_id: race.id,
@@ -455,7 +305,6 @@ export default function Home() {
           team: null,
           avatar: DEFAULT_AVATAR,
           is_vip: false,
-          login_code: loginCode,
         });
         participant = fallback.data;
         participantError = fallback.error;
@@ -512,185 +361,6 @@ export default function Home() {
 
         <Card className="border-none shadow-2xl shadow-black/5 bg-card/80 backdrop-blur-md">
           <CardContent className="pt-8 space-y-8">
-            <div className="space-y-4">
-              <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground px-1">
-                Conta
-              </Label>
-              {loginCode ? (
-                <div className="space-y-3 rounded-2xl border border-muted/60 bg-background/60 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                        Seu código de login
-                      </p>
-                      <p className="text-2xl font-black tracking-[0.3em]">
-                        {loginCode}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      className="text-muted-foreground hover:text-primary"
-                      onClick={handleLogout}
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sair
-                    </Button>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="w-full h-12 rounded-xl font-semibold"
-                    onClick={handleLoadGroups}
-                    disabled={isLoadingGroups}
-                  >
-                    {isLoadingGroups ? "Carregando..." : "Meus grupos"}
-                  </Button>
-                  {groupsError && (
-                    <p className="text-xs text-red-500 font-semibold">
-                      {groupsError}
-                    </p>
-                  )}
-                  {myGroups.length > 0 && (
-                    <div className="space-y-2">
-                      {myGroups.map((group) => (
-                        <div
-                          key={group.id}
-                          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-muted/60 bg-background/70 px-4 py-3"
-                        >
-                          <div>
-                            <p className="text-sm font-bold">{group.name}</p>
-                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                              Código {group.room_code}
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-primary"
-                            onClick={() => router.push(`/sala/${group.room_code}`)}
-                          >
-                            Entrar
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : accountFlow ? (
-                <div className="space-y-4 rounded-2xl border border-muted/60 bg-background/60 p-4">
-                  {accountFlow === "login" ? (
-                    <>
-                      <div className="space-y-2">
-                        <Label
-                          htmlFor="accountCode"
-                          className="text-xs uppercase tracking-widest font-bold text-muted-foreground"
-                        >
-                          Código
-                        </Label>
-                        <Input
-                          id="accountCode"
-                          placeholder="ABCDE"
-                          value={accountCodeInput}
-                          onChange={(e) =>
-                            setAccountCodeInput(e.target.value.toUpperCase())
-                          }
-                          className="h-12 text-lg font-black tracking-[0.4em] uppercase"
-                          maxLength={5}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label
-                          htmlFor="accountPassword"
-                          className="text-xs uppercase tracking-widest font-bold text-muted-foreground"
-                        >
-                          Senha
-                        </Label>
-                        <Input
-                          id="accountPassword"
-                          type="password"
-                          placeholder="Crie sua senha"
-                          value={accountPassword}
-                          onChange={(e) => setAccountPassword(e.target.value)}
-                          className="h-12"
-                        />
-                      </div>
-                      <Button
-                        className="w-full h-12 rounded-xl font-bold"
-                        onClick={handleLogin}
-                        disabled={accountLoading}
-                      >
-                        <LogIn className="mr-2 h-4 w-4" />
-                        {accountLoading ? "Entrando..." : "Entrar"}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        className="w-full text-muted-foreground"
-                        onClick={() => {
-                          setAccountFlow("create");
-                          setAccountPassword("");
-                        }}
-                      >
-                        Não tem conta? Criar agora
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="space-y-2">
-                        <Label
-                          htmlFor="newPassword"
-                          className="text-xs uppercase tracking-widest font-bold text-muted-foreground"
-                        >
-                          Defina sua senha
-                        </Label>
-                        <Input
-                          id="newPassword"
-                          type="password"
-                          placeholder="Escolha uma senha"
-                          value={accountPassword}
-                          onChange={(e) => setAccountPassword(e.target.value)}
-                          className="h-12"
-                        />
-                      </div>
-                      <Button
-                        className="w-full h-12 rounded-xl font-bold"
-                        onClick={handleCreateLogin}
-                        disabled={accountLoading}
-                      >
-                        {accountLoading ? "Criando..." : "Criar conta"}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        className="w-full text-muted-foreground"
-                        onClick={() => {
-                          setAccountFlow("login");
-                          setAccountPassword("");
-                        }}
-                      >
-                        Já tenho conta
-                      </Button>
-                    </>
-                  )}
-                  <Button
-                    variant="ghost"
-                    className="w-full text-muted-foreground"
-                    onClick={() => {
-                      setAccountFlow(null);
-                      setAccountPassword("");
-                      setAccountCodeInput("");
-                    }}
-                  >
-                    Voltar
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  className="w-full h-12 rounded-xl font-semibold"
-                  onClick={() => setAccountFlow("login")}
-                >
-                  Entrar com uma conta
-                </Button>
-              )}
-            </div>
             <div className="space-y-3">
               {flow ? (
                 <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
