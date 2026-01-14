@@ -11,7 +11,7 @@ import { generateRoomCode } from "@/lib/utils/room-code";
 import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
 import { DEFAULT_AVATAR } from "@/lib/utils/avatars";
 
-// Importação dos novos componentes
+// Componentes refatorados
 import { HomeHeader } from "@/components/home/home-header";
 import { AccountSection } from "@/components/home/account-section";
 import { CreateRaceForm } from "@/components/home/create-race-form";
@@ -22,11 +22,16 @@ const LOGIN_STORAGE_KEY = "rodizio-race-login";
 
 export default function Home() {
   const router = useRouter();
+
+  // ESTADOS PRINCIPAIS
   const [playerName, setPlayerName] = useState("");
   const [selectedFood, setSelectedFood] = useState<FoodType | null>(null);
   const [flow, setFlow] = useState<"create" | "join" | null>(null);
   const [roomCode, setRoomCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isTeamMode, setIsTeamMode] = useState(false);
+
+  // ESTADOS DE CONTA
   const [accountFlow, setAccountFlow] = useState<"login" | "create" | null>(
     null
   );
@@ -37,7 +42,6 @@ export default function Home() {
   const [myGroups, setMyGroups] = useState<Race[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [groupsError, setGroupsError] = useState<string | null>(null);
-  const [isTeamMode, setIsTeamMode] = useState(false);
 
   const foodTypes = [
     { type: "pizza" as FoodType, label: "Pizza", icon: Pizza },
@@ -50,7 +54,7 @@ export default function Home() {
     if (storedLogin) setLoginCode(storedLogin);
   }, []);
 
-  // --- FUNÇÕES DE LÓGICA ---
+  // --- FUNÇÕES DE SUPORTE ---
 
   const isMissingColumn = (error: unknown, column: string) => {
     if (!error || typeof error !== "object") return false;
@@ -104,6 +108,8 @@ export default function Home() {
     return { data, error };
   };
 
+  // --- LÓGICA DE CONTA ---
+
   const handleCreateLogin = async () => {
     if (!accountPassword.trim()) return;
     setAccountLoading(true);
@@ -136,7 +142,7 @@ export default function Home() {
         p_code: normalizedCode,
         p_password: accountPassword,
       });
-      if (error || !data) throw new Error("Credenciais inválidas");
+      if (error || !data) throw new Error("Código ou senha inválidos.");
       setLoginCode(normalizedCode);
       localStorage.setItem(LOGIN_STORAGE_KEY, normalizedCode);
       setAccountFlow(null);
@@ -177,13 +183,16 @@ export default function Home() {
     }
   };
 
+  // --- LÓGICA DAS SALAS ---
+
   const handleCreateRoom = async () => {
     if (!playerName.trim() || !selectedFood) return;
     setLoading(true);
     try {
       const supabase = createClient();
       const code = generateRoomCode();
-      const { data: race, error: raceError } = await supabase
+
+      let { data: race, error: raceError } = await supabase
         .from("races")
         .insert({
           name: `Sala de ${playerName}`,
@@ -194,6 +203,21 @@ export default function Home() {
         })
         .select()
         .single();
+
+      if (raceError && isMissingColumn(raceError, "is_team_mode")) {
+        const fallback = await supabase
+          .from("races")
+          .insert({
+            name: `Sala de ${playerName}`,
+            food_type: selectedFood,
+            room_code: code,
+            is_active: true,
+          })
+          .select()
+          .single();
+        race = fallback.data;
+        raceError = fallback.error;
+      }
       if (raceError) throw raceError;
 
       const { data: participant } = await insertParticipantWithFallback(
@@ -223,30 +247,56 @@ export default function Home() {
     try {
       const supabase = createClient();
       const normalized = roomCode.toUpperCase();
-      const { data: race } = await supabase
+
+      // 1. Verificar se a sala existe e está ativa
+      const { data: race, error: raceError } = await supabase
         .from("races")
         .select()
         .eq("room_code", normalized)
         .eq("is_active", true)
         .single();
-      if (!race) throw new Error("Sala não encontrada");
 
-      const { data: participant } = await insertParticipantWithFallback(
-        supabase,
-        {
+      if (raceError || !race) throw new Error("Sala não encontrada");
+
+      // 2. Tentar encontrar um participante existente com este nome nesta sala
+      const { data: existingParticipant } = await supabase
+        .from("participants")
+        .select("id")
+        .eq("race_id", race.id)
+        .eq("name", playerName.trim())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingParticipant) {
+        // Se encontrar, re-associa o usuário ao registro antigo (mantém o status VIP se houver)
+        localStorage.setItem(
+          getParticipantStorageKey(normalized),
+          existingParticipant.id
+        );
+        router.push(`/sala/${normalized}`);
+        return;
+      }
+
+      // 3. Se não encontrar, cria um novo participante
+      const { data: participant, error: pError } =
+        await insertParticipantWithFallback(supabase, {
           race_id: race.id,
           name: playerName,
           items_eaten: 0,
+          team: null,
           avatar: DEFAULT_AVATAR,
           is_vip: false,
           login_code: loginCode,
-        }
-      );
+        });
+
+      if (pError) throw pError;
       if (participant)
         localStorage.setItem(
           getParticipantStorageKey(normalized),
           participant.id
         );
+
       router.push(`/sala/${normalized}`);
     } catch (e: any) {
       alert(e.message);
