@@ -1,9 +1,9 @@
-import { Pizza, Fish, Beef } from "lucide-react"
-import type { FoodType } from "@/types/database"
+import { Pizza, Fish, Beef } from "lucide-react";
+import type { FoodType } from "@/types/database";
 
 interface FoodIconProps {
-  type: FoodType
-  className?: string
+  type: FoodType;
+  className?: string;
 }
 
 export function FoodIcon({ type, className }: FoodIconProps) {
@@ -11,8 +11,8 @@ export function FoodIcon({ type, className }: FoodIconProps) {
     pizza: Pizza,
     sushi: Fish,
     burger: Beef,
-  }
+  };
 
-  const Icon = icons[type]
-  return <Icon className={className} />
+  const Icon = icons[type];
+  return <Icon className={className} />;
 }

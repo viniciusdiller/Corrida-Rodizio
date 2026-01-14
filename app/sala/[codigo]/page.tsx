@@ -26,6 +26,7 @@ import { FoodIcon } from "@/components/food-icon";
 import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
 import { AVATAR_OPTIONS, DEFAULT_AVATAR } from "@/lib/utils/avatars";
 import confetti from "canvas-confetti";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const MOTIVATIONAL_PHRASES = [
   "O importante é que a barriga está cheia!",
@@ -317,7 +318,10 @@ export default function RoomPage() {
     const topScore = members[0]?.items_eaten ?? 0;
     return {
       ...team,
-      total: members.reduce((acc, participant) => acc + participant.items_eaten, 0),
+      total: members.reduce(
+        (acc, participant) => acc + participant.items_eaten,
+        0
+      ),
       members,
       topScore,
     };
@@ -360,19 +364,17 @@ export default function RoomPage() {
           {race.is_team_mode && (
             <Card
               className={`border-none ${
-                winningTeam
-                  ? "bg-primary/20"
-                  : "bg-muted/20"
+                winningTeam ? "bg-primary/20" : "bg-muted/20"
               }`}
             >
-              <CardContent className="p-6 text-center space-y-2">
+              <CardContent className="p-6 text-center space-y-2 text-white">
                 <Badge
                   variant="outline"
                   className="uppercase font-black tracking-widest text-[10px]"
                 >
                   Resultado por Equipe
                 </Badge>
-                <h2 className="text-2xl font-black italic">
+                <h2 className="text-2xl font-black italic ">
                   {winningTeam
                     ? `TIME ${winningTeam.shortLabel.toUpperCase()} VENCEU!`
                     : "EMPATE TÉCNICO!"}
@@ -421,7 +423,8 @@ export default function RoomPage() {
                           <span
                             className={`text-[10px] px-1.5 py-0.5 rounded ${
                               TEAM_OPTIONS.find((team) => team.id === p.team)
-                                ?.pillClass ?? "bg-muted/30 text-muted-foreground"
+                                ?.pillClass ??
+                              "bg-muted/30 text-muted-foreground"
                             }`}
                           >
                             {TEAM_OPTIONS.find((team) => team.id === p.team)
@@ -514,7 +517,9 @@ export default function RoomPage() {
               <div className="text-2xl">{avatar}</div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-base">{participant.name}</span>
+                  <span className="font-bold text-base">
+                    {participant.name}
+                  </span>
                   {participant.is_vip && (
                     <Badge className="bg-yellow-500/20 text-yellow-600 border-none text-[9px] h-4 uppercase">
                       VIP
@@ -529,9 +534,8 @@ export default function RoomPage() {
                         )?.badgeClass ?? "border-muted text-muted-foreground"
                       }`}
                     >
-                      {TEAM_OPTIONS.find(
-                        (team) => team.id === participant.team
-                      )?.shortLabel ?? "Sem time"}
+                      {TEAM_OPTIONS.find((team) => team.id === participant.team)
+                        ?.shortLabel ?? "Sem time"}
                     </Badge>
                   )}
                   {participant.id === currentParticipantId && !isPersonal && (
@@ -613,6 +617,9 @@ export default function RoomPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black p-4 md:p-8">
       <div className="mx-auto max-w-2xl space-y-8">
+        <div className="flex justify-end">
+          <ThemeToggle />
+        </div>
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
@@ -683,34 +690,36 @@ export default function RoomPage() {
           </div>
         </div>
 
-        {race.is_team_mode && currentParticipant && !currentParticipant.team && (
-          <Card className="border-none shadow-lg shadow-black/5 bg-card/70">
-            <CardContent className="p-6 space-y-4">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
-                  Escolha seu time
-                </Label>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Entre no placar selecionando seu time agora.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {TEAM_OPTIONS.map((team) => (
-                  <Button
-                    key={team.id}
-                    type="button"
-                    variant="outline"
-                    className={`h-11 rounded-xl font-bold ${team.badgeClass}`}
-                    onClick={() => updateTeam(team.id)}
-                    disabled={isUpdatingTeam}
-                  >
-                    {team.label}
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {race.is_team_mode &&
+          currentParticipant &&
+          !currentParticipant.team && (
+            <Card className="border-none shadow-lg shadow-black/5 bg-card/70">
+              <CardContent className="p-6 space-y-4">
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
+                    Escolha seu time
+                  </Label>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Entre no placar selecionando seu time agora.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {TEAM_OPTIONS.map((team) => (
+                    <Button
+                      key={team.id}
+                      type="button"
+                      variant="outline"
+                      className={`h-11 rounded-xl font-bold ${team.badgeClass}`}
+                      onClick={() => updateTeam(team.id)}
+                      disabled={isUpdatingTeam}
+                    >
+                      {team.label}
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
         {currentParticipant && (
           <div className="space-y-4">
@@ -750,7 +759,9 @@ export default function RoomPage() {
                   >
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-center justify-between">
-                        <div className={`flex items-center gap-2 ${team.scoreClass}`}>
+                        <div
+                          className={`flex items-center gap-2 ${team.scoreClass}`}
+                        >
                           <Sword className="h-4 w-4" />
                           <span className="text-[11px] font-black uppercase tracking-widest">
                             {team.label}
