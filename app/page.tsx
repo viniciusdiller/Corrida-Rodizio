@@ -111,41 +111,71 @@ export default function Home() {
   // --- LÓGICA DE CONTA ---
 
   const handleCreateLogin = async () => {
-    if (!accountPassword.trim()) return;
+    // Validação: Garante que nome e senha foram preenchidos
+    if (!accountCodeInput.trim() || !accountPassword.trim()) {
+      alert("Por favor, escolha um nome de usuário e uma senha.");
+      return;
+    }
+
     setAccountLoading(true);
+    setGroupsError(null);
+
     try {
       const supabase = createClient();
-      let generatedCode = generateRoomCode();
+      const desiredUsername = accountCodeInput.trim().toUpperCase();
+
       const { data, error } = await supabase.rpc("create_login", {
-        p_code: generatedCode,
-        p_password: accountPassword,
+        p_username: desiredUsername, // Nome escolhido pelo usuário
+        p_password: accountPassword, // Senha escolhida pelo usuário
       });
-      if (error) throw error;
-      const normalizedCode = (data || generatedCode).toUpperCase();
-      setLoginCode(normalizedCode);
-      localStorage.setItem(LOGIN_STORAGE_KEY, normalizedCode);
+
+      if (error) {
+        if (error.code === "23505") {
+          throw new Error("Este nome de usuário já está em uso. Tente outro.");
+        }
+        throw error;
+      }
+
+      setLoginCode(data);
+      localStorage.setItem(LOGIN_STORAGE_KEY, data);
       setAccountFlow(null);
-    } catch (error: any) {
-      alert(`Erro ao criar conta: ${error.message}`);
+      setAccountPassword("");
+      setAccountCodeInput("");
+      alert("Conta criada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao criar conta:", error);
+      alert(error instanceof Error ? error.message : "Erro ao criar conta.");
     } finally {
       setAccountLoading(false);
     }
   };
 
   const handleLogin = async () => {
-    if (!accountCodeInput.trim() || !accountPassword.trim()) return;
+    const targetName = accountCodeInput.trim();
+    if (!targetName || !accountPassword.trim()) return;
+
     setAccountLoading(true);
     try {
       const supabase = createClient();
-      const normalizedCode = accountCodeInput.trim().toUpperCase();
+      const normalizedName = targetName.toUpperCase();
+
       const { data, error } = await supabase.rpc("verify_login", {
-        p_code: normalizedCode,
+        p_username: normalizedName,
         p_password: accountPassword,
       });
-      if (error || !data) throw new Error("Código ou senha inválidos.");
-      setLoginCode(normalizedCode);
-      localStorage.setItem(LOGIN_STORAGE_KEY, normalizedCode);
+
+      if (error || !data) throw new Error("Usuário ou senha incorretos.");
+
+      setLoginCode(normalizedName);
+      localStorage.setItem(LOGIN_STORAGE_KEY, normalizedName);
+
+      setPlayerName(targetName);
+
       setAccountFlow(null);
+      setAccountPassword("");
+      setAccountCodeInput("");
+
+      handleLoadGroups(normalizedName);
     } catch (error: any) {
       alert(error.message);
     } finally {
@@ -159,25 +189,33 @@ export default function Home() {
     localStorage.removeItem(LOGIN_STORAGE_KEY);
   };
 
-  const handleLoadGroups = async () => {
-    if (!loginCode) return;
+  const handleLoadGroups = async (forcedCode?: string) => {
+    const codeToUse = forcedCode || loginCode;
+    if (!codeToUse) return;
+
     setIsLoadingGroups(true);
     try {
       const supabase = createClient();
       const { data: rows } = await supabase
         .from("participants")
         .select("race_id")
-        .eq("login_code", loginCode);
+        .eq("login_code", codeToUse);
+
       const ids = Array.from(new Set((rows || []).map((r) => r.race_id)));
-      if (ids.length === 0) return setMyGroups([]);
+      if (ids.length === 0) {
+        setMyGroups([]);
+        return;
+      }
+
       const { data } = await supabase
         .from("races")
         .select()
         .in("id", ids)
         .order("created_at", { ascending: false });
+
       setMyGroups(data || []);
     } catch (e) {
-      setGroupsError("Erro ao carregar grupos");
+      setGroupsError("Erro ao carregar histórico.");
     } finally {
       setIsLoadingGroups(false);
     }

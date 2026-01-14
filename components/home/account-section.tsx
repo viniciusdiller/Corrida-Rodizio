@@ -107,21 +107,19 @@ export function AccountSection({
               <div className="space-y-2">
                 <Label
                   htmlFor="accountCode"
-                  className="text-xs uppercase tracking-widest font-bold text-muted-foreground"
+                  className="text-xs uppercase font-bold text-muted-foreground"
                 >
-                  Código
+                  Seu Nome de Usuário
                 </Label>
                 <Input
                   id="accountCode"
-                  placeholder="ABCDE"
+                  placeholder="Ex: João Silva"
                   value={accountCodeInput}
-                  onChange={(e) =>
-                    setAccountCodeInput(e.target.value.toUpperCase())
-                  }
-                  className="h-12 text-lg font-black tracking-[0.4em] uppercase"
-                  maxLength={5}
+                  onChange={(e) => setAccountCodeInput(e.target.value)}
+                  className="h-12 text-lg font-bold"
                 />
               </div>
+
               <div className="space-y-2">
                 <Label
                   htmlFor="accountPassword"
@@ -158,18 +156,33 @@ export function AccountSection({
             <>
               <div className="space-y-2">
                 <Label
+                  htmlFor="newUsername"
+                  className="text-xs uppercase tracking-widest font-bold text-muted-foreground"
+                >
+                  Escolha seu Nome de Usuário
+                </Label>
+                <Input
+                  id="newUsername"
+                  placeholder="Ex: João Silva"
+                  value={accountCodeInput}
+                  onChange={(e) => setAccountCodeInput(e.target.value)}
+                  className="h-12 text-lg font-bold "
+                />
+              </div>
+              <div className="space-y-2">
+                <Label
                   htmlFor="newPassword"
                   className="text-xs uppercase tracking-widest font-bold text-muted-foreground"
                 >
-                  Defina sua senha
+                  Escolha sua Senha
                 </Label>
                 <Input
                   id="newPassword"
                   type="password"
-                  placeholder="Escolha uma senha"
+                  placeholder="Sua senha secreta"
                   value={accountPassword}
                   onChange={(e) => setAccountPassword(e.target.value)}
-                  className="h-12"
+                  className="h-12 text-lg font-bold "
                 />
               </div>
               <Button
@@ -177,7 +190,9 @@ export function AccountSection({
                 onClick={onCreateLogin}
                 disabled={accountLoading}
               >
-                {accountLoading ? "Criando..." : "Criar conta"}
+                {accountLoading
+                  ? "Criando..."
+                  : "Criar conta e Salvar Histórico"}
               </Button>
               <Button
                 variant="ghost"
