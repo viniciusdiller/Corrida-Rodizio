@@ -111,9 +111,9 @@ export default function Home() {
   // --- LÓGICA DE CONTA ---
 
   const handleCreateLogin = async () => {
-    // Validação: Garante que nome e senha foram preenchidos
+    // 1. Validação básica: agora exigimos nome e senha
     if (!accountCodeInput.trim() || !accountPassword.trim()) {
-      alert("Por favor, escolha um nome de usuário e uma senha.");
+      alert("Por favor, preencha o nome de usuário e a senha.");
       return;
     }
 
@@ -122,18 +122,17 @@ export default function Home() {
 
     try {
       const supabase = createClient();
-      const desiredUsername = accountCodeInput.trim().toUpperCase();
+      const chosenName = accountCodeInput.trim().toUpperCase();
 
+      // Chamamos a função RPC enviando o nome escolhido em 'p_code'
       const { data, error } = await supabase.rpc("create_login", {
-        p_username: desiredUsername, // Nome escolhido pelo usuário
-        p_password: accountPassword, // Senha escolhida pelo usuário
+        p_code: chosenName,
+        p_password: accountPassword,
       });
 
       if (error) {
-        if (error.code === "23505") {
-          throw new Error("Este nome de usuário já está em uso. Tente outro.");
-        }
-        throw error;
+        console.error("Erro Supabase:", error);
+        throw error; // Lança para o catch tratar a mensagem
       }
 
       setLoginCode(data);
@@ -141,43 +140,49 @@ export default function Home() {
       setAccountFlow(null);
       setAccountPassword("");
       setAccountCodeInput("");
-      alert("Conta criada com sucesso!");
-    } catch (error) {
-      console.error("Erro ao criar conta:", error);
-      alert(error instanceof Error ? error.message : "Erro ao criar conta.");
+      alert(
+        "Conta criada com sucesso! Use este nome para salvar seu histórico."
+      );
+    } catch (error: any) {
+      console.error("Erro detalhado:", error);
+      // Extrai a mensagem real do erro (ex: 'usuário já existe')
+      const msg =
+        error.message ||
+        (typeof error === "object" ? JSON.stringify(error) : error);
+      alert(`Erro ao criar conta: ${msg}`);
     } finally {
       setAccountLoading(false);
     }
   };
 
   const handleLogin = async () => {
-    const targetName = accountCodeInput.trim();
-    if (!targetName || !accountPassword.trim()) return;
-
+    if (!accountCodeInput.trim() || !accountPassword.trim()) return;
     setAccountLoading(true);
+
     try {
       const supabase = createClient();
-      const normalizedName = targetName.toUpperCase();
+      const normalizedName = accountCodeInput.trim().toUpperCase();
 
       const { data, error } = await supabase.rpc("verify_login", {
-        p_username: normalizedName,
+        p_code: normalizedName,
         p_password: accountPassword,
       });
 
-      if (error || !data) throw new Error("Usuário ou senha incorretos.");
+      if (error || !data) {
+        alert("Nome de usuário ou senha inválidos.");
+        return;
+      }
 
       setLoginCode(normalizedName);
       localStorage.setItem(LOGIN_STORAGE_KEY, normalizedName);
-
-      setPlayerName(targetName);
-
       setAccountFlow(null);
       setAccountPassword("");
       setAccountCodeInput("");
 
-      handleLoadGroups(normalizedName);
+      // Carrega o histórico de partidas deste usuário
+      handleLoadGroups();
     } catch (error: any) {
-      alert(error.message);
+      alert("Erro ao entrar. Tente novamente.");
     } finally {
       setAccountLoading(false);
     }

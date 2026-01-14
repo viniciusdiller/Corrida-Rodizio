@@ -51,11 +51,9 @@ export function AccountSection({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                Seu código de login
+                Nome de Usuário
               </p>
-              <p className="text-2xl font-black tracking-[0.3em]">
-                {loginCode}
-              </p>
+              <p className="text-2xl font-black tracking-wider">{loginCode}</p>
             </div>
             <Button
               variant="ghost"
@@ -157,32 +155,32 @@ export function AccountSection({
               <div className="space-y-2">
                 <Label
                   htmlFor="newUsername"
-                  className="text-xs uppercase tracking-widest font-bold text-muted-foreground"
+                  className="text-xs uppercase font-bold text-muted-foreground"
                 >
                   Escolha seu Nome de Usuário
                 </Label>
                 <Input
                   id="newUsername"
-                  placeholder="Ex: João Silva"
+                  placeholder="Ex: VINECO"
                   value={accountCodeInput}
                   onChange={(e) => setAccountCodeInput(e.target.value)}
-                  className="h-12 text-lg font-bold "
+                  className="h-12 text-lg font-bold"
                 />
               </div>
               <div className="space-y-2">
                 <Label
                   htmlFor="newPassword"
-                  className="text-xs uppercase tracking-widest font-bold text-muted-foreground"
+                  className="text-xs uppercase font-bold text-muted-foreground"
                 >
-                  Escolha sua Senha
+                  Defina sua Senha
                 </Label>
                 <Input
                   id="newPassword"
                   type="password"
-                  placeholder="Sua senha secreta"
+                  placeholder="Mínimo 6 caracteres"
                   value={accountPassword}
                   onChange={(e) => setAccountPassword(e.target.value)}
-                  className="h-12 text-lg font-bold "
+                  className="h-12"
                 />
               </div>
               <Button
