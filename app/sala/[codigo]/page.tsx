@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Plus } from "lucide-react";
+import { Flag, Plus } from "lucide-react";
 import confetti from "canvas-confetti";
 
 import { RoomHeader } from "@/components/room/room-header";
@@ -20,6 +20,14 @@ import type { Race, Participant } from "@/types/database";
 import { TeamSelection } from "@/components/room/team-selection";
 
 export default function RoomPage() {
+  const addCooldownMs = 10_000;
+  const cooldownMessages = [
+    "Calma ai amigao.",
+    "Ta comendo igual um boi?",
+    "Vamo com calma senao vai estourar.",
+    "Segura a onda do rodizio.",
+  ];
+
   const params = useParams();
   const router = useRouter();
   const roomCodeRaw = params.codigo as string;
@@ -34,6 +42,19 @@ export default function RoomPage() {
   const [currentParticipantId, setCurrentParticipantId] = useState<
     string | null
   >(null);
+  const [cooldownToast, setCooldownToast] = useState<{
+    text: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [isAddCooldownActive, setIsAddCooldownActive] = useState(false);
+  const lastAddAtRef = useRef<number | null>(null);
+  const cooldownToastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const addCooldownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   const getItemLabel = (count: number) => {
     if (!race) return "";
@@ -87,6 +108,50 @@ export default function RoomPage() {
       .eq("id", participantId);
   };
 
+  const showCooldownMessage = (event?: MouseEvent<HTMLButtonElement>) => {
+    const message =
+      cooldownMessages[Math.floor(Math.random() * cooldownMessages.length)];
+    const fallbackX = Math.round(window.innerWidth / 2);
+    const fallbackY = Math.round(window.innerHeight / 2);
+    setCooldownToast({
+      text: message,
+      x: event?.clientX ?? fallbackX,
+      y: event?.clientY ?? fallbackY,
+    });
+    if (cooldownToastTimeoutRef.current) {
+      clearTimeout(cooldownToastTimeoutRef.current);
+    }
+    cooldownToastTimeoutRef.current = setTimeout(() => {
+      setCooldownToast(null);
+    }, 2500);
+  };
+
+  const handleUpdateCount = async (
+    participantId: string,
+    change: number,
+    event?: MouseEvent<HTMLButtonElement>
+  ) => {
+    if (change > 0) {
+      const now = Date.now();
+      const lastAddAt = lastAddAtRef.current ?? 0;
+      const remaining = addCooldownMs - (now - lastAddAt);
+      if (remaining > 0) {
+        showCooldownMessage(event);
+        return;
+      }
+      lastAddAtRef.current = now;
+      setIsAddCooldownActive(true);
+      if (addCooldownTimeoutRef.current) {
+        clearTimeout(addCooldownTimeoutRef.current);
+      }
+      addCooldownTimeoutRef.current = setTimeout(() => {
+        setIsAddCooldownActive(false);
+      }, addCooldownMs);
+    }
+
+    await updateCount(participantId, change);
+  };
+
   const updateAvatar = async (avatar: string) => {
     if (!currentParticipantId || isUpdatingAvatar) return;
     setIsUpdatingAvatar(true);
@@ -137,6 +202,15 @@ export default function RoomPage() {
     }
   };
 
+  const handleEndRace = async () => {
+    if (isEnding) return;
+    const confirmed = window.confirm(
+      "Encerrar competição agora? Esta ação não pode ser desfeita."
+    );
+    if (!confirmed) return;
+    await endRace();
+  };
+
   useEffect(() => {
     loadRoomData();
     const storedId = localStorage.getItem(getParticipantStorageKey(roomCode));
@@ -158,6 +232,12 @@ export default function RoomPage() {
       .subscribe();
 
     return () => {
+      if (cooldownToastTimeoutRef.current) {
+        clearTimeout(cooldownToastTimeoutRef.current);
+      }
+      if (addCooldownTimeoutRef.current) {
+        clearTimeout(addCooldownTimeoutRef.current);
+      }
       supabase.removeChannel(channel);
     };
   }, [roomCode]);
@@ -183,35 +263,21 @@ export default function RoomPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black p-4 md:p-8">
-      <div className="mx-auto max-w-2xl space-y-8">
-        <RoomHeader
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black p-4 md:p-8 text-[15px] md:text-base">
+      <div className="mx-auto max-w-2xl space-y-6">
+        <RoomHeader onExit={() => router.push("/")} />
+
+        <RoomInfo
+          race={race}
+          participantsCount={participants.length}
           roomCode={roomCode}
-          canEndRace={!!currentParticipant?.is_vip}
-          isEnding={isEnding}
           copied={copied}
-          onExit={() => router.push("/")}
-          onEndRace={endRace}
           onCopyCode={() => {
             navigator.clipboard.writeText(roomCode);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
           }}
         />
-
-        <RoomInfo race={race} participantsCount={participants.length} />
-
-        {participants.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">
-              Corrida em Tempo Real
-            </label>
-            <RaceTrack
-              participants={participants}
-              isTeamMode={race.is_team_mode}
-            />
-          </div>
-        )}
 
         {race.is_team_mode &&
           currentParticipant &&
@@ -226,9 +292,17 @@ export default function RoomPage() {
           <PersonalProgress
             participant={currentParticipant}
             getItemLabel={getItemLabel}
-            onUpdateCount={updateCount}
+            onUpdateCount={handleUpdateCount}
             onUpdateAvatar={updateAvatar}
             isUpdatingAvatar={isUpdatingAvatar}
+            isAddCooldown={isAddCooldownActive}
+          />
+        )}
+
+        {participants.length > 0 && (
+          <RaceTrack
+            participants={participants}
+            isTeamMode={race.is_team_mode}
           />
         )}
 
@@ -238,16 +312,44 @@ export default function RoomPage() {
           currentParticipantId={currentParticipantId}
           getItemLabel={getItemLabel}
         />
+
+        {currentParticipant?.is_vip && (
+          <div className="flex justify-center pt-2">
+            <Button
+              variant="destructive"
+              className="w-full max-w-xs rounded-xl font-bold gap-2 shadow-lg shadow-destructive/20 cursor-pointer transition-all hover:scale-105"
+              onClick={handleEndRace}
+              disabled={isEnding}
+            >
+              <Flag className="h-4 w-4" />
+              {isEnding ? "Encerrando..." : "Encerrar Competicao"}
+            </Button>
+          </div>
+        )}
       </div>
 
       {currentParticipant && (
-        <Button
-          size="icon"
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl shadow-primary/30"
-          onClick={() => updateCount(currentParticipant.id, 1)}
+        <div className="fixed bottom-6 right-6 flex flex-col items-end gap-2">
+          <Button
+            size="icon"
+            className={`h-14 w-14 rounded-full shadow-xl shadow-primary/30 ${
+              isAddCooldownActive ? "opacity-50 grayscale" : ""
+            }`}
+            onClick={(event) =>
+              handleUpdateCount(currentParticipant.id, 1, event)
+            }
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        </div>
+      )}
+      {cooldownToast && (
+        <div
+          className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full rounded-full bg-amber-100 px-4 py-2 text-center text-sm font-semibold leading-snug text-amber-800 shadow-sm md:text-[11px]"
+          style={{ left: cooldownToast.x, top: cooldownToast.y }}
         >
-          <Plus className="h-6 w-6" />
-        </Button>
+          {cooldownToast.text}
+        </div>
       )}
     </div>
   );

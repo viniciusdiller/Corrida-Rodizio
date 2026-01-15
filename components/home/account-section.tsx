@@ -66,10 +66,6 @@ export function AccountSection({
 
   return (
     <div className="space-y-4">
-      <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground px-1">
-        Conta
-      </Label>
-
       {loginCode ? (
         /* SESSÃO: USUÁRIO LOGADO */
         <div className="space-y-3 rounded-2xl border border-muted/60 bg-background/60 p-4">

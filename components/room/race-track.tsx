@@ -30,7 +30,7 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-1.5 text-primary font-black uppercase text-[9px] tracking-widest">
           <Timer className="h-3 w-3" />
-          Live Race
+          Corrida em Tempo Real - Live Race
         </div>
         <div className="text-[9px] font-bold text-muted-foreground uppercase bg-muted/50 px-2 py-0.5 rounded-full">
           Líder: {maxScore}

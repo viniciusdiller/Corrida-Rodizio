@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Pizza, Fish, Beef } from "lucide-react";
 import type { FoodType, Race } from "@/types/database";
 import { generateRoomCode } from "@/lib/utils/room-code";
@@ -65,6 +64,12 @@ export default function Home() {
     const storedLogin = localStorage.getItem(LOGIN_STORAGE_KEY);
     if (storedLogin) setLoginCode(storedLogin);
   }, []);
+
+  useEffect(() => {
+    if (loginCode && flow === "create" && !playerName.trim()) {
+      setPlayerName(loginCode);
+    }
+  }, [loginCode, flow, playerName]);
 
   // --- FUNÇÕES DE SUPORTE ---
 
@@ -257,7 +262,8 @@ export default function Home() {
   // --- LÓGICA DAS SALAS ---
 
   const handleCreateRoom = async () => {
-    if (!playerName.trim() || !selectedFood) return;
+    const normalizedName = loginCode?.trim() || playerName.trim();
+    if (!normalizedName || !selectedFood) return;
     setLoading(true);
     try {
       const supabase = createClient();
@@ -266,7 +272,7 @@ export default function Home() {
       let { data: race, error: raceError } = await supabase
         .from("races")
         .insert({
-          name: `Sala de ${playerName}`,
+          name: `Sala de ${normalizedName}`,
           food_type: selectedFood,
           room_code: code,
           is_active: true,
@@ -279,7 +285,7 @@ export default function Home() {
         const fallback = await supabase
           .from("races")
           .insert({
-            name: `Sala de ${playerName}`,
+            name: `Sala de ${normalizedName}`,
             food_type: selectedFood,
             room_code: code,
             is_active: true,
@@ -295,7 +301,7 @@ export default function Home() {
         supabase,
         {
           race_id: race.id,
-          name: playerName,
+          name: normalizedName,
           items_eaten: 0,
           avatar: DEFAULT_AVATAR,
           is_vip: true,
@@ -378,75 +384,74 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black p-6 md:p-12 transition-colors duration-500">
-      <div className="mx-auto max-w-xl space-y-12">
-        <div className="flex justify-end">
-          <ThemeToggle />
-        </div>
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black px-6 pb-6 pt-0 md:px-12 md:pb-12 md:pt-8 transition-colors duration-500">
+      <div className="mx-auto max-w-xl space-y-8">
+        <div className="space-y-10">
+          <HomeHeader isCompact={flow !== null || accountFlow !== null} />
 
-        <HomeHeader />
-
-        <Card className="border-none shadow-2xl shadow-black/5 bg-card/80 backdrop-blur-md">
-          <CardContent className="pt-8 space-y-8">
-            <AccountSection
-              loginCode={loginCode}
-              accountFlow={accountFlow}
-              accountLoading={accountLoading}
-              accountCodeInput={accountCodeInput}
-              accountPassword={accountPassword}
-              myGroups={myGroups}
-              isLoadingGroups={isLoadingGroups}
-              groupsError={groupsError}
-              showHistory={showHistory}
-              onToggleHistory={toggleHistory}
-              currentPage={currentPage}
-              setCurrentPage={setCurrentPage}
-              itemsPerPage={ITEMS_PER_PAGE}
-              onLogout={handleLogout}
-              onLoadGroups={handleLoadGroups}
-              onLogin={handleLogin}
-              onCreateLogin={handleCreateLogin}
-              setAccountFlow={setAccountFlow}
-              setAccountCodeInput={setAccountCodeInput}
-              setAccountPassword={setAccountPassword}
-              router={router}
-            />
-
-            {!flow ? (
-              <StartActions onSetFlow={setFlow} />
-            ) : flow === "create" ? (
-              <CreateRaceForm
-                playerName={playerName}
-                setPlayerName={setPlayerName}
-                isTeamMode={isTeamMode}
-                setIsTeamMode={setIsTeamMode}
-                selectedFood={selectedFood}
-                setSelectedFood={setSelectedFood}
-                foodTypes={foodTypes}
-                loading={loading}
-                onCreate={handleCreateRoom}
-                onBack={() => {
-                  setFlow(null);
-                  setSelectedFood(null);
-                }}
-              />
-            ) : (
-              <JoinRaceForm
-                playerName={playerName}
-                setPlayerName={setPlayerName}
-                roomCode={roomCode}
-                setRoomCode={setRoomCode}
+          <Card className="border-none shadow-2xl shadow-black/5 bg-card/80 backdrop-blur-md">
+            <CardContent className="pt-8 space-y-8">
+              <AccountSection
                 loginCode={loginCode}
-                loading={loading}
-                onJoin={handleJoinRoom}
-                onBack={() => {
-                  setFlow(null);
-                  setRoomCode("");
-                }}
+                accountFlow={accountFlow}
+                accountLoading={accountLoading}
+                accountCodeInput={accountCodeInput}
+                accountPassword={accountPassword}
+                myGroups={myGroups}
+                isLoadingGroups={isLoadingGroups}
+                groupsError={groupsError}
+                showHistory={showHistory}
+                onToggleHistory={toggleHistory}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onLogout={handleLogout}
+                onLoadGroups={handleLoadGroups}
+                onLogin={handleLogin}
+                onCreateLogin={handleCreateLogin}
+                setAccountFlow={setAccountFlow}
+                setAccountCodeInput={setAccountCodeInput}
+                setAccountPassword={setAccountPassword}
+                router={router}
               />
-            )}
-          </CardContent>
-        </Card>
+
+              {!flow ? (
+                <StartActions onSetFlow={setFlow} />
+              ) : flow === "create" ? (
+                <CreateRaceForm
+                  playerName={playerName}
+                  setPlayerName={setPlayerName}
+                  loginCode={loginCode}
+                  isTeamMode={isTeamMode}
+                  setIsTeamMode={setIsTeamMode}
+                  selectedFood={selectedFood}
+                  setSelectedFood={setSelectedFood}
+                  foodTypes={foodTypes}
+                  loading={loading}
+                  onCreate={handleCreateRoom}
+                  onBack={() => {
+                    setFlow(null);
+                    setSelectedFood(null);
+                  }}
+                />
+              ) : (
+                <JoinRaceForm
+                  playerName={playerName}
+                  setPlayerName={setPlayerName}
+                  roomCode={roomCode}
+                  setRoomCode={setRoomCode}
+                  loginCode={loginCode}
+                  loading={loading}
+                  onJoin={handleJoinRoom}
+                  onBack={() => {
+                    setFlow(null);
+                    setRoomCode("");
+                  }}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

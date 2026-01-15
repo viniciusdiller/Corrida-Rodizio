@@ -1,6 +1,7 @@
 "use client";
 
-import { Minus, Plus } from "lucide-react";
+import { useState, type MouseEvent } from "react";
+import { ChevronDown, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -11,9 +12,14 @@ import { Participant } from "@/types/database";
 interface PersonalProgressProps {
   participant: Participant;
   getItemLabel: (count: number) => string;
-  onUpdateCount: (id: string, change: number) => void;
+  onUpdateCount: (
+    id: string,
+    change: number,
+    event?: MouseEvent<HTMLButtonElement>
+  ) => void;
   onUpdateAvatar: (avatar: string) => void;
   isUpdatingAvatar: boolean;
+  isAddCooldown: boolean;
 }
 
 export function PersonalProgress({
@@ -22,7 +28,10 @@ export function PersonalProgress({
   onUpdateCount,
   onUpdateAvatar,
   isUpdatingAvatar,
+  isAddCooldown,
 }: PersonalProgressProps) {
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+
   return (
     <div className="space-y-4">
       <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">
@@ -57,7 +66,9 @@ export function PersonalProgress({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 cursor-pointer"
-                onClick={() => onUpdateCount(participant.id, -1)}
+                onClick={(event) =>
+                  onUpdateCount(participant.id, -1, event)
+                }
                 disabled={participant.items_eaten === 0}
               >
                 <Minus className="h-4 w-4" />
@@ -68,33 +79,54 @@ export function PersonalProgress({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 cursor-pointer"
-                onClick={() => onUpdateCount(participant.id, 1)}
+                className={`h-8 w-8 cursor-pointer ${
+                  isAddCooldown ? "opacity-50 grayscale" : ""
+                }`}
+                onClick={(event) =>
+                  onUpdateCount(participant.id, 1, event)
+                }
               >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
           </div>
           <div className="pt-4 border-t border-muted/40 space-y-3">
-            <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground">
-              Trocar seu ícone
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {AVATAR_OPTIONS.map((opt) => (
-                <button
-                  key={opt}
-                  disabled={isUpdatingAvatar}
-                  onClick={() => onUpdateAvatar(opt)}
-                  className={`w-10 h-10 rounded-xl border transition-all text-xl flex items-center justify-center cursor-pointer ${
-                    participant.avatar === opt
-                      ? "border-primary bg-primary/20 scale-110 shadow-lg"
-                      : "hover:border-primary/40 bg-background/40 hover:bg-background/60"
-                  } ${isUpdatingAvatar ? "opacity-50 cursor-not-allowed" : ""}`}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
+            <Button
+              variant="outline"
+              className="w-full justify-between rounded-xl text-xs font-black uppercase tracking-[0.2em]"
+              onClick={() => setShowAvatarPicker((prev) => !prev)}
+              disabled={isUpdatingAvatar}
+            >
+              Trocar seu Avatar
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${
+                  showAvatarPicker ? "rotate-180" : ""
+                }`}
+              />
+            </Button>
+            {showAvatarPicker && (
+              <div className="flex flex-wrap gap-2">
+                {AVATAR_OPTIONS.map((opt) => (
+                  <button
+                    key={opt}
+                    disabled={isUpdatingAvatar}
+                    onClick={() => {
+                      onUpdateAvatar(opt);
+                      setShowAvatarPicker(false);
+                    }}
+                    className={`w-10 h-10 rounded-xl border transition-all text-xl flex items-center justify-center cursor-pointer ${
+                      participant.avatar === opt
+                        ? "border-primary bg-primary/20 scale-110 shadow-lg"
+                        : "hover:border-primary/40 bg-background/40 hover:bg-background/60"
+                    } ${
+                      isUpdatingAvatar ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
