@@ -43,6 +43,18 @@ export default function Home() {
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [groupsError, setGroupsError] = useState<string | null>(null);
 
+  const [showHistory, setShowHistory] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 4;
+
+  const toggleHistory = () => {
+    if (!showHistory && myGroups.length === 0) {
+      handleLoadGroups();
+    }
+    setShowHistory(!showHistory);
+    setCurrentPage(1);
+  };
+
   const foodTypes = [
     { type: "pizza" as FoodType, label: "Pizza", icon: Pizza },
     { type: "sushi" as FoodType, label: "Japa", icon: Fish },
@@ -384,6 +396,11 @@ export default function Home() {
               myGroups={myGroups}
               isLoadingGroups={isLoadingGroups}
               groupsError={groupsError}
+              showHistory={showHistory}
+              onToggleHistory={toggleHistory}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              itemsPerPage={ITEMS_PER_PAGE}
               onLogout={handleLogout}
               onLoadGroups={handleLoadGroups}
               onLogin={handleLogin}

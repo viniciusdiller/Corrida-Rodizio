@@ -60,7 +60,7 @@ export function JoinRaceForm({
       </div>
       <div className="space-y-3">
         <Button
-          className="w-full h-14 rounded-xl font-bold text-lg shadow-xl shadow-primary/20"
+          className="w-full h-14 rounded-xl font-bold text-lg shadow-xl shadow-primary/20 cursor-pointer"
           onClick={onJoin}
           disabled={!playerName.trim() || !roomCode.trim() || loading}
         >
@@ -69,7 +69,7 @@ export function JoinRaceForm({
         </Button>
         <Button
           variant="ghost"
-          className="w-full text-muted-foreground"
+          className="w-full text-muted-foreground cursor-pointer"
           onClick={onBack}
         >
           Voltar

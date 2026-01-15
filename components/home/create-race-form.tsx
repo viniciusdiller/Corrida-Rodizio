@@ -108,7 +108,7 @@ export function CreateRaceForm({
       <div className="pt-2 space-y-4">
         <Button
           size="lg"
-          className="w-full h-14 rounded-xl font-bold text-lg shadow-xl shadow-primary/20"
+          className="w-full h-14 rounded-xl font-bold text-lg shadow-xl shadow-primary/20 cursor-pointer"
           onClick={onCreate}
           disabled={!playerName.trim() || !selectedFood || loading}
         >
@@ -117,7 +117,7 @@ export function CreateRaceForm({
         </Button>
         <Button
           variant="ghost"
-          className="w-full text-muted-foreground"
+          className="w-full text-muted-foreground cursor-pointer"
           onClick={onBack}
         >
           Voltar
