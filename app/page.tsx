@@ -128,10 +128,10 @@ export default function Home() {
     setGroupsError(null);
     try {
       const supabase = createClient();
-      const chosenName = accountCodeInput.trim().toUpperCase();
+      const normalizedName = accountCodeInput.trim().toUpperCase();
 
       const { data, error } = await supabase.rpc("create_login", {
-        p_username: chosenName,
+        p_username: normalizedName,
         p_password: accountPassword,
       });
 
