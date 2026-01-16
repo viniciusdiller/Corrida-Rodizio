@@ -42,6 +42,7 @@ export default function RoomPage() {
   const [currentParticipantId, setCurrentParticipantId] = useState<
     string | null
   >(null);
+  const [showEndRaceToast, setShowEndRaceToast] = useState(false);
   const [cooldownToast, setCooldownToast] = useState<{
     text: string;
     x: number;
@@ -202,13 +203,15 @@ export default function RoomPage() {
     }
   };
 
-  const handleEndRace = async () => {
+  const handleEndRace = () => {
     if (isEnding) return;
-    const confirmed = window.confirm(
-      "Encerrar competição agora? Esta ação não pode ser desfeita."
-    );
-    if (!confirmed) return;
+    setShowEndRaceToast(true);
+  };
+
+  const confirmEndRace = async () => {
+    if (isEnding) return;
     await endRace();
+    setShowEndRaceToast(false);
   };
 
   useEffect(() => {
@@ -322,7 +325,7 @@ export default function RoomPage() {
               disabled={isEnding}
             >
               <Flag className="h-4 w-4" />
-              {isEnding ? "Encerrando..." : "Encerrar Competicao"}
+              {isEnding ? "Encerrando..." : "Encerrar Competição"}
             </Button>
           </div>
         )}
@@ -350,6 +353,32 @@ export default function RoomPage() {
         >
           {cooldownToast.text}
         </div>
+      )}
+      {showEndRaceToast && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" />
+          <div className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-muted/60 bg-background/95 p-4 shadow-xl backdrop-blur-sm">
+            <p className="text-sm font-semibold text-foreground">
+              Encerrar competição agora? Esta ação não pode ser desfeita.
+            </p>
+            <div className="mt-3 flex items-center justify-end gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => setShowEndRaceToast(false)}
+                disabled={isEnding}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmEndRace}
+                disabled={isEnding}
+              >
+                {isEnding ? "Encerrando..." : "Encerrar"}
+              </Button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

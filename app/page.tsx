@@ -29,6 +29,7 @@ export default function Home() {
   const [roomCode, setRoomCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [isTeamMode, setIsTeamMode] = useState(false);
+  const [hasEditedName, setHasEditedName] = useState(false);
 
   // ESTADOS DE CONTA
   const [accountFlow, setAccountFlow] = useState<"login" | "create" | null>(
@@ -66,10 +67,26 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (loginCode && flow === "create" && !playerName.trim()) {
+    if (
+      loginCode &&
+      (flow === "create" || flow === "join") &&
+      !playerName.trim() &&
+      !hasEditedName
+    ) {
       setPlayerName(loginCode);
     }
-  }, [loginCode, flow, playerName]);
+  }, [loginCode, flow, playerName, hasEditedName]);
+
+  useEffect(() => {
+    if (flow === null) {
+      setHasEditedName(false);
+    }
+  }, [flow]);
+
+  const handlePlayerNameChange = (value: string) => {
+    setHasEditedName(true);
+    setPlayerName(value);
+  };
 
   // --- FUNÇÕES DE SUPORTE ---
 
@@ -262,8 +279,9 @@ export default function Home() {
   // --- LÓGICA DAS SALAS ---
 
   const handleCreateRoom = async () => {
-    const normalizedName = loginCode?.trim() || playerName.trim();
-    if (!normalizedName || !selectedFood) return;
+    const normalizedName = playerName.trim();
+    const roomOwnerName = loginCode?.trim() || normalizedName;
+    if (!normalizedName || !roomOwnerName || !selectedFood) return;
     setLoading(true);
     try {
       const supabase = createClient();
@@ -272,7 +290,7 @@ export default function Home() {
       let { data: race, error: raceError } = await supabase
         .from("races")
         .insert({
-          name: `Sala de ${normalizedName}`,
+          name: `Sala de ${roomOwnerName}`,
           food_type: selectedFood,
           room_code: code,
           is_active: true,
@@ -285,7 +303,7 @@ export default function Home() {
         const fallback = await supabase
           .from("races")
           .insert({
-            name: `Sala de ${normalizedName}`,
+            name: `Sala de ${roomOwnerName}`,
             food_type: selectedFood,
             room_code: code,
             is_active: true,
@@ -319,7 +337,7 @@ export default function Home() {
   };
 
   const handleJoinRoom = async () => {
-    const normalizedName = loginCode?.trim() || playerName.trim();
+    const normalizedName = playerName.trim();
     if (!normalizedName || !roomCode.trim()) return;
     setLoading(true);
     try {
@@ -418,14 +436,13 @@ export default function Home() {
               {!flow ? (
                 <StartActions onSetFlow={setFlow} />
               ) : flow === "create" ? (
-                <CreateRaceForm
-                  playerName={playerName}
-                  setPlayerName={setPlayerName}
-                  loginCode={loginCode}
-                  isTeamMode={isTeamMode}
-                  setIsTeamMode={setIsTeamMode}
-                  selectedFood={selectedFood}
-                  setSelectedFood={setSelectedFood}
+              <CreateRaceForm
+                playerName={playerName}
+                setPlayerName={handlePlayerNameChange}
+                isTeamMode={isTeamMode}
+                setIsTeamMode={setIsTeamMode}
+                selectedFood={selectedFood}
+                setSelectedFood={setSelectedFood}
                   foodTypes={foodTypes}
                   loading={loading}
                   onCreate={handleCreateRoom}
@@ -437,7 +454,7 @@ export default function Home() {
               ) : (
                 <JoinRaceForm
                   playerName={playerName}
-                  setPlayerName={setPlayerName}
+                  setPlayerName={handlePlayerNameChange}
                   roomCode={roomCode}
                   setRoomCode={setRoomCode}
                   loginCode={loginCode}

@@ -24,33 +24,24 @@ export function JoinRaceForm({
   onJoin,
   onBack,
 }: JoinRaceFormProps) {
-  const isNameRequired = !loginCode;
+  const hasName = !!playerName.trim();
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-left-4">
-      {isNameRequired ? (
-        <div className="space-y-3">
-          <Label
-            htmlFor="playerName"
-            className="text-xs uppercase font-bold text-muted-foreground px-1"
-          >
-            Seu Codinome
-          </Label>
-          <Input
-            id="playerName"
-            placeholder="Ex: Predador de Pizza"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
-            className="bg-background/50 h-14 text-lg font-medium"
-          />
-        </div>
-      ) : (
-        <div className="space-y-2 rounded-2xl border border-muted/60 bg-background/60 px-4 py-3">
-          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
-            Entrando como
-          </Label>
-          <p className="text-lg font-black tracking-wider">{loginCode}</p>
-        </div>
-      )}
+      <div className="space-y-3">
+        <Label
+          htmlFor="playerName"
+          className="text-xs uppercase font-bold text-muted-foreground px-1"
+        >
+          Seu Codinome
+        </Label>
+        <Input
+          id="playerName"
+          placeholder="Ex: Predador de Pizza"
+          value={playerName}
+          onChange={(e) => setPlayerName(e.target.value)}
+          className="bg-background/50 h-14 text-lg font-medium"
+        />
+      </div>
       <div className="space-y-3">
         <Label
           htmlFor="roomCode"
@@ -74,7 +65,7 @@ export function JoinRaceForm({
         <Button
           className="w-full h-14 rounded-xl font-bold text-lg shadow-xl shadow-primary/20 cursor-pointer"
           onClick={onJoin}
-          disabled={(isNameRequired && !playerName.trim()) || !roomCode.trim() || loading}
+          disabled={!hasName || !roomCode.trim() || loading}
         >
           {loading ? "Localizando..." : "Entrar na Arena"}{" "}
           <ArrowRight className="ml-2 h-5 w-5" />
