@@ -73,7 +73,7 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
                 <div className="absolute bottom-0 left-2 right-2 h-px bg-white/5" />
 
                 <div
-                  className="absolute transition-all duration-1000 ease-in-out flex items-center gap-0.5"
+                  className="absolute transition-all duration-1000 ease-in-out flex items-center gap-1"
                   style={{
                     left: `${progress}%`,
                     transform: `translateX(-${progress}%)`,
@@ -81,9 +81,14 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
                   }}
                 >
                   {/* Caixa de informacoes com a cor do time */}
-                  <div className="flex flex-col min-w-0 p-1 text-right text-white">
+                  <div className="flex flex-col min-w-[64px] p-1 text-right text-white">
                     <span className="text-[9px] font-black uppercase leading-none truncate max-w-[80px] md:max-w-[120px]">
-                      {participant.name.split(" ")[0]}
+                      <span className="inline-flex items-center justify-end gap-1">
+                        {isLeader && (
+                          <Trophy className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                        )}
+                        {participant.name.split(" ")[0]}
+                      </span>
                     </span>
                     <span
                       className={`text-[12px] font-black italic leading-tight ${
@@ -93,20 +98,16 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
                       {participant.items_eaten}pts
                     </span>
                   </div>
-                  <div className="relative shrink-0">
+                  <div className="relative shrink-0 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center">
                     {isImageAvatar(participant.avatar) ? (
                       <img
                         src={getAvatarUrl(participant.avatar)}
                         alt=""
-                        className={`h-7 w-7 md:h-9 md:w-9 object-contain transition-transform ${
-                          participant.items_eaten > 0 ? "animate-bounce" : ""
-                        }`}
+                        className="h-9 w-9 md:h-12 md:w-12 object-contain"
                       />
                     ) : (
                       <span
-                        className={`text-2xl md:text-3xl transition-transform ${
-                          participant.items_eaten > 0 ? "animate-bounce" : ""
-                        } ${
+                        className={`text-3xl md:text-4xl ${
                           isVehicleAvatar(participant.avatar)
                             ? "-scale-x-100 inline-block"
                             : ""
@@ -115,10 +116,6 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
                         {participant.avatar}
                       </span>
                     )}
-                    {isLeader && (
-                      <Trophy className="absolute -top-3 -right-1 h-3 w-3 text-yellow-500 fill-yellow-500" />
-                    )}
-
                     {/* Pequeno indicador de cor acima do avatar (opcional) */}
                     {isTeamMode && participant.team && (
                       <div
