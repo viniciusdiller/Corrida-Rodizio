@@ -31,6 +31,9 @@ export default function Home() {
   const [isTeamMode, setIsTeamMode] = useState(false);
   const [hasEditedName, setHasEditedName] = useState(false);
   const [isSpectator, setIsSpectator] = useState(false);
+  const [defaultAvatar, setDefaultAvatar] = useState<string | null>(
+    DEFAULT_AVATAR
+  );
 
   // ESTADOS DE CONTA
   const [accountFlow, setAccountFlow] = useState<"login" | "create" | null>(
@@ -65,6 +68,28 @@ export default function Home() {
   useEffect(() => {
     const storedLogin = localStorage.getItem(LOGIN_STORAGE_KEY);
     if (storedLogin) setLoginCode(storedLogin);
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadDefaultAvatar = async () => {
+      try {
+        const response = await fetch("/api/avatars");
+        if (!response.ok) return;
+        const data = await response.json();
+        const list = Array.isArray(data?.avatars) ? data.avatars : [];
+        if (isMounted && list.length > 0) {
+          setDefaultAvatar(list[0]);
+        }
+      } catch {
+        return;
+      }
+    };
+
+    loadDefaultAvatar();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -323,7 +348,7 @@ export default function Home() {
           race_id: race.id,
           name: normalizedName,
           items_eaten: 0,
-          avatar: DEFAULT_AVATAR,
+          avatar: defaultAvatar,
           is_vip: true,
           login_code: loginCode,
         }
@@ -389,7 +414,7 @@ export default function Home() {
           name: normalizedName,
           items_eaten: 0,
           team: null,
-          avatar: DEFAULT_AVATAR,
+          avatar: defaultAvatar,
           is_vip: false,
           login_code: loginCode,
         });

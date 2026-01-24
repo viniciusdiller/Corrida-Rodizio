@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sword, TrendingUp } from "lucide-react";
 import { Race, Participant } from "@/types/database";
-import { getAvatarUrl, isImageAvatar, isVehicleAvatar } from "@/lib/utils/avatars";
+import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
 
 const TEAM_CONFIG = {
   AZUL: {
@@ -128,15 +128,7 @@ export function RankingSection({
                             className="h-5 w-5 object-contain shrink-0"
                           />
                         ) : (
-                          <span
-                            className={`text-sm shrink-0 ${
-                              isVehicleAvatar(m.avatar)
-                                ? "inline-block -scale-x-100"
-                                : ""
-                            }`}
-                          >
-                            {m.avatar}
-                          </span>
+                          <span className="inline-block h-4 w-4 rounded-full bg-muted/40 shrink-0" />
                         )}
                         <span
                           className={`text-[11px] font-bold truncate ${

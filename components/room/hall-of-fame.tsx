@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Race, Participant } from "@/types/database";
-import { getAvatarUrl, isImageAvatar, isVehicleAvatar } from "@/lib/utils/avatars";
+import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
 
 // Constantes movidas para o componente para facilitar a organização
 const MOTIVATIONAL_PHRASES = [
@@ -100,15 +100,7 @@ export function HallOfFame({
                         className="h-10 w-10 object-contain"
                       />
                     ) : (
-                      <span
-                        className={
-                          isVehicleAvatar(p.avatar)
-                            ? "inline-block -scale-x-100"
-                            : ""
-                        }
-                      >
-                        {p.avatar}
-                      </span>
+                      <span className="inline-block h-9 w-9 rounded-full bg-white/10" />
                     )}
                   </div>
                   <span

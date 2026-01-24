@@ -2,7 +2,7 @@
 
 import { Participant } from "@/types/database";
 import { Card } from "@/components/ui/card";
-import { getAvatarUrl, isImageAvatar, isVehicleAvatar } from "@/lib/utils/avatars";
+import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
 import { Trophy, Timer } from "lucide-react";
 
 // Mapeamento de cores para manter a consistencia com o restante do app
@@ -106,15 +106,7 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
                         className="h-9 w-9 md:h-12 md:w-12 object-contain"
                       />
                     ) : (
-                      <span
-                        className={`text-3xl md:text-4xl ${
-                          isVehicleAvatar(participant.avatar)
-                            ? "-scale-x-100 inline-block"
-                            : ""
-                        }`}
-                      >
-                        {participant.avatar}
-                      </span>
+                      <span className="inline-block h-9 w-9 rounded-full bg-white/10 md:h-12 md:w-12" />
                     )}
                     {/* Pequeno indicador de cor acima do avatar (opcional) */}
                     {isTeamMode && participant.team && (

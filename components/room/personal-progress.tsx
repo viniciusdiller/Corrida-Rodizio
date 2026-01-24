@@ -7,10 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
-  AVATAR_OPTIONS,
   getAvatarUrl,
   isImageAvatar,
-  isVehicleAvatar,
 } from "@/lib/utils/avatars";
 import { Participant } from "@/types/database";
 
@@ -36,7 +34,7 @@ export function PersonalProgress({
   isAddCooldown,
 }: PersonalProgressProps) {
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  const [avatarOptions, setAvatarOptions] = useState(AVATAR_OPTIONS);
+  const [avatarOptions, setAvatarOptions] = useState<string[]>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -47,8 +45,7 @@ export function PersonalProgress({
         const data = await response.json();
         const list = Array.isArray(data?.avatars) ? data.avatars : [];
         if (list.length === 0) return;
-        const merged = Array.from(new Set([...list, ...AVATAR_OPTIONS]));
-        if (isMounted) setAvatarOptions(merged);
+        if (isMounted) setAvatarOptions(list);
       } catch {
         return;
       }
@@ -77,15 +74,7 @@ export function PersonalProgress({
                     className="h-12 w-12 object-contain"
                   />
                 ) : (
-                  <span
-                    className={
-                      isVehicleAvatar(participant.avatar)
-                        ? "inline-block -scale-x-100"
-                        : ""
-                    }
-                  >
-                    {participant.avatar}
-                  </span>
+                  <span className="inline-block h-10 w-10 rounded-full bg-muted/40" />
                 )}
               </div>
               <div>
@@ -166,22 +155,12 @@ export function PersonalProgress({
                       isUpdatingAvatar ? "opacity-50 cursor-not-allowed" : ""
                     }`}
                   >
-                    {isImageAvatar(opt) ? (
+                    {isImageAvatar(opt) && (
                       <img
                         src={getAvatarUrl(opt)}
                         alt=""
                         className="h-7 w-7 object-contain"
                       />
-                    ) : (
-                      <span
-                        className={
-                          isVehicleAvatar(opt)
-                            ? "inline-block -scale-x-100"
-                            : ""
-                        }
-                      >
-                        {opt}
-                      </span>
                     )}
                   </button>
                 ))}
