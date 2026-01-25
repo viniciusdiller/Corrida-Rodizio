@@ -12,6 +12,7 @@ type AdminUser = {
   username: string;
   isPremium: boolean;
   exclusiveAvatars: string[];
+  promoPermissions: string[];
 };
 
 export default function AdminPage() {
@@ -31,6 +32,8 @@ export default function AdminPage() {
 
   const [newExclusiveAvatar, setNewExclusiveAvatar] = useState("");
   const [exclusiveStatus, setExclusiveStatus] = useState<string | null>(null);
+  const [newPromoPermission, setNewPromoPermission] = useState("");
+  const [promoStatus, setPromoStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -81,6 +84,7 @@ export default function AdminPage() {
     setUserError(null);
     setPasswordStatus(null);
     setExclusiveStatus(null);
+    setPromoStatus(null);
     try {
       const supabase = createClient();
       const { data: loginData, error: loginError } = await supabase
@@ -106,11 +110,19 @@ export default function AdminPage() {
         .select("avatar")
         .eq("login_code", loginData.username);
 
+      const { data: permissionData } = await supabase
+        .from("exclusive_avatar_permissions")
+        .select("avatar")
+        .eq("login_code", loginData.username);
+
       setUser({
         username: loginData.username,
         isPremium: !!profileData?.is_premium,
         exclusiveAvatars: Array.isArray(exclusiveData)
           ? exclusiveData.map((row) => row.avatar)
+          : [],
+        promoPermissions: Array.isArray(permissionData)
+          ? permissionData.map((row) => row.avatar)
           : [],
       });
     } finally {
@@ -202,6 +214,56 @@ export default function AdminPage() {
     setUser({
       ...user,
       exclusiveAvatars: user.exclusiveAvatars.filter(
+        (item) => item !== avatarName
+      ),
+    });
+  };
+
+  const addPromoPermission = async () => {
+    if (!user) return;
+    const avatarName = newPromoPermission.trim();
+    if (!avatarName) return;
+    setPromoStatus(null);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("exclusive_avatar_permissions")
+      .upsert(
+        { login_code: user.username, avatar: avatarName },
+        { onConflict: "login_code,avatar" }
+      );
+
+    if (error) {
+      setPromoStatus("Failed to add permission");
+      return;
+    }
+
+    setUser({
+      ...user,
+      promoPermissions: Array.from(
+        new Set([...user.promoPermissions, avatarName])
+      ),
+    });
+    setNewPromoPermission("");
+  };
+
+  const removePromoPermission = async (avatarName: string) => {
+    if (!user) return;
+    setPromoStatus(null);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("exclusive_avatar_permissions")
+      .delete()
+      .eq("login_code", user.username)
+      .eq("avatar", avatarName);
+
+    if (error) {
+      setPromoStatus("Failed to remove permission");
+      return;
+    }
+
+    setUser({
+      ...user,
+      promoPermissions: user.promoPermissions.filter(
         (item) => item !== avatarName
       ),
     });
@@ -384,6 +446,54 @@ export default function AdminPage() {
                           <button
                             className="text-xs text-destructive"
                             onClick={() => removeExclusiveAvatar(avatar)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">
+                      Permissao de Codigos
+                    </Label>
+                    <div className="flex flex-col gap-2 md:flex-row">
+                      <Input
+                        value={newPromoPermission}
+                        onChange={(event) =>
+                          setNewPromoPermission(event.target.value)
+                        }
+                        placeholder="avatar-exclusive-betatester.png"
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={addPromoPermission}
+                        className="md:w-32"
+                      >
+                        Add
+                      </Button>
+                    </div>
+                    {promoStatus && (
+                      <p className="text-xs text-muted-foreground">
+                        {promoStatus}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {user.promoPermissions.length === 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          No promo permissions
+                        </span>
+                      )}
+                      {user.promoPermissions.map((avatar) => (
+                        <div
+                          key={avatar}
+                          className="flex items-center gap-2 rounded-full border border-muted px-3 py-1 text-xs"
+                        >
+                          <span>{avatar}</span>
+                          <button
+                            className="text-xs text-destructive"
+                            onClick={() => removePromoPermission(avatar)}
                           >
                             Remove
                           </button>

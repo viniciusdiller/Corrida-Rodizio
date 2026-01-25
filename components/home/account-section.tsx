@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,6 +66,12 @@ export function AccountSection({
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [showClaimForm, setShowClaimForm] = useState(false);
+  const [claimCode, setClaimCode] = useState("");
+  const [claimStatus, setClaimStatus] = useState<string | null>(null);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [promoPermissions, setPromoPermissions] = useState<string[]>([]);
+  const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
 
   // Lógica de Paginação interna
   const totalPages = Math.ceil(myGroups.length / itemsPerPage);
@@ -115,6 +121,82 @@ export function AccountSection({
       setPasswordStatus("Nao foi possivel atualizar a senha.");
     } finally {
       setIsUpdatingPassword(false);
+    }
+  };
+
+  const handleClaimExclusiveAvatar = async () => {
+    if (!loginCode) return;
+    const trimmedCode = claimCode.trim();
+    if (!trimmedCode) {
+      setClaimStatus("Digite o codigo.");
+      return;
+    }
+
+    setIsClaiming(true);
+    setClaimStatus(null);
+    try {
+      const response = await fetch("/api/exclusive-avatars/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          loginCode: loginCode.trim().toUpperCase(),
+          code: trimmedCode,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      const status = String(data?.status || "");
+      if (status === "claimed") {
+        setClaimStatus(`Avatar registrado: ${data?.avatar ?? ""}`.trim());
+        setClaimCode("");
+        return;
+      }
+      if (status === "already_claimed") {
+        setClaimStatus("Esse avatar ja esta na sua conta.");
+        return;
+      }
+      if (status === "used_up") {
+        setClaimStatus("Codigo ja foi usado.");
+        return;
+      }
+      if (status === "expired") {
+        setClaimStatus("Codigo expirado.");
+        return;
+      }
+      if (status === "unknown_user") {
+        setClaimStatus("Usuario invalido.");
+        return;
+      }
+      setClaimStatus("Codigo invalido.");
+    } catch {
+      setClaimStatus("Nao foi possivel registrar o avatar.");
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPromoPermissions();
+  }, [loginCode]);
+
+  const loadPromoPermissions = async () => {
+    if (!loginCode) {
+      setPromoPermissions([]);
+      return;
+    }
+    setIsLoadingPermissions(true);
+    try {
+      const response = await fetch(
+        `/api/promo-codes/permissions?loginCode=${encodeURIComponent(
+          loginCode.trim().toUpperCase()
+        )}`
+      );
+      const data = await response.json().catch(() => ({}));
+      const avatars = Array.isArray(data?.avatars) ? data.avatars : [];
+      setPromoPermissions(avatars);
+    } catch {
+      setPromoPermissions([]);
+    } finally {
+      setIsLoadingPermissions(false);
     }
   };
 
@@ -218,6 +300,55 @@ export function AccountSection({
               ? "Ocultar histórico"
               : "Ver histórico de Competições"}
           </Button>
+
+          <Button
+            variant="outline"
+            className="w-full h-12 rounded-xl font-semibold"
+            onClick={() => {
+              setShowClaimForm((prev) => !prev);
+              setClaimStatus(null);
+            }}
+          >
+            Registrar avatar exclusivo
+          </Button>
+
+          {showClaimForm && (
+            <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
+              <Label className="text-xs uppercase font-bold text-muted-foreground">
+                Codigo de resgate
+              </Label>
+              <div className="flex flex-col gap-2 md:flex-row">
+                <Input
+                  value={claimCode}
+                  onChange={(e) => setClaimCode(e.target.value)}
+                  className="h-10"
+                  placeholder="EX: BETA-2025-01"
+                />
+                <Button
+                  className="h-10 md:w-40"
+                  onClick={handleClaimExclusiveAvatar}
+                  disabled={isClaiming}
+                >
+                  {isClaiming ? "Registrando..." : "Registrar"}
+                </Button>
+              </div>
+              {claimStatus && (
+                <p className="text-xs text-muted-foreground font-semibold">
+                  {claimStatus}
+                </p>
+              )}
+            </div>
+          )}
+
+          {!isLoadingPermissions && promoPermissions.length > 0 && (
+            <Button
+              variant="outline"
+              className="w-full h-12 rounded-xl font-semibold"
+              onClick={() => router.push("/codigos-promocionais")}
+            >
+              Gerenciar codigos promocionais
+            </Button>
+          )}
 
           {groupsError && (
             <p className="text-xs text-red-500 font-semibold">{groupsError}</p>
