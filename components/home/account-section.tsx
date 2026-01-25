@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,7 @@ import {
   ChevronRight,
   Calendar,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 interface AccountSectionProps {
   loginCode: string | null;
@@ -58,11 +60,63 @@ export function AccountSection({
   setCurrentPage,
   router,
 }: AccountSectionProps) {
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
   // Lógica de Paginação interna
   const totalPages = Math.ceil(myGroups.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = myGroups.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handleChangePassword = async () => {
+    if (!loginCode) return;
+    const trimmedCurrent = currentPassword.trim();
+    const trimmedNew = newPassword.trim();
+    const trimmedConfirm = confirmNewPassword.trim();
+    if (!trimmedCurrent || !trimmedNew || !trimmedConfirm) {
+      setPasswordStatus("Preencha todos os campos.");
+      return;
+    }
+    if (trimmedNew !== trimmedConfirm) {
+      setPasswordStatus("As novas senhas nao conferem.");
+      return;
+    }
+    if (trimmedNew.length < 6) {
+      setPasswordStatus("A nova senha precisa de pelo menos 6 caracteres.");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    setPasswordStatus(null);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("change_login_password", {
+        p_username: loginCode.trim().toUpperCase(),
+        p_old_password: trimmedCurrent,
+        p_new_password: trimmedNew,
+      });
+
+      if (error || !data) {
+        setPasswordStatus("Senha atual incorreta.");
+        return;
+      }
+
+      setPasswordStatus("Senha atualizada com sucesso.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setShowPasswordForm(false);
+    } catch {
+      setPasswordStatus("Nao foi possivel atualizar a senha.");
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -76,14 +130,79 @@ export function AccountSection({
               </p>
               <p className="text-2xl font-black tracking-wider">{loginCode}</p>
             </div>
-            <Button
-              variant="ghost"
-              className="text-muted-foreground hover:text-primary cursor-pointer"
-              onClick={onLogout}
-            >
-              <LogOut className="mr-2 h-4 w-4" /> Sair
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                className="text-muted-foreground hover:text-primary cursor-pointer"
+                onClick={() => {
+                  setShowPasswordForm((prev) => !prev);
+                  setPasswordStatus(null);
+                }}
+              >
+                Trocar senha
+              </Button>
+              <Button
+                variant="ghost"
+                className="text-muted-foreground hover:text-primary cursor-pointer"
+                onClick={onLogout}
+              >
+                <LogOut className="mr-2 h-4 w-4" /> Sair
+              </Button>
+            </div>
           </div>
+
+          {showPasswordForm && (
+            <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-muted-foreground">
+                  Senha atual
+                </Label>
+                <Input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="h-10"
+                  placeholder="Digite sua senha atual"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-muted-foreground">
+                  Nova senha
+                </Label>
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="h-10"
+                  placeholder="Digite a nova senha"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-muted-foreground">
+                  Confirmar nova senha
+                </Label>
+                <Input
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  className="h-10"
+                  placeholder="Digite a nova senha novamente"
+                />
+              </div>
+              {passwordStatus && (
+                <p className="text-xs text-muted-foreground font-semibold">
+                  {passwordStatus}
+                </p>
+              )}
+              <Button
+                className="w-full h-10 rounded-xl font-bold"
+                onClick={handleChangePassword}
+                disabled={isUpdatingPassword}
+              >
+                {isUpdatingPassword ? "Atualizando..." : "Atualizar senha"}
+              </Button>
+            </div>
+          )}
 
           <Button
             variant="outline"

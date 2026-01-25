@@ -131,6 +131,8 @@ export default function RoomPage() {
   const [copied, setCopied] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
+  const [isPremiumPlayer, setIsPremiumPlayer] = useState(false);
+  const [exclusiveAvatars, setExclusiveAvatars] = useState<string[]>([]);
   const [currentParticipantId, setCurrentParticipantId] = useState<
     string | null
   >(null);
@@ -369,12 +371,64 @@ export default function RoomPage() {
     };
   }, [roomCode, isSpectator]);
 
-  if (loading) return <LoadingScreen />;
-  if (!race) return null;
-
   const currentParticipant = participants.find(
     (p) => p.id === currentParticipantId
   );
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadPlayerEntitlements = async () => {
+      const loginCode = currentParticipant?.login_code?.trim().toUpperCase();
+      if (!loginCode) {
+        if (isMounted) {
+          setIsPremiumPlayer(false);
+          setExclusiveAvatars([]);
+        }
+        return;
+      }
+
+      try {
+        const supabase = createClient();
+        const { data: profileData, error: profileError } = await supabase
+          .from("player_profiles")
+          .select("is_premium")
+          .eq("login_code", loginCode)
+          .maybeSingle();
+
+        if (!profileError && isMounted) {
+          setIsPremiumPlayer(!!profileData?.is_premium);
+        }
+
+        const { data: exclusiveData, error: exclusiveError } = await supabase
+          .from("exclusive_avatars")
+          .select("avatar")
+          .eq("login_code", loginCode);
+
+        if (!exclusiveError && isMounted) {
+          setExclusiveAvatars(
+            Array.isArray(exclusiveData)
+              ? exclusiveData.map((row) => row.avatar)
+              : []
+          );
+        }
+      } catch (error) {
+        console.error(error);
+        if (isMounted) {
+          setIsPremiumPlayer(false);
+          setExclusiveAvatars([]);
+        }
+      }
+    };
+
+    loadPlayerEntitlements();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentParticipant?.login_code]);
+
+  if (loading) return <LoadingScreen />;
+  if (!race) return null;
+
   const maxScore = Math.max(...participants.map((p) => p.items_eaten), 0);
 
   if (!race.is_active) {
@@ -423,6 +477,8 @@ export default function RoomPage() {
             onUpdateAvatar={updateAvatar}
             isUpdatingAvatar={isUpdatingAvatar}
             isAddCooldown={isAddCooldownActive}
+            isPremium={isPremiumPlayer}
+            exclusiveAvatars={exclusiveAvatars}
           />
         )}
 

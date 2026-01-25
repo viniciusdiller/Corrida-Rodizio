@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   getAvatarUrl,
+  isExclusiveAvatar,
   isImageAvatar,
+  isPremiumAvatar,
 } from "@/lib/utils/avatars";
 import { Participant } from "@/types/database";
 
@@ -23,6 +25,8 @@ interface PersonalProgressProps {
   onUpdateAvatar: (avatar: string) => void;
   isUpdatingAvatar: boolean;
   isAddCooldown: boolean;
+  isPremium: boolean;
+  exclusiveAvatars: string[];
 }
 
 export function PersonalProgress({
@@ -32,6 +36,8 @@ export function PersonalProgress({
   onUpdateAvatar,
   isUpdatingAvatar,
   isAddCooldown,
+  isPremium,
+  exclusiveAvatars,
 }: PersonalProgressProps) {
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [avatarOptions, setAvatarOptions] = useState<string[]>([]);
@@ -45,7 +51,13 @@ export function PersonalProgress({
         const data = await response.json();
         const list = Array.isArray(data?.avatars) ? data.avatars : [];
         if (list.length === 0) return;
-        if (isMounted) setAvatarOptions(list);
+        const filtered = list.filter((opt) => {
+          if (opt === participant.avatar) return true;
+          if (isExclusiveAvatar(opt)) return exclusiveAvatars.includes(opt);
+          if (isPremiumAvatar(opt)) return isPremium;
+          return true;
+        });
+        if (isMounted) setAvatarOptions(filtered);
       } catch {
         return;
       }
@@ -55,7 +67,7 @@ export function PersonalProgress({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [exclusiveAvatars, isPremium, participant.avatar]);
 
   return (
     <div className="space-y-4">
@@ -139,31 +151,43 @@ export function PersonalProgress({
             </Button>
             {showAvatarPicker && (
               <div className="flex flex-wrap gap-2">
-                {avatarOptions.map((opt) => (
-                  <button
-                    key={opt}
-                    disabled={isUpdatingAvatar}
-                    onClick={() => {
-                      onUpdateAvatar(opt);
-                      setShowAvatarPicker(false);
-                    }}
-                    className={`w-10 h-10 rounded-xl border transition-all text-xl flex items-center justify-center cursor-pointer ${
-                      participant.avatar === opt
-                        ? "border-primary bg-primary/20 scale-110 shadow-lg"
-                        : "hover:border-primary/40 bg-background/40 hover:bg-background/60"
-                    } ${
-                      isUpdatingAvatar ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    {isImageAvatar(opt) && (
-                      <img
-                        src={getAvatarUrl(opt)}
-                        alt=""
-                        className="h-7 w-7 object-contain"
-                      />
-                    )}
-                  </button>
-                ))}
+                {avatarOptions.map((opt) => {
+                  const isSelected = participant.avatar === opt;
+                  const isPremiumOption = isPremiumAvatar(opt);
+                  const isExclusiveOption = isExclusiveAvatar(opt);
+                  const premiumBorderClass = isPremiumOption
+                    ? "border-foreground/70 border-2"
+                    : "";
+                  const exclusiveBorderClass = isExclusiveOption
+                    ? "border-purple-500 dark:border-primary border-2"
+                    : "";
+
+                  return (
+                    <button
+                      key={opt}
+                      disabled={isUpdatingAvatar}
+                      onClick={() => {
+                        onUpdateAvatar(opt);
+                        setShowAvatarPicker(false);
+                      }}
+                      className={`w-10 h-10 rounded-xl border transition-all text-xl flex items-center justify-center cursor-pointer ${
+                        isSelected
+                          ? "ring-2 ring-primary bg-primary/20 scale-110 shadow-lg"
+                          : "hover:border-primary/40 bg-background/40 hover:bg-background/60"
+                      } ${premiumBorderClass} ${exclusiveBorderClass} ${
+                        isUpdatingAvatar ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {isImageAvatar(opt) && (
+                        <img
+                          src={getAvatarUrl(opt)}
+                          alt=""
+                          className="h-7 w-7 object-contain"
+                        />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
