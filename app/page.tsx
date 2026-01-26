@@ -435,7 +435,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen min-h-[100svh] bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-0 sm:px-6 md:px-12 md:pb-12 md:pt-8 transition-colors duration-500">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black px-6 pb-6 pt-0 md:px-12 md:pb-12 md:pt-8 transition-colors duration-500">
       <div className="mx-auto max-w-xl space-y-8">
         <div className="space-y-3">
           <HomeHeader isCompact={flow !== null || accountFlow !== null} />

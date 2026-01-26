@@ -274,9 +274,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen min-h-[100svh] bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black px-4 pb-[calc(3rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 sm:pt-8">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black px-6 pb-12 pt-8">
       <div className="mx-auto max-w-2xl space-y-6">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between">
           <h1 className="text-xl font-black uppercase tracking-[0.2em] text-foreground">
             Admin Console
           </h1>

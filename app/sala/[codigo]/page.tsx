@@ -441,7 +441,7 @@ export default function RoomPage() {
   }
 
   return (
-    <div className="min-h-screen min-h-[100svh] bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] md:p-8 text-[15px] md:text-base">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black p-4 md:p-8 text-[15px] md:text-base">
       <div className="mx-auto max-w-2xl space-y-6">
         <RoomHeader onExit={() => router.push("/")} />
 
@@ -509,7 +509,7 @@ export default function RoomPage() {
       </div>
 
       {currentParticipant && (
-        <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 flex flex-col items-end gap-2 sm:bottom-6 sm:right-6">
+        <div className="fixed bottom-6 right-6 flex flex-col items-end gap-2">
           <Button
             size="icon"
             className={`h-14 w-14 rounded-full shadow-xl shadow-primary/30 ${

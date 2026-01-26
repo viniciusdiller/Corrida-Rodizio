@@ -178,7 +178,7 @@ export default function PromoCodesPage() {
   }, [codesWithStatus, currentPage]);
   if (!loginCode) {
     return (
-      <div className="min-h-screen min-h-[100svh] bg-background flex items-center justify-center p-4 sm:p-6">
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <Card className="border-none shadow-2xl shadow-black/5 bg-card/80 backdrop-blur-md">
           <CardContent className="pt-6 space-y-4">
             <p className="text-sm text-muted-foreground">
@@ -192,7 +192,7 @@ export default function PromoCodesPage() {
   }
 
   return (
-    <div className="min-h-screen min-h-[100svh] bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black px-4 pb-[calc(3rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 sm:pt-8">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black px-6 pb-12 pt-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
