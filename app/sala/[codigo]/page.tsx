@@ -18,104 +18,12 @@ import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
 import { Button } from "@/components/ui/button";
 import type { Race, Participant } from "@/types/database";
 import { TeamSelection } from "@/components/room/team-selection";
+import { useLanguage } from "@/contexts/language-context";
 
 export default function RoomPage() {
+  const { t } = useLanguage();
   const LOGIN_STORAGE_KEY = "rodizio-race-login";
   const addCooldownMs = 2_000;
-  const cooldownMessages = [
-    "Respira campeão, isso não é maratona.",
-    "Já pensou em mastigar?",
-    "Calma que o garçom não vai fugir.",
-    "Isso é rodízio, não último jantar.",
-    "Menos garfo, mais dignidade.",
-    "Vai devagar antes que dê ruim.",
-    "O estômago pediu arrego.",
-    "Você não ganha ponto por velocidade.",
-    "O prato ainda nem esfriou.",
-    "Mastiga ou só engole?",
-    "Vai com calma que o banheiro cobra depois.",
-    "Isso não é desafio do YouTube.",
-    "A comida não vai acabar.",
-    "Segura a fome ancestral.",
-    "O rodízio confia em você.",
-    "Daqui a pouco o corpo desliga.",
-    "O fígado está observando.",
-    "Você quer comer ou desaparecer?",
-    "Dá um tempo pro estômago entender.",
-    "Isso não é prova olímpica.",
-    "Vai virar estatística.",
-    "O garçom já está preocupado.",
-    "A cadeira já está rangendo.",
-    "Comendo assim nem sente o gosto.",
-    "Pausa estratégica, guerreiro.",
-    "A digestão também precisa viver.",
-    "Já bateu o recorde do exagero.",
-    "Calma antes que o arroz volte.",
-    "A sobremesa ainda existe.",
-    "Isso é jantar, não vingança.",
-    "O estômago não é buraco negro.",
-    "Vai devagar ou vai chorar depois.",
-    "Seu corpo pediu intervalo.",
-    "Mastigar é opcional agora?",
-    "Já estamos julgando em silêncio.",
-    "Isso não é speedrun.",
-    "O prato está pedindo socorro.",
-    "Menos voracidade, mais classe.",
-    "O rodízio não vai te abandonar.",
-    "O banheiro está lotado.",
-    "Come igual gente, não igual lenda urbana.",
-    "Você já venceu, relaxa.",
-    "A comida não te deve nada.",
-    "Vai com calma antes do arrependimento.",
-    "Isso não é teste de resistência.",
-    "O estômago está digitando um email.",
-    "Já estamos no limite humano.",
-    "A próxima mordida pode ser a última.",
-    "Dá um tempo pra gravidade agir.",
-    "Seu metabolismo não assinou isso.",
-    "Você não precisa provar nada.",
-    "O corpo já entrou em modo alerta.",
-    "Isso não é competição de engolir.",
-    "O prato não vai fugir.",
-    "Vai virar história triste.",
-    "Já passou do ponto gourmet.",
-    "Seu estômago pediu trégua.",
-    "Isso aí já é ganância.",
-    "Come menos, vive mais.",
-    "O rodízio agradece a pausa.",
-    "Seu corpo está negociando limites.",
-    "Isso é fome ou trauma?",
-    "Vai devagar que dói menos.",
-    "A comida merece respeito.",
-    "Já estamos preocupados com você.",
-    "Isso não acaba bem.",
-    "O estômago já fechou pra balanço.",
-    "Respira entre uma garfada e outra.",
-    "Isso não é prova eliminatória.",
-    "O rodízio não é contra você.",
-    "Seu corpo não é triturador.",
-    "Já entrou no modo exagero.",
-    "Vai com calma que ainda tem tempo.",
-    "A próxima garfada é opcional.",
-    "Isso já virou abuso gastronômico.",
-    "O estômago está cansado.",
-    "Você não é uma sucuri.",
-    "Come devagar pra não sofrer.",
-    "O rodízio não vale internação.",
-    "Já deu pra impressionar.",
-    "Seu corpo não pediu isso.",
-    "Isso é jantar, não desafio mortal.",
-    "A digestão não é instantânea.",
-    "Vai virar meme interno.",
-    "O prato está te julgando.",
-    "Isso não é fim do mundo.",
-    "Seu estômago está em pânico.",
-    "Dá um tempo antes do colapso.",
-    "Menos pressa, mais sobrevivência.",
-    "Isso já é excesso.",
-    "O rodízio continua amanhã.",
-    "Vai com calma, herói do garfo.",
-  ];
 
   const params = useParams();
   const router = useRouter();
@@ -229,8 +137,8 @@ export default function RoomPage() {
   };
 
   const showCooldownMessage = (event?: MouseEvent<HTMLButtonElement>) => {
-    const message =
-      cooldownMessages[Math.floor(Math.random() * cooldownMessages.length)];
+    const messages = t.room.cooldown_messages;
+    const message = messages[Math.floor(Math.random() * messages.length)];
     const fallbackX = Math.round(window.innerWidth / 2);
     const fallbackY = Math.round(window.innerHeight / 2);
     setCooldownToast({
@@ -502,14 +410,14 @@ export default function RoomPage() {
               disabled={isEnding}
             >
               <Flag className="h-4 w-4" />
-              {isEnding ? "Encerrando..." : "Encerrar Competição"}
+              {isEnding ? t.room.ending : t.room.end_race}
             </Button>
           </div>
         )}
       </div>
 
       {currentParticipant && (
-        <div className="fixed bottom-6 right-6 flex flex-col items-end gap-2">
+        <div className="fixed right-6 flex flex-col items-end gap-2 pb-[env(safe-area-inset-bottom)] bottom-6">
           <Button
             size="icon"
             className={`h-14 w-14 rounded-full shadow-xl shadow-primary/30 ${
@@ -551,7 +459,7 @@ export default function RoomPage() {
                 onClick={confirmEndRace}
                 disabled={isEnding}
               >
-                {isEnding ? "Encerrando..." : "Encerrar"}
+                {isEnding ? t.room.ending : t.room.end_race}
               </Button>
             </div>
           </div>

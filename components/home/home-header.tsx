@@ -1,4 +1,5 @@
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
 
 interface HomeHeaderProps {
   isCompact?: boolean;
@@ -10,13 +11,12 @@ export function HomeHeader({ isCompact }: HomeHeaderProps) {
   return (
     <div className="text-center transition-all duration-300">
       <div className="flex justify-end pt-4 md:pt-6">
+        <LanguageToggle />
         <ThemeToggle />
       </div>
       <div
         className={`transition-all duration-300 ${
-          isCompact
-            ? "space-y-1 -mt-6 md:mt-0"
-            : "space-y-4 -mt-6 md:mt-0"
+          isCompact ? "space-y-1 -mt-6 md:mt-0" : "space-y-4 -mt-6 md:mt-0"
         } mt-4`}
       >
         <div className="flex flex-col items-center">

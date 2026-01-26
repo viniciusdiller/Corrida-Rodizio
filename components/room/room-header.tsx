@@ -3,12 +3,15 @@
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
+import { useLanguage } from "@/contexts/language-context";
 
 interface RoomHeaderProps {
   onExit: () => void;
 }
 
 export function RoomHeader({ onExit }: RoomHeaderProps) {
+  const { t } = useLanguage();
   return (
     <div className="flex items-center justify-between">
       <Button
@@ -20,6 +23,7 @@ export function RoomHeader({ onExit }: RoomHeaderProps) {
       </Button>
 
       <div className="flex items-center gap-2">
+        <LanguageToggle />
         <ThemeToggle />
       </div>
     </div>
