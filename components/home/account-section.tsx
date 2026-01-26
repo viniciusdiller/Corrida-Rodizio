@@ -6,12 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   LogIn,
-  LogOut,
   ChevronLeft,
   ChevronRight,
   Calendar,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/contexts/language-context";
 
 interface AccountSectionProps {
@@ -28,13 +26,13 @@ interface AccountSectionProps {
   itemsPerPage: number;
   onToggleHistory: () => void;
   setCurrentPage: (page: number) => void;
-  onLogout: () => void;
   onLoadGroups: () => void;
   onLogin: () => void;
   onCreateLogin: () => void;
   setAccountFlow: (flow: "login" | "create" | null) => void;
   setAccountCodeInput: (val: string) => void;
   setAccountPassword: (val: string) => void;
+  onMenuStateChange?: (isOpen: boolean) => void;
   router: any;
 }
 
@@ -50,7 +48,6 @@ export function AccountSection({
   showHistory,
   currentPage,
   itemsPerPage,
-  onLogout,
   onLoadGroups,
   onLogin,
   onCreateLogin,
@@ -59,15 +56,10 @@ export function AccountSection({
   setAccountPassword,
   onToggleHistory,
   setCurrentPage,
+  onMenuStateChange,
   router,
 }: AccountSectionProps) {
   const { t } = useLanguage();
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [showClaimForm, setShowClaimForm] = useState(false);
   const [claimCode, setClaimCode] = useState("");
   const [claimStatus, setClaimStatus] = useState<string | null>(null);
@@ -75,56 +67,18 @@ export function AccountSection({
   const [promoPermissions, setPromoPermissions] = useState<string[]>([]);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
 
+  const isHistoryView = showHistory;
+  const isClaimView = showClaimForm;
+
+  useEffect(() => {
+    onMenuStateChange?.(isHistoryView || isClaimView || accountFlow !== null);
+  }, [isHistoryView, isClaimView, accountFlow, onMenuStateChange]);
+
   // Lógica de Paginação interna
   const totalPages = Math.ceil(myGroups.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = myGroups.slice(indexOfFirstItem, indexOfLastItem);
-
-  const handleChangePassword = async () => {
-    if (!loginCode) return;
-    const trimmedCurrent = currentPassword.trim();
-    const trimmedNew = newPassword.trim();
-    const trimmedConfirm = confirmNewPassword.trim();
-    if (!trimmedCurrent || !trimmedNew || !trimmedConfirm) {
-      setPasswordStatus("Preencha todos os campos.");
-      return;
-    }
-    if (trimmedNew !== trimmedConfirm) {
-      setPasswordStatus("As novas senhas nao conferem.");
-      return;
-    }
-    if (trimmedNew.length < 6) {
-      setPasswordStatus("A nova senha precisa de pelo menos 6 caracteres.");
-      return;
-    }
-
-    setIsUpdatingPassword(true);
-    setPasswordStatus(null);
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase.rpc("change_login_password", {
-        p_username: loginCode.trim().toUpperCase(),
-        p_old_password: trimmedCurrent,
-        p_new_password: trimmedNew,
-      });
-
-      if (error || !data) {
-        setPasswordStatus("Senha atual incorreta.");
-        return;
-      }
-
-      setPasswordStatus("Senha atualizada com sucesso.");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmNewPassword("");
-      setShowPasswordForm(false);
-    } catch {
-      setPasswordStatus("Nao foi possivel atualizar a senha.");
-    } finally {
-      setIsUpdatingPassword(false);
-    }
-  };
 
   const handleClaimExclusiveAvatar = async () => {
     // ... (manter lógica igual)
@@ -192,116 +146,56 @@ export function AccountSection({
       {loginCode ? (
         /* SESSÃO: USUÁRIO LOGADO */
         <div className="space-y-3 rounded-2xl border border-muted/60 bg-background/60 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                {t.account.logged_user_label}
-              </p>
-              <p className="text-2xl font-black tracking-wider">{loginCode}</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                className="text-muted-foreground hover:text-primary cursor-pointer"
-                onClick={() => {
-                  setShowPasswordForm((prev) => !prev);
-                  setPasswordStatus(null);
-                }}
-              >
-                {t.account.change_password}
-              </Button>
-              <Button
-                variant="ghost"
-                className="text-muted-foreground hover:text-primary cursor-pointer"
-                onClick={onLogout}
-              >
-                <LogOut className="mr-2 h-4 w-4" /> {t.account.logout}
-              </Button>
-            </div>
-          </div>
 
-          {showPasswordForm && (
-            <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
-              <div className="space-y-2">
-                <Label className="text-xs uppercase font-bold text-muted-foreground">
-                  {t.account.current_password}
-                </Label>
-                <Input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="h-10"
-                  placeholder="***"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase font-bold text-muted-foreground">
-                  {t.account.new_password}
-                </Label>
-                <Input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="h-10"
-                  placeholder="***"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase font-bold text-muted-foreground">
-                  {t.account.confirm_password}
-                </Label>
-                <Input
-                  type="password"
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  className="h-10"
-                  placeholder="***"
-                />
-              </div>
-              {passwordStatus && (
-                <p className="text-xs text-muted-foreground font-semibold">
-                  {passwordStatus}
-                </p>
-              )}
-              <Button
-                className="w-full h-10 rounded-xl font-bold"
-                onClick={handleChangePassword}
-                disabled={isUpdatingPassword}
-              >
-                {isUpdatingPassword
-                  ? t.account.updating
-                  : t.account.update_password}
-              </Button>
-            </div>
+          {!isClaimView && (
+            <Button
+              variant="outline"
+              className={`w-full h-12 rounded-xl font-semibold transition-all cursor-pointer ${
+                isHistoryView ? "bg-muted" : ""
+              }`}
+              onClick={() => {
+                if (isHistoryView) {
+                  onToggleHistory();
+                  return;
+                }
+                if (isClaimView) {
+                  setShowClaimForm(false);
+                }
+                onToggleHistory();
+              }}
+              disabled={isLoadingGroups}
+            >
+              {isLoadingGroups
+                ? t.common.loading
+                : isHistoryView
+                  ? t.common.back
+                  : t.account.view_history}
+            </Button>
           )}
 
-          <Button
-            variant="outline"
-            className={`w-full h-12 rounded-xl font-semibold transition-all cursor-pointer ${
-              showHistory ? "bg-muted" : ""
-            }`}
-            onClick={onToggleHistory}
-            disabled={isLoadingGroups}
-          >
-            {isLoadingGroups
-              ? t.common.loading
-              : showHistory
-                ? t.account.hide_history
-                : t.account.view_history}
-          </Button>
+          {!isHistoryView && (
+            <Button
+              variant="outline"
+              className={`w-full h-12 rounded-xl font-semibold transition-all ${
+                isClaimView ? "bg-muted" : ""
+              }`}
+              onClick={() => {
+                if (isClaimView) {
+                  setShowClaimForm(false);
+                  return;
+                }
+                if (isHistoryView) {
+                  onToggleHistory();
+                }
+                setShowClaimForm(true);
+                setClaimStatus(null);
+              }}
+            >
+              {isClaimView ? t.common.back : t.account.register_avatar}
+            </Button>
+          )}
 
-          <Button
-            variant="outline"
-            className="w-full h-12 rounded-xl font-semibold"
-            onClick={() => {
-              setShowClaimForm((prev) => !prev);
-              setClaimStatus(null);
-            }}
-          >
-            {t.account.register_avatar}
-          </Button>
-
-          {showClaimForm && (
+          {isClaimView && (
             <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
               <Label className="text-xs uppercase font-bold text-muted-foreground">
                 Codigo de resgate
@@ -329,7 +223,7 @@ export function AccountSection({
             </div>
           )}
 
-          {!isLoadingPermissions && promoPermissions.length > 0 && (
+          {!isHistoryView && !isClaimView && !isLoadingPermissions && promoPermissions.length > 0 && (
             <Button
               variant="outline"
               className="w-full h-12 rounded-xl font-semibold"
@@ -339,23 +233,29 @@ export function AccountSection({
             </Button>
           )}
 
-          {groupsError && (
+          {!isClaimView && groupsError && (
             <p className="text-xs text-red-500 font-semibold">{groupsError}</p>
           )}
 
-          {showHistory && !isLoadingGroups && (
+          {isHistoryView && !isLoadingGroups && (
             <div className="space-y-2 mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
               {currentItems.length > 0 ? (
                 <>
                   {currentItems.map((group: any) => (
-                    <div
+                    <button
                       key={group.id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-muted/60 bg-background/70 px-4 py-3 hover:border-primary/40 transition-colors"
+                      type="button"
+                      className="w-full text-left flex flex-wrap items-center justify-between gap-2 rounded-xl border border-muted/60 bg-background/70 px-4 py-3 hover:border-primary/40 transition-colors"
+                      onClick={() => router.push(`/sala/${group.room_code}`)}
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-bold">{group.name}</p>
-                          {!group.is_active && (
+                          {group.is_active ? (
+                            <span className="text-[8px] bg-orange-200/60 text-orange-700 px-1.5 py-0.5 rounded uppercase font-black">
+                              Em andamento
+                            </span>
+                          ) : (
                             <span className="text-[8px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground uppercase font-black">
                               Encerrada
                             </span>
@@ -383,19 +283,7 @@ export function AccountSection({
                           </span>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant={group.is_active ? "ghost" : "outline"}
-                        className={
-                          group.is_active
-                            ? "text-primary font-bold"
-                            : "text-xs h-8"
-                        }
-                        onClick={() => router.push(`/sala/${group.room_code}`)}
-                      >
-                        {group.is_active ? t.home.enter_arena : "Ver Placar"}
-                      </Button>
-                    </div>
+                    </button>
                   ))}
 
                   {totalPages > 1 && (
@@ -483,8 +371,8 @@ export function AccountSection({
                 {accountLoading ? t.common.loading : t.account.login_btn}
               </Button>
               <Button
-                variant="ghost"
-                className="w-full text-muted-foreground"
+                variant="outline"
+                className="w-full h-12 rounded-xl font-semibold"
                 onClick={() => setAccountFlow("create")}
               >
                 {t.account.no_account}
@@ -531,8 +419,8 @@ export function AccountSection({
                 {accountLoading ? t.common.loading : t.account.create_btn}
               </Button>
               <Button
-                variant="ghost"
-                className="w-full text-muted-foreground"
+                variant="outline"
+                className="w-full h-12 rounded-xl font-semibold"
                 onClick={() => setAccountFlow("login")}
               >
                 {t.account.have_account}
@@ -540,8 +428,8 @@ export function AccountSection({
             </>
           )}
           <Button
-            variant="ghost"
-            className="w-full text-muted-foreground cursor-pointer"
+            variant="outline"
+            className="w-full h-12 rounded-xl font-semibold cursor-pointer"
             onClick={() => setAccountFlow(null)}
           >
             {t.common.back}

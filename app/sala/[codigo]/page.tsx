@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Flag, Plus } from "lucide-react";
+import { Plus, ArrowLeft, Settings } from "lucide-react";
 import confetti from "canvas-confetti";
 
 import { RoomHeader } from "@/components/room/room-header";
@@ -16,6 +16,8 @@ import { LoadingScreen } from "@/components/room/loading-screen";
 
 import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { Race, Participant } from "@/types/database";
 import { TeamSelection } from "@/components/room/team-selection";
 import { useLanguage } from "@/contexts/language-context";
@@ -40,6 +42,14 @@ export default function RoomPage() {
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
   const [isPremiumPlayer, setIsPremiumPlayer] = useState(false);
   const [exclusiveAvatars, setExclusiveAvatars] = useState<string[]>([]);
+  const [loggedUsername, setLoggedUsername] = useState<string | null>(null);
+  const [showAccountOverlay, setShowAccountOverlay] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [currentParticipantId, setCurrentParticipantId] = useState<
     string | null
   >(null);
@@ -243,6 +253,76 @@ export default function RoomPage() {
     setShowEndRaceToast(false);
   };
 
+  const toggleAccountOverlay = () => {
+    setShowAccountOverlay((prev) => {
+      const next = !prev;
+      if (!next) {
+        setShowPasswordForm(false);
+        setPasswordStatus(null);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmNewPassword("");
+      }
+      return next;
+    });
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem(LOGIN_STORAGE_KEY);
+    setShowAccountOverlay(false);
+    setShowPasswordForm(false);
+    setPasswordStatus(null);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    router.push("/");
+  };
+
+  const handleChangePassword = async () => {
+    if (!loggedUsername) return;
+    const trimmedCurrent = currentPassword.trim();
+    const trimmedNew = newPassword.trim();
+    const trimmedConfirm = confirmNewPassword.trim();
+    if (!trimmedCurrent || !trimmedNew || !trimmedConfirm) {
+      setPasswordStatus("Preencha todos os campos.");
+      return;
+    }
+    if (trimmedNew !== trimmedConfirm) {
+      setPasswordStatus("As novas senhas nao conferem.");
+      return;
+    }
+    if (trimmedNew.length < 6) {
+      setPasswordStatus("A nova senha precisa de pelo menos 6 caracteres.");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    setPasswordStatus(null);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("change_login_password", {
+        p_username: loggedUsername.trim().toUpperCase(),
+        p_old_password: trimmedCurrent,
+        p_new_password: trimmedNew,
+      });
+
+      if (error || !data) {
+        setPasswordStatus("Senha atual incorreta.");
+        return;
+      }
+
+      setPasswordStatus("Senha atualizada com sucesso.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setShowPasswordForm(false);
+    } catch {
+      setPasswordStatus("Nao foi possivel atualizar a senha.");
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
   useEffect(() => {
     loadRoomData();
     if (isSpectator) {
@@ -251,6 +331,8 @@ export default function RoomPage() {
       const storedId = localStorage.getItem(getParticipantStorageKey(roomCode));
       setCurrentParticipantId(storedId);
     }
+    const storedLogin = localStorage.getItem(LOGIN_STORAGE_KEY);
+    setLoggedUsername(storedLogin || null);
 
     const supabase = createClient();
     const channel = supabase
@@ -354,7 +436,21 @@ export default function RoomPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black p-4 md:p-8 text-[15px] md:text-base">
       <div className="mx-auto max-w-2xl space-y-6">
-        <RoomHeader onExit={() => router.push("/")} />
+        <RoomHeader
+          onExit={() => router.push("/")}
+          accountPill={
+            loggedUsername ? (
+              <button
+                type="button"
+                onClick={toggleAccountOverlay}
+                className="inline-flex items-center rounded-xl border border-muted/60 bg-background/80 px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground backdrop-blur transition hover:border-primary/40 hover:text-primary"
+              >
+                <Settings className="mr-2 h-3.5 w-3.5" />
+                {t.common.connected_as} &quot;{loggedUsername}&quot;
+              </button>
+            ) : null
+          }
+        />
 
         <RoomInfo
           race={race}
@@ -367,6 +463,19 @@ export default function RoomPage() {
             setTimeout(() => setCopied(false), 2000);
           }}
         />
+
+        {currentParticipant?.is_vip && (
+          <div className="flex justify-center">
+            <Button
+              variant="destructive"
+              className="w-full max-w-xs rounded-xl font-bold shadow-lg shadow-destructive/20 cursor-pointer transition-all hover:scale-105"
+              onClick={handleEndRace}
+              disabled={isEnding}
+            >
+              {isEnding ? t.room.ending : t.room.end_race}
+            </Button>
+          </div>
+        )}
 
         {race.is_team_mode &&
           currentParticipant &&
@@ -404,19 +513,6 @@ export default function RoomPage() {
           getItemLabel={getItemLabel}
         />
 
-        {currentParticipant?.is_vip && (
-          <div className="flex justify-center pt-2">
-            <Button
-              variant="destructive"
-              className="w-full max-w-xs rounded-xl font-bold gap-2 shadow-lg shadow-destructive/20 cursor-pointer transition-all hover:scale-105"
-              onClick={handleEndRace}
-              disabled={isEnding}
-            >
-              <Flag className="h-4 w-4" />
-              {isEnding ? t.room.ending : t.room.end_race}
-            </Button>
-          </div>
-        )}
       </div>
 
       {currentParticipant && (
@@ -433,6 +529,103 @@ export default function RoomPage() {
             <Plus className="h-6 w-6" />
           </Button>
         </div>
+      )}
+      <div className="fixed left-4 bottom-4 sm:left-6 sm:bottom-6 pb-[env(safe-area-inset-bottom)] z-40">
+        <Button
+          variant="outline"
+          onClick={() => router.push("/")}
+          className="rounded-xl font-semibold gap-2 shadow-sm bg-background/90 backdrop-blur"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t.common.exit}
+        </Button>
+      </div>
+      {loggedUsername && showAccountOverlay && (
+        <>
+          <div
+            className={`fixed inset-0 z-30 transition ${
+              showPasswordForm
+                ? "bg-black/40 backdrop-blur-sm"
+                : "bg-transparent"
+            }`}
+            onClick={toggleAccountOverlay}
+          />
+          <div className="fixed left-3 top-14 z-40 w-[min(320px,calc(100%-1.5rem))] space-y-3 rounded-2xl border border-muted/60 bg-background/95 p-4 shadow-xl backdrop-blur">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 min-w-[140px]"
+                onClick={() => {
+                  setShowPasswordForm((prev) => !prev);
+                  setPasswordStatus(null);
+                }}
+              >
+                {t.account.change_password}
+              </Button>
+              <Button
+                variant="ghost"
+                className="flex-1 min-w-[120px]"
+                onClick={handleLogout}
+              >
+                {t.account.logout}
+              </Button>
+            </div>
+            {showPasswordForm && (
+              <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-bold text-muted-foreground">
+                    {t.account.current_password}
+                  </Label>
+                  <Input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="h-10"
+                    placeholder="***"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-bold text-muted-foreground">
+                    {t.account.new_password}
+                  </Label>
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="h-10"
+                    placeholder="***"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-bold text-muted-foreground">
+                    {t.account.confirm_password}
+                  </Label>
+                  <Input
+                    type="password"
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    className="h-10"
+                    placeholder="***"
+                  />
+                </div>
+                {passwordStatus && (
+                  <p className="text-xs text-muted-foreground font-semibold">
+                    {passwordStatus}
+                  </p>
+                )}
+                <Button
+                  className="w-full h-10 rounded-xl font-bold"
+                  onClick={handleChangePassword}
+                  disabled={isUpdatingPassword}
+                >
+                  {isUpdatingPassword
+                    ? t.account.updating
+                    : t.account.update_password}
+                </Button>
+              </div>
+            )}
+          </div>
+        </>
       )}
       {cooldownToast && (
         <div

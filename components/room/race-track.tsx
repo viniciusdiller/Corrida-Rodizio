@@ -98,15 +98,15 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
                       {participant.items_eaten}pts
                     </span>
                   </div>
-                  <div className="relative shrink-0 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center">
+                  <div className="relative shrink-0 w-14 h-14 md:w-16 md:h-16 flex items-center justify-center">
                     {isImageAvatar(participant.avatar) ? (
                       <img
                         src={getAvatarUrl(participant.avatar)}
                         alt=""
-                        className="h-9 w-9 md:h-12 md:w-12 object-contain"
+                        className="h-11 w-11 md:h-14 md:w-14 object-contain"
                       />
                     ) : (
-                      <span className="inline-block h-9 w-9 rounded-full bg-white/10 md:h-12 md:w-12" />
+                      <span className="inline-block h-11 w-11 rounded-full bg-white/10 md:h-14 md:w-14" />
                     )}
                     {/* Pequeno indicador de cor acima do avatar (opcional) */}
                     {isTeamMode && participant.team && (

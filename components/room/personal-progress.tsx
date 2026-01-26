@@ -72,32 +72,32 @@ export function PersonalProgress({
   }, [exclusiveAvatars, isPremium, participant.avatar]);
 
   return (
-    <div className="space-y-4">
-      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">
+    <div className="space-y-2">
+      <Label className="text-[9px] font-black uppercase tracking-[0.18em] text-muted-foreground px-1">
         {t.room.your_progress}
       </Label>
-      <Card className="ring-2 ring-primary shadow-xl scale-[1.02] border-none bg-card/80 backdrop-blur-sm">
-        <CardContent className="px-4 py-4 space-y-4">
+      <Card className="ring-1 ring-primary/40 shadow-lg border-none bg-card/80 backdrop-blur-sm">
+        <CardContent className="px-3 py-0 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="text-4xl animate-in zoom-in duration-300">
+              <div className="text-3xl animate-in zoom-in duration-300">
                 {isImageAvatar(participant.avatar) ? (
                   <img
                     src={getAvatarUrl(participant.avatar)}
                     alt=""
-                    className="h-12 w-12 object-contain"
+                    className="h-10 w-10 object-contain"
                   />
                 ) : (
-                  <span className="inline-block h-10 w-10 rounded-full bg-muted/40" />
+                  <span className="inline-block h-9 w-9 rounded-full bg-muted/40" />
                 )}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-base">
+                  <span className="font-bold text-sm">
                     {participant.name}
                   </span>
                   {participant.is_vip && (
-                    <Badge className="bg-yellow-500/20 text-yellow-600 border-none text-[9px] h-4 uppercase font-black">
+                    <Badge className="bg-yellow-500/20 text-yellow-600 border-none text-[8px] h-4 uppercase font-black">
                       VIP
                     </Badge>
                   )}
@@ -112,47 +112,47 @@ export function PersonalProgress({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive active:scale-75 transition-all duration-200 cursor-pointer"
+                className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive active:scale-75 transition-all duration-200 cursor-pointer"
                 onClick={(event) => onUpdateCount(participant.id, -1, event)}
                 disabled={participant.items_eaten === 0}
               >
-                <Minus className="h-4 w-4" />
+                <Minus className="h-3.5 w-3.5" />
               </Button>
               <div
                 key={participant.items_eaten}
-                className="w-10 text-center text-2xl font-black text-primary drop-shadow-sm animate-in zoom-in-50 fade-in slide-in-from-bottom-1 duration-200"
+                className="w-8 text-center text-xl font-black text-primary drop-shadow-sm animate-in zoom-in-50 fade-in slide-in-from-bottom-1 duration-200"
               >
                 {participant.items_eaten}
               </div>
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary active:scale-75 transition-all duration-200 cursor-pointer ${
+                className={`h-7 w-7 rounded-full hover:bg-primary/10 hover:text-primary active:scale-75 transition-all duration-200 cursor-pointer ${
                   isAddCooldown ? "opacity-50 grayscale" : ""
                 }`}
                 onClick={(event) => onUpdateCount(participant.id, 1, event)}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-muted/40 space-y-3 ">
+          <div className="border-t border-muted/40 space-y-1 pt-2 pb-0">
             <Button
               variant="outline"
-              className="w-full justify-between rounded-xl text-xs font-black uppercase tracking-[0.2em] hover:cursor-pointer"
+              className="w-full justify-between rounded-xl text-[11px] font-black uppercase tracking-[0.18em] hover:cursor-pointer"
               onClick={() => setShowAvatarPicker((prev) => !prev)}
               disabled={isUpdatingAvatar}
             >
               {t.room.change_avatar}
               <ChevronDown
-                className={`h-4 w-4 transition-transform ${
+                className={`h-3.5 w-3.5 transition-transform ${
                   showAvatarPicker ? "rotate-180" : ""
                 }`}
               />
             </Button>
             {showAvatarPicker && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {avatarOptions.map((opt) => {
                   const isSelected = participant.avatar === opt;
                   const isPremiumOption = isPremiumAvatar(opt);
@@ -172,7 +172,7 @@ export function PersonalProgress({
                         onUpdateAvatar(opt);
                         setShowAvatarPicker(false);
                       }}
-                      className={`w-10 h-10 rounded-xl border transition-all text-xl flex items-center justify-center cursor-pointer ${
+                      className={`w-11 h-11 rounded-lg border transition-all text-xl flex items-center justify-center cursor-pointer ${
                         isSelected
                           ? "ring-2 ring-primary bg-primary/20 scale-110 shadow-lg"
                           : "hover:border-primary/40 bg-background/40 hover:bg-background/60"
@@ -184,7 +184,7 @@ export function PersonalProgress({
                         <img
                           src={getAvatarUrl(opt)}
                           alt=""
-                          className="h-7 w-7 object-contain"
+                          className="h-9 w-9 object-contain"
                         />
                       )}
                     </button>

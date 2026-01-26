@@ -4,11 +4,15 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Pizza, Fish, Beef } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Pizza, Fish, Beef, Settings } from "lucide-react";
 import type { FoodType, Race } from "@/types/database";
 import { generateRoomCode } from "@/lib/utils/room-code";
 import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
 import { DEFAULT_AVATAR } from "@/lib/utils/avatars";
+import { useLanguage } from "@/contexts/language-context";
 
 // Componentes refatorados
 import { HomeHeader } from "@/components/home/home-header";
@@ -21,6 +25,7 @@ const LOGIN_STORAGE_KEY = "rodizio-race-login";
 
 export default function Home() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   // ESTADOS PRINCIPAIS
   const [playerName, setPlayerName] = useState("");
@@ -50,6 +55,14 @@ export default function Home() {
   const [showHistory, setShowHistory] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 4;
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [showAccountOverlay, setShowAccountOverlay] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const toggleHistory = () => {
     if (!showHistory && myGroups.length === 0) {
@@ -302,6 +315,71 @@ export default function Home() {
     setLoginCode(null);
     setMyGroups([]);
     localStorage.removeItem(LOGIN_STORAGE_KEY);
+    setShowAccountOverlay(false);
+    setShowPasswordForm(false);
+    setPasswordStatus(null);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+  };
+
+  const toggleAccountOverlay = () => {
+    setShowAccountOverlay((prev) => {
+      const next = !prev;
+      if (!next) {
+        setShowPasswordForm(false);
+        setPasswordStatus(null);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmNewPassword("");
+      }
+      return next;
+    });
+  };
+
+  const handleChangePassword = async () => {
+    if (!loginCode) return;
+    const trimmedCurrent = currentPassword.trim();
+    const trimmedNew = newPassword.trim();
+    const trimmedConfirm = confirmNewPassword.trim();
+    if (!trimmedCurrent || !trimmedNew || !trimmedConfirm) {
+      setPasswordStatus("Preencha todos os campos.");
+      return;
+    }
+    if (trimmedNew !== trimmedConfirm) {
+      setPasswordStatus("As novas senhas nao conferem.");
+      return;
+    }
+    if (trimmedNew.length < 6) {
+      setPasswordStatus("A nova senha precisa de pelo menos 6 caracteres.");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    setPasswordStatus(null);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("change_login_password", {
+        p_username: loginCode.trim().toUpperCase(),
+        p_old_password: trimmedCurrent,
+        p_new_password: trimmedNew,
+      });
+
+      if (error || !data) {
+        setPasswordStatus("Senha atual incorreta.");
+        return;
+      }
+
+      setPasswordStatus("Senha atualizada com sucesso.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setShowPasswordForm(false);
+    } catch {
+      setPasswordStatus("Nao foi possivel atualizar a senha.");
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
   // --- LÓGICA DAS SALAS ---
 
@@ -436,70 +514,174 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black px-6 pb-6 pt-0 md:px-12 md:pb-12 md:pt-8 transition-colors duration-500">
+      {loginCode && showAccountOverlay && (
+        <>
+          <div
+            className={`fixed inset-0 z-30 transition ${
+              showPasswordForm
+                ? "bg-black/40 backdrop-blur-sm"
+                : "bg-transparent"
+            }`}
+            onClick={toggleAccountOverlay}
+          />
+          <div className="fixed left-3 top-14 z-40 w-[min(320px,calc(100%-1.5rem))] space-y-3 rounded-2xl border border-muted/60 bg-background/95 p-4 shadow-xl backdrop-blur">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 min-w-[140px]"
+                onClick={() => {
+                  setShowPasswordForm((prev) => !prev);
+                  setPasswordStatus(null);
+                }}
+              >
+                {t.account.change_password}
+              </Button>
+              <Button
+                variant="ghost"
+                className="flex-1 min-w-[120px]"
+                onClick={handleLogout}
+              >
+                {t.account.logout}
+              </Button>
+            </div>
+            {showPasswordForm && (
+              <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-bold text-muted-foreground">
+                    {t.account.current_password}
+                  </Label>
+                  <Input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="h-10"
+                    placeholder="***"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-bold text-muted-foreground">
+                    {t.account.new_password}
+                  </Label>
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="h-10"
+                    placeholder="***"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-bold text-muted-foreground">
+                    {t.account.confirm_password}
+                  </Label>
+                  <Input
+                    type="password"
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    className="h-10"
+                    placeholder="***"
+                  />
+                </div>
+                {passwordStatus && (
+                  <p className="text-xs text-muted-foreground font-semibold">
+                    {passwordStatus}
+                  </p>
+                )}
+                <Button
+                  className="w-full h-10 rounded-xl font-bold"
+                  onClick={handleChangePassword}
+                  disabled={isUpdatingPassword}
+                >
+                  {isUpdatingPassword
+                    ? t.account.updating
+                    : t.account.update_password}
+                </Button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
       <div className="mx-auto max-w-xl space-y-8">
         <div className="space-y-3">
-          <HomeHeader isCompact={flow !== null || accountFlow !== null} />
+          <HomeHeader
+            isCompact={flow !== null || accountFlow !== null}
+            accountPill={
+              loginCode ? (
+                <button
+                  type="button"
+                  onClick={toggleAccountOverlay}
+                  className="inline-flex items-center rounded-xl border border-muted/60 bg-background/80 px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground backdrop-blur transition hover:border-primary/40 hover:text-primary"
+                >
+                  <Settings className="mr-2 h-3.5 w-3.5" />
+                  {t.common.connected_as} &quot;{loginCode}&quot;
+                </button>
+              ) : null
+            }
+          />
 
           <Card className="border-none shadow-2xl shadow-black/5 bg-card/80 backdrop-blur-md">
             <CardContent className="pt-8 space-y-8">
-              <AccountSection
-                loginCode={loginCode}
-                accountFlow={accountFlow}
-                accountLoading={accountLoading}
-                accountCodeInput={accountCodeInput}
-                accountPassword={accountPassword}
-                myGroups={myGroups}
-                isLoadingGroups={isLoadingGroups}
-                groupsError={groupsError}
-                showHistory={showHistory}
-                onToggleHistory={toggleHistory}
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
-                itemsPerPage={ITEMS_PER_PAGE}
-                onLogout={handleLogout}
-                onLoadGroups={handleLoadGroups}
-                onLogin={handleLogin}
-                onCreateLogin={handleCreateLogin}
-                setAccountFlow={setAccountFlow}
-                setAccountCodeInput={setAccountCodeInput}
-                setAccountPassword={setAccountPassword}
-                router={router}
-              />
-
-              {!flow ? (
-                <StartActions onSetFlow={setFlow} />
-              ) : flow === "create" ? (
-              <CreateRaceForm
-                playerName={playerName}
-                setPlayerName={handlePlayerNameChange}
-                isTeamMode={isTeamMode}
-                setIsTeamMode={setIsTeamMode}
-                selectedFood={selectedFood}
-                setSelectedFood={setSelectedFood}
-                  foodTypes={foodTypes}
-                  loading={loading}
-                  onCreate={handleCreateRoom}
-                  onBack={() => {
-                    setFlow(null);
-                    setSelectedFood(null);
-                  }}
-                />
-              ) : (
-                <JoinRaceForm
-                  playerName={playerName}
-                  setPlayerName={handlePlayerNameChange}
-                  roomCode={roomCode}
-                  setRoomCode={setRoomCode}
-                  loading={loading}
-                  isSpectator={isSpectator}
-                  setIsSpectator={setIsSpectator}
-                  onJoin={handleJoinRoom}
-                  onBack={() => {
-                    setFlow(null);
-                    setRoomCode("");
-                  }}
+              {!flow && (
+                <AccountSection
+                  loginCode={loginCode}
+                  accountFlow={accountFlow}
+                  accountLoading={accountLoading}
+                  accountCodeInput={accountCodeInput}
+                  accountPassword={accountPassword}
+                  myGroups={myGroups}
+                  isLoadingGroups={isLoadingGroups}
+                  groupsError={groupsError}
+                  showHistory={showHistory}
+                  onToggleHistory={toggleHistory}
+                  currentPage={currentPage}
+                  setCurrentPage={setCurrentPage}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  onLoadGroups={handleLoadGroups}
+                  onLogin={handleLogin}
+                  onCreateLogin={handleCreateLogin}
+                  setAccountFlow={setAccountFlow}
+                  setAccountCodeInput={setAccountCodeInput}
+                  setAccountPassword={setAccountPassword}
+                  onMenuStateChange={setIsAccountMenuOpen}
+                  router={router}
                 />
               )}
+
+              {!isAccountMenuOpen &&
+                (!flow ? (
+                  <StartActions onSetFlow={setFlow} />
+                ) : flow === "create" ? (
+                <CreateRaceForm
+                  playerName={playerName}
+                  setPlayerName={handlePlayerNameChange}
+                  isTeamMode={isTeamMode}
+                  setIsTeamMode={setIsTeamMode}
+                  selectedFood={selectedFood}
+                  setSelectedFood={setSelectedFood}
+                    foodTypes={foodTypes}
+                    loading={loading}
+                    onCreate={handleCreateRoom}
+                    onBack={() => {
+                      setFlow(null);
+                      setSelectedFood(null);
+                    }}
+                  />
+                ) : (
+                  <JoinRaceForm
+                    playerName={playerName}
+                    setPlayerName={handlePlayerNameChange}
+                    roomCode={roomCode}
+                    setRoomCode={setRoomCode}
+                    loading={loading}
+                    isSpectator={isSpectator}
+                    setIsSpectator={setIsSpectator}
+                    onJoin={handleJoinRoom}
+                    onBack={() => {
+                      setFlow(null);
+                      setRoomCode("");
+                    }}
+                  />
+                ))}
             </CardContent>
           </Card>
         </div>

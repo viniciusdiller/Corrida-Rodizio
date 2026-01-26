@@ -1,27 +1,18 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import type { ReactNode } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
-import { useLanguage } from "@/contexts/language-context";
 
 interface RoomHeaderProps {
   onExit: () => void;
+  accountPill?: ReactNode;
 }
 
-export function RoomHeader({ onExit }: RoomHeaderProps) {
-  const { t } = useLanguage();
+export function RoomHeader({ onExit, accountPill }: RoomHeaderProps) {
   return (
-    <div className="flex items-center justify-between">
-      <Button
-        variant="ghost"
-        onClick={onExit}
-        className="text-muted-foreground hover:text-primary hover:cursor-pointer"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" /> {t.common.exit}
-      </Button>
-
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="min-w-0">{accountPill}</div>
       <div className="flex items-center gap-2">
         <LanguageToggle />
         <ThemeToggle />

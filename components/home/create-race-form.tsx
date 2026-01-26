@@ -127,8 +127,8 @@ export function CreateRaceForm({
           )}
         </Button>
         <Button
-          variant="ghost"
-          className="w-full text-muted-foreground cursor-pointer"
+          variant="outline"
+          className="w-full h-12 sm:h-14 rounded-xl font-semibold text-muted-foreground hover:text-primary"
           onClick={onBack}
         >
           {t.common.back}

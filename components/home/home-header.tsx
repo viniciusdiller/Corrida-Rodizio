@@ -1,18 +1,23 @@
+import type { ReactNode } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 
 interface HomeHeaderProps {
   isCompact?: boolean;
+  accountPill?: ReactNode;
 }
 
-export function HomeHeader({ isCompact }: HomeHeaderProps) {
+export function HomeHeader({ isCompact, accountPill }: HomeHeaderProps) {
   const logoSize = isCompact ? "h-32 md:h-36" : "h-52 md:h-64";
 
   return (
     <div className="text-center transition-all duration-300">
-      <div className="flex justify-end pt-4 md:pt-6">
-        <LanguageToggle />
-        <ThemeToggle />
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-4 md:pt-6">
+        <div className="min-w-0">{accountPill}</div>
+        <div className="flex items-center gap-2">
+          <LanguageToggle />
+          <ThemeToggle />
+        </div>
       </div>
       <div
         className={`transition-all duration-300 ${
