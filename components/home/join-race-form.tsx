@@ -88,7 +88,7 @@ export function JoinRaceForm({
             placeholder="ABCDE"
             value={roomCode}
             onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-            className="pl-12 h-14 text-2xl font-black uppercase border-primary/20"
+            className="pl-12 h-14 text-xl font-black uppercase border-primary/20 sm:text-2xl"
             maxLength={5}
           />
         </div>

@@ -20,7 +20,7 @@ export function RoomInfo({
 }: RoomInfoProps) {
   return (
     <div className="space-y-2 py-2 sm:space-y-3 sm:py-3">
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-card shadow-xl border border-muted sm:w-20 sm:h-20 sm:rounded-3xl">
             <FoodIcon
@@ -37,8 +37,8 @@ export function RoomInfo({
             </h1>
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-2xl border border-muted/60 bg-background/60 px-3 py-2 shadow-sm">
-          <div className="text-right leading-none">
+        <div className="flex w-full items-center justify-between gap-2 rounded-2xl border border-muted/60 bg-background/60 px-3 py-2 shadow-sm sm:w-auto sm:justify-start">
+          <div className="text-right leading-none sm:text-left">
             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
               Sala
             </p>

@@ -85,19 +85,19 @@ export function CreateRaceForm({
         <Label className="text-xs uppercase font-bold text-muted-foreground px-1">
           Escolha a Categoria
         </Label>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
           {foodTypes.map(({ type, label, icon: Icon }) => (
             <button
               key={type}
               onClick={() => setSelectedFood(type)}
-              className={`flex flex-col items-center gap-3 p-4 rounded-xl transition-all ${
+              className={`flex flex-col items-center gap-2 p-3 sm:gap-3 sm:p-4 rounded-xl transition-all ${
                 selectedFood === type
                   ? "bg-primary text-white shadow-lg scale-105"
                   : "bg-background text-muted-foreground border border-transparent hover:border-primary/20"
               }`}
             >
-              <Icon className="h-6 w-6" />
-              <span className="text-[10px] font-black uppercase tracking-tighter">
+              <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="text-[10px] font-black uppercase tracking-tighter sm:text-xs">
                 {label}
               </span>
             </button>

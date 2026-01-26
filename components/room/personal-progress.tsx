@@ -76,8 +76,8 @@ export function PersonalProgress({
       </Label>
       <Card className="ring-2 ring-primary shadow-xl scale-[1.02] border-none bg-card/80 backdrop-blur-sm">
         <CardContent className="px-4 py-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 min-w-0">
               <div className="text-4xl animate-in zoom-in duration-300">
                 {isImageAvatar(participant.avatar) ? (
                   <img
@@ -89,9 +89,9 @@ export function PersonalProgress({
                   <span className="inline-block h-10 w-10 rounded-full bg-muted/40" />
                 )}
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-base">
+                  <span className="font-bold text-base truncate">
                     {participant.name}
                   </span>
                   {participant.is_vip && (
