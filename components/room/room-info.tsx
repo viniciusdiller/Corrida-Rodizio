@@ -2,6 +2,7 @@ import { Check, Copy, Users } from "lucide-react";
 import { FoodIcon } from "@/components/food-icon";
 import { Button } from "@/components/ui/button";
 import { Race } from "@/types/database";
+import { useLanguage } from "@/contexts/language-context";
 
 interface RoomInfoProps {
   race: Race;
@@ -18,6 +19,8 @@ export function RoomInfo({
   copied,
   onCopyCode,
 }: RoomInfoProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-2 py-2 sm:space-y-3 sm:py-3">
       <div className="flex items-start justify-between gap-2">
@@ -30,7 +33,7 @@ export function RoomInfo({
           </div>
           <div className="space-y-0 sm:space-y-0.5">
             <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-primary sm:text-xs sm:tracking-[0.3em]">
-              Competição de
+              {t.room.competition_of}
             </h2>
             <h1 className="text-3xl font-black capitalize sm:text-4xl">
               {race.food_type === "sushi" ? "Rodízio Japa" : race.food_type}
@@ -40,7 +43,7 @@ export function RoomInfo({
         <div className="flex items-center gap-2 rounded-2xl border border-muted/60 bg-background/60 px-3 py-2 shadow-sm">
           <div className="text-right leading-none">
             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Sala
+              {t.common.room}
             </p>
             <p className="font-mono font-bold text-lg leading-none">
               {roomCode}
@@ -62,10 +65,11 @@ export function RoomInfo({
       </div>
       <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground sm:gap-3 sm:text-xs">
         <span className="flex items-center gap-1.5">
-          <Users className="h-3.5 w-3.5" /> {participantsCount} Jogadores
+          <Users className="h-3.5 w-3.5" /> {participantsCount}{" "}
+          {t.common.players}
         </span>
         <span className="w-1 h-1 bg-muted rounded-full" />
-        <span className="text-primary animate-pulse">● Ao Vivo</span>
+        <span className="text-primary animate-pulse">● {t.common.live}</span>
       </div>
     </div>
   );

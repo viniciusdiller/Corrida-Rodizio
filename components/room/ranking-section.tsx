@@ -1,41 +1,10 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Sword, TrendingUp } from "lucide-react";
 import { Race, Participant } from "@/types/database";
 import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
-
-const TEAM_CONFIG = {
-  AZUL: {
-    label: "Time Azul",
-    color: "bg-blue-500",
-    text: "text-blue-500",
-    border: "border-l-blue-500",
-    bg: "bg-blue-500/5",
-  },
-  VERMELHA: {
-    label: "Time Vermelho",
-    color: "bg-red-500",
-    text: "text-red-500",
-    border: "border-l-red-500",
-    bg: "bg-red-500/5",
-  },
-  VERDE: {
-    label: "Time Verde",
-    color: "bg-emerald-500",
-    text: "text-emerald-400",
-    border: "border-l-emerald-500",
-    bg: "bg-emerald-500/5",
-  },
-  AMARELA: {
-    label: "Time Amarelo",
-    color: "bg-yellow-500",
-    text: "text-yellow-400",
-    border: "border-l-yellow-500",
-    bg: "bg-yellow-500/5",
-  },
-};
+import { useLanguage } from "@/contexts/language-context";
 
 interface RankingSectionProps {
   race: Race;
@@ -49,18 +18,51 @@ export function RankingSection({
   participants,
   currentParticipantId,
 }: RankingSectionProps) {
+  const { t } = useLanguage();
+
   if (participants.length <= 1) return null;
 
-  if (!race.is_team_mode) return null; // Individual é gerido pelo componente de itens
+  if (!race.is_team_mode) return null;
 
   const totalScore = participants.reduce((acc, p) => acc + p.items_eaten, 0);
+
+  const TEAM_CONFIG = {
+    AZUL: {
+      label: t.room.team_blue,
+      color: "bg-blue-500",
+      text: "text-blue-500",
+      border: "border-l-blue-500",
+      bg: "bg-blue-500/5",
+    },
+    VERMELHA: {
+      label: t.room.team_red,
+      color: "bg-red-500",
+      text: "text-red-500",
+      border: "border-l-red-500",
+      bg: "bg-red-500/5",
+    },
+    VERDE: {
+      label: t.room.team_green,
+      color: "bg-emerald-500",
+      text: "text-emerald-400",
+      border: "border-l-emerald-500",
+      bg: "bg-emerald-500/5",
+    },
+    AMARELA: {
+      label: t.room.team_yellow,
+      color: "bg-yellow-500",
+      text: "text-yellow-400",
+      border: "border-l-yellow-500",
+      bg: "bg-yellow-500/5",
+    },
+  };
 
   return (
     <div className="space-y-6">
       {/* CABO DE GUERRA MULTI-EQUIPAS */}
       <div className="space-y-2 px-1">
         <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-          <span>Disputa por Equipas</span>
+          <span>{t.room.team_dispute}</span>
           <span>{totalScore} Total</span>
         </div>
         <div className="h-4 w-full flex rounded-full overflow-hidden bg-muted/20 border border-white/5 shadow-inner">
@@ -107,7 +109,7 @@ export function RankingSection({
                     <div className="flex items-center gap-1">
                       <TrendingUp className="h-3 w-3" />
                       <span className="text-[9px] font-bold tracking-tighter">
-                        Méd. {average}
+                        {t.room.team_avg} {average}
                       </span>
                     </div>
                     <span className="text-xs font-black">{teamTotal}</span>
@@ -145,7 +147,7 @@ export function RankingSection({
                   ))}
                   {members.length === 0 && (
                     <p className="text-[9px] text-center text-muted-foreground italic py-2">
-                      Sem jogadores
+                      {t.room.no_players}
                     </p>
                   )}
                 </div>

@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Users2, ArrowRight, Loader2 } from "lucide-react";
 import { FoodType } from "@/types/database";
+import { useLanguage } from "@/contexts/language-context";
 
 interface CreateRaceFormProps {
   playerName: string;
@@ -29,6 +30,8 @@ export function CreateRaceForm({
   onCreate,
   onBack,
 }: CreateRaceFormProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
       <div className="space-y-3">
@@ -36,11 +39,11 @@ export function CreateRaceForm({
           htmlFor="playerName"
           className="text-xs uppercase font-bold text-muted-foreground px-1"
         >
-          Seu Codinome
+          {t.home.codename_label}
         </Label>
         <Input
           id="playerName"
-          placeholder="Ex: Predador de Pizza"
+          placeholder={t.home.codename_placeholder}
           value={playerName}
           onChange={(e) => setPlayerName(e.target.value)}
           className="bg-background/50 h-14 text-lg font-medium"
@@ -62,9 +65,9 @@ export function CreateRaceForm({
             }`}
           />
           <div className="text-left">
-            <p className="text-sm font-bold">Modo Equipes</p>
+            <p className="text-sm font-bold">{t.home.team_mode}</p>
             <p className="text-[10px] text-muted-foreground uppercase">
-              Disputa Coletiva
+              {t.home.team_mode_desc}
             </p>
           </div>
         </div>
@@ -83,7 +86,7 @@ export function CreateRaceForm({
 
       <div className="space-y-4">
         <Label className="text-xs uppercase font-bold text-muted-foreground px-1">
-          Escolha a Categoria
+          {t.home.category_label}
         </Label>
         <div className="grid grid-cols-3 gap-3">
           {foodTypes.map(({ type, label, icon: Icon }) => (
@@ -115,11 +118,11 @@ export function CreateRaceForm({
           {loading ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Preparando Mesa...
+              {t.home.preparing}
             </>
           ) : (
             <>
-              Criar Competicao <ArrowRight className="ml-2 h-5 w-5" />
+              {t.home.create_title} <ArrowRight className="ml-2 h-5 w-5" />
             </>
           )}
         </Button>
@@ -128,7 +131,7 @@ export function CreateRaceForm({
           className="w-full text-muted-foreground cursor-pointer"
           onClick={onBack}
         >
-          Voltar
+          {t.common.back}
         </Button>
       </div>
     </div>

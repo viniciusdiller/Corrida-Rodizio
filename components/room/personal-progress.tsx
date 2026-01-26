@@ -13,6 +13,7 @@ import {
   isPremiumAvatar,
 } from "@/lib/utils/avatars";
 import { Participant } from "@/types/database";
+import { useLanguage } from "@/contexts/language-context";
 
 interface PersonalProgressProps {
   participant: Participant;
@@ -39,6 +40,7 @@ export function PersonalProgress({
   isPremium,
   exclusiveAvatars,
 }: PersonalProgressProps) {
+  const { t } = useLanguage();
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [avatarOptions, setAvatarOptions] = useState<string[]>([]);
 
@@ -72,7 +74,7 @@ export function PersonalProgress({
   return (
     <div className="space-y-4">
       <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">
-        Seu Progresso
+        {t.room.your_progress}
       </Label>
       <Card className="ring-2 ring-primary shadow-xl scale-[1.02] border-none bg-card/80 backdrop-blur-sm">
         <CardContent className="px-4 py-4 space-y-4">
@@ -142,7 +144,7 @@ export function PersonalProgress({
               onClick={() => setShowAvatarPicker((prev) => !prev)}
               disabled={isUpdatingAvatar}
             >
-              Trocar seu Avatar
+              {t.room.change_avatar}
               <ChevronDown
                 className={`h-4 w-4 transition-transform ${
                   showAvatarPicker ? "rotate-180" : ""

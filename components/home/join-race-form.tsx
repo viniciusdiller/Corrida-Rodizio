@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Hash, ArrowRight, Loader2 } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
 
 interface JoinRaceFormProps {
   playerName: string;
@@ -26,7 +27,9 @@ export function JoinRaceForm({
   onJoin,
   onBack,
 }: JoinRaceFormProps) {
+  const { t } = useLanguage();
   const hasName = isSpectator || !!playerName.trim();
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-left-4">
       <button
@@ -39,9 +42,9 @@ export function JoinRaceForm({
         }`}
       >
         <div className="text-left">
-          <p className="text-sm font-bold">Entrar como espectador</p>
+          <p className="text-sm font-bold">{t.home.enter_spectator}</p>
           <p className="text-[10px] text-muted-foreground uppercase">
-            Sem nome, apenas visualizacao
+            {t.home.spectator_desc}
           </p>
         </div>
         <div
@@ -63,11 +66,11 @@ export function JoinRaceForm({
             htmlFor="playerName"
             className="text-xs uppercase font-bold text-muted-foreground px-1"
           >
-            Seu Codinome
+            {t.home.codename_label}
           </Label>
           <Input
             id="playerName"
-            placeholder="Ex: Predador de Pizza"
+            placeholder={t.home.codename_placeholder}
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
             className="bg-background/50 h-14 text-lg font-medium"
@@ -79,13 +82,13 @@ export function JoinRaceForm({
           htmlFor="roomCode"
           className="text-xs uppercase font-bold text-muted-foreground px-1"
         >
-          Código da Arena
+          {t.home.room_code_label}
         </Label>
         <div className="relative">
           <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             id="roomCode"
-            placeholder="ABCDE"
+            placeholder={t.home.room_code_placeholder}
             value={roomCode}
             onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
             className="pl-12 h-14 text-2xl font-black uppercase border-primary/20"
@@ -102,11 +105,11 @@ export function JoinRaceForm({
           {loading ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Localizando...
+              {t.home.locating}
             </>
           ) : (
             <>
-              Entrar na Arena <ArrowRight className="ml-2 h-5 w-5" />
+              {t.home.enter_arena} <ArrowRight className="ml-2 h-5 w-5" />
             </>
           )}
         </Button>
@@ -115,7 +118,7 @@ export function JoinRaceForm({
           className="w-full text-muted-foreground cursor-pointer"
           onClick={onBack}
         >
-          Voltar
+          {t.common.back}
         </Button>
       </div>
     </div>

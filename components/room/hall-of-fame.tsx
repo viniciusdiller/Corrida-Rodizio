@@ -2,30 +2,9 @@
 
 import { Trophy, Instagram, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Race, Participant } from "@/types/database";
 import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
-
-// Constantes movidas para o componente para facilitar a organização
-const MOTIVATIONAL_PHRASES = [
-  "O importante é que a barriga está cheia!",
-  "Na próxima você pede reforço!",
-  "Faltou um espacinho para a sobremesa?",
-  "O estômago é o limite, mas hoje você parou antes!",
-  "O vice-campeão também ganha... a conta!",
-  "Treino é treino, rodízio é jogo!",
-  "Guerreiro(a), mas o estômago não ajudou!",
-  "A vitória escapou, mas a conta chegou igual!",
-  "Hoje o campeão foi o garçom!",
-  "Faltou gás no final, mas o começo foi histórico!",
-  "Seu estômago entrou em modo economia de energia!",
-  "A competição acabou, a digestão começou!",
-  "Não foi derrota, foi estratégia de sobrevivência!",
-  "Seu limite foi atingido antes do garçom!",
-  "O campeão come mais, mas você comeu bem!",
-  "Derrota honrosa: saiu andando, não rolando!",
-];
+import { useLanguage } from "@/contexts/language-context";
 
 const TEAM_OPTIONS = [
   { id: "AZUL", shortLabel: "Azul", pillClass: "bg-blue-500/20 text-blue-300" },
@@ -61,6 +40,9 @@ export function HallOfFame({
   getItemLabel,
   onHome,
 }: HallOfFameProps) {
+  const { t } = useLanguage();
+  const MOTIVATIONAL_PHRASES = t.hall_of_fame.phrases;
+
   return (
     <div className="min-h-screen bg-zinc-950 text-white p-6 flex flex-col items-center justify-center animate-in fade-in duration-1000">
       <div className="w-full max-w-md space-y-8">
@@ -70,10 +52,10 @@ export function HallOfFame({
           </div>
           <div className="space-y-1">
             <h1 className="text-4xl font-black italic tracking-tighter uppercase">
-              Hall of Fame
+              {t.hall_of_fame.title}
             </h1>
             <p className="text-orange-500 font-mono text-sm tracking-widest">
-              SALA: {race.room_code}
+              {t.common.room}: {race.room_code}
             </p>
           </div>
         </div>
@@ -123,7 +105,7 @@ export function HallOfFame({
                     </p>
                     <p className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
                       {isWinner
-                        ? "🏆 Lendário Comilão"
+                        ? t.hall_of_fame.legendary
                         : MOTIVATIONAL_PHRASES[i % MOTIVATIONAL_PHRASES.length]}
                     </p>
                   </div>
@@ -145,7 +127,7 @@ export function HallOfFame({
           <div className="flex items-center gap-2 text-zinc-500 animate-bounce">
             <Instagram className="h-4 w-4" />
             <span className="text-[10px] font-black uppercase tracking-[0.2em]">
-              Print & Post
+              {t.hall_of_fame.print_post}
             </span>
           </div>
           <Button
@@ -153,7 +135,7 @@ export function HallOfFame({
             className="w-full rounded-2xl border-white/10 bg-white/5 hover:bg-white/10"
             onClick={onHome}
           >
-            <Home className="h-4 w-4 mr-2" /> Início
+            <Home className="h-4 w-4 mr-2" /> {t.hall_of_fame.home}
           </Button>
         </div>
       </div>

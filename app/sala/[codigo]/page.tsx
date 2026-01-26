@@ -69,6 +69,7 @@ export default function RoomPage() {
   };
 
   const loadRoomData = async () => {
+    // ... (lógica de carregamento permanece igual)
     try {
       const supabase = createClient();
       const { data: raceData } = await supabase
@@ -137,6 +138,7 @@ export default function RoomPage() {
   };
 
   const showCooldownMessage = (event?: MouseEvent<HTMLButtonElement>) => {
+    // ATUALIZADO: Usando array de mensagens traduzidas
     const messages = t.room.cooldown_messages;
     const message = messages[Math.floor(Math.random() * messages.length)];
     const fallbackX = Math.round(window.innerWidth / 2);
@@ -154,6 +156,7 @@ export default function RoomPage() {
     }, 1000);
   };
 
+  // ... (funções handleUpdateCount, updateAvatar, updateTeam, endRace permanecem iguais)
   const handleUpdateCount = async (
     participantId: string,
     change: number,
@@ -189,7 +192,6 @@ export default function RoomPage() {
         .from("participants")
         .update({ avatar })
         .eq("id", currentParticipantId);
-      // O Realtime atualizará o estado automaticamente
     } catch (error) {
       console.error(error);
     } finally {
@@ -283,6 +285,7 @@ export default function RoomPage() {
   useEffect(() => {
     let isMounted = true;
     const loadPlayerEntitlements = async () => {
+      // ... (lógica original)
       const loginCode = currentParticipant?.login_code?.trim().toUpperCase();
       if (!loginCode) {
         if (isMounted) {
@@ -444,7 +447,10 @@ export default function RoomPage() {
           <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" />
           <div className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-muted/60 bg-background/95 p-4 shadow-xl backdrop-blur-sm">
             <p className="text-sm font-semibold text-foreground">
-              Encerrar competição agora? Esta ação não pode ser desfeita.
+              {t.room.confirm_end_title}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t.room.confirm_end_desc}
             </p>
             <div className="mt-3 flex items-center justify-end gap-2">
               <Button
@@ -452,14 +458,14 @@ export default function RoomPage() {
                 onClick={() => setShowEndRaceToast(false)}
                 disabled={isEnding}
               >
-                Cancelar
+                {t.room.cancel}
               </Button>
               <Button
                 variant="destructive"
                 onClick={confirmEndRace}
                 disabled={isEnding}
               >
-                {isEnding ? t.room.ending : t.room.end_race}
+                {isEnding ? t.room.ending : t.room.confirm}
               </Button>
             </div>
           </div>

@@ -19,7 +19,7 @@ export function RoomHeader({ onExit }: RoomHeaderProps) {
         onClick={onExit}
         className="text-muted-foreground hover:text-primary hover:cursor-pointer"
       >
-        <ArrowLeft className="h-4 w-4 mr-2" /> Sair
+        <ArrowLeft className="h-4 w-4 mr-2" /> {t.common.exit}
       </Button>
 
       <div className="flex items-center gap-2">
