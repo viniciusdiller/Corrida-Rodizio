@@ -31,7 +31,7 @@ export const metadata: Metadata = {
       "Compete com amigos em rodizios e veja quem come mais em tempo real",
     images: [
       {
-        url: "/logo-big-light.png",
+        url: "https://rodiziorace.mechama.eu/logo-big-light.png",
         width: 1200,
         height: 630,
         alt: "Rodizio Race",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     title: "Rodizio Race",
     description:
       "Compete com amigos em rodizios e veja quem come mais em tempo real",
-    images: ["/logo-big-light.png"],
+    images: ["https://rodiziorace.mechama.eu/logo-big-light.png"],
   },
   appleWebApp: {
     title: "Rodízio Race",
