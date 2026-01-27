@@ -15,6 +15,10 @@ export const translations = {
       copied: "Copiado!",
       theme_toggle: "Alternar tema",
       connected_as: "Conectado como",
+      add_to_home: "Adicionar à tela inicial",
+      add_to_home_title: "Adicionar à tela inicial",
+      add_to_home_steps:
+        "Toque em Compartilhar e depois em “Adicionar à Tela de Início”.",
     },
     home: {
       create_race: "Criar Competição",
@@ -205,6 +209,9 @@ export const translations = {
       copied: "Copied!",
       theme_toggle: "Toggle theme",
       connected_as: "Connected as",
+      add_to_home: "Add to Home Screen",
+      add_to_home_title: "Add to Home Screen",
+      add_to_home_steps: "Tap Share, then “Add to Home Screen”.",
     },
     home: {
       create_race: "Create Competition",

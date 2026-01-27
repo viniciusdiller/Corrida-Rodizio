@@ -23,12 +23,12 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://rodiziorace.mechama.eu"),
   title: "Rodízio Race",
   description:
-    "Compete com amigos em rodízios e veja quem come mais em tempo real",
+    "Venha competir com amigos em rodízios e veja quem come mais em tempo real",
   applicationName: "Rodízio Race",
   openGraph: {
     title: "Rodizio Race",
     description:
-      "Compete com amigos em rodizios e veja quem come mais em tempo real",
+      "Venha competir com amigos em rodizios e veja quem come mais em tempo real",
     images: [
       {
         url: "https://rodiziorace.mechama.eu/og-image.jpg",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Rodizio Race",
     description:
-      "Compete com amigos em rodizios e veja quem come mais em tempo real",
+      "Venha competir com amigos em rodizios e veja quem come mais em tempo real",
     images: ["https://rodiziorace.mechama.eu/og-image.jpg"],
   },
   appleWebApp: {

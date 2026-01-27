@@ -51,6 +51,9 @@ export default function RoomPage() {
   const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [showPasswordSuccess, setShowPasswordSuccess] = useState(false);
+  const [isIosDevice, setIsIosDevice] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [showAddToHomeHelp, setShowAddToHomeHelp] = useState(false);
   const [currentParticipantId, setCurrentParticipantId] = useState<
     string | null
   >(null);
@@ -341,6 +344,16 @@ export default function RoomPage() {
     }
     const storedLogin = localStorage.getItem(LOGIN_STORAGE_KEY);
     setLoggedUsername(storedLogin || null);
+    if (typeof window !== "undefined") {
+      const ua = window.navigator.userAgent.toLowerCase();
+      const isIos = /iphone|ipad|ipod/.test(ua);
+      const standaloneMatch = window.matchMedia?.("(display-mode: standalone)");
+      const standalone =
+        (window.navigator as any).standalone === true ||
+        (standaloneMatch?.matches ?? false);
+      setIsIosDevice(isIos);
+      setIsStandalone(standalone);
+    }
 
     const supabase = createClient();
     const channel = supabase
@@ -578,6 +591,15 @@ export default function RoomPage() {
                 {t.account.logout}
               </Button>
             </div>
+            {isIosDevice && !isStandalone && (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowAddToHomeHelp(true)}
+              >
+                {t.common.add_to_home}
+              </Button>
+            )}
             {showPasswordForm && (
               <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
                 <div className="space-y-2">
@@ -685,6 +707,25 @@ export default function RoomPage() {
                 {isEnding ? t.room.ending : t.room.confirm}
               </Button>
             </div>
+          </div>
+        </>
+      )}
+      {showAddToHomeHelp && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+          <div className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-muted/60 bg-background/95 p-4 text-center shadow-xl backdrop-blur">
+            <p className="text-sm font-semibold text-foreground">
+              {t.common.add_to_home_title}
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {t.common.add_to_home_steps}
+            </p>
+            <Button
+              className="mt-3 w-full h-10 rounded-xl font-bold"
+              onClick={() => setShowAddToHomeHelp(false)}
+            >
+              OK
+            </Button>
           </div>
         </>
       )}
