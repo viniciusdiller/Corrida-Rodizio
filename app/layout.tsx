@@ -24,6 +24,26 @@ export const metadata: Metadata = {
   description:
     "Compete com amigos em rodízios e veja quem come mais em tempo real",
   applicationName: "Rodízio Race",
+  openGraph: {
+    title: "Rodizio Race",
+    description:
+      "Compete com amigos em rodizios e veja quem come mais em tempo real",
+    images: [
+      {
+        url: "/logo-big-light.png",
+        width: 1200,
+        height: 630,
+        alt: "Rodizio Race",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Rodizio Race",
+    description:
+      "Compete com amigos em rodizios e veja quem come mais em tempo real",
+    images: ["/logo-big-light.png"],
+  },
   appleWebApp: {
     title: "Rodízio Race",
   },

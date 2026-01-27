@@ -50,6 +50,7 @@ export default function RoomPage() {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [showPasswordSuccess, setShowPasswordSuccess] = useState(false);
   const [currentParticipantId, setCurrentParticipantId] = useState<
     string | null
   >(null);
@@ -259,6 +260,7 @@ export default function RoomPage() {
       if (!next) {
         setShowPasswordForm(false);
         setPasswordStatus(null);
+        setShowPasswordSuccess(false);
         setCurrentPassword("");
         setNewPassword("");
         setConfirmNewPassword("");
@@ -272,6 +274,7 @@ export default function RoomPage() {
     setShowAccountOverlay(false);
     setShowPasswordForm(false);
     setPasswordStatus(null);
+    setShowPasswordSuccess(false);
     setCurrentPassword("");
     setNewPassword("");
     setConfirmNewPassword("");
@@ -306,12 +309,17 @@ export default function RoomPage() {
         p_new_password: trimmedNew,
       });
 
-      if (error || !data) {
+      if (error) {
+        setPasswordStatus(error.message || "Senha atual incorreta.");
+        return;
+      }
+      if (data === false) {
         setPasswordStatus("Senha atual incorreta.");
         return;
       }
 
-      setPasswordStatus("Senha atualizada com sucesso.");
+      setPasswordStatus("Senha trocada com sucesso.");
+      setShowPasswordSuccess(true);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
@@ -634,6 +642,22 @@ export default function RoomPage() {
         >
           {cooldownToast.text}
         </div>
+      )}
+      {showPasswordSuccess && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+          <div className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-muted/60 bg-background/95 p-4 text-center shadow-xl backdrop-blur">
+            <p className="text-sm font-semibold text-foreground">
+              Senha trocada com sucesso
+            </p>
+            <Button
+              className="mt-3 w-full h-10 rounded-xl font-bold"
+              onClick={() => setShowPasswordSuccess(false)}
+            >
+              OK
+            </Button>
+          </div>
+        </>
       )}
       {showEndRaceToast && (
         <>
