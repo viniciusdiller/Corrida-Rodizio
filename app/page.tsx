@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -300,9 +301,11 @@ function HomeContent() {
       handleAccountFlowChange(null);
       setAccountPassword("");
       setAccountCodeInput("");
-      alert("Conta criada com sucesso!");
+      toast.success("Conta criada com sucesso!");
     } catch (error: any) {
-      alert(`Erro ao criar conta: ${error.message || "Tente outro nome"}`);
+      toast.error(
+        `Erro ao criar conta: ${error.message || "Tente outro nome"}`,
+      );
     } finally {
       setAccountLoading(false);
     }
@@ -321,7 +324,7 @@ function HomeContent() {
       });
 
       if (error || !data) {
-        alert("Nome de usuário ou senha inválidos.");
+        toast.error("Nome de usuário ou senha inválidos.");
         return;
       }
 
@@ -333,7 +336,7 @@ function HomeContent() {
 
       handleLoadGroups(normalizedName);
     } catch (error: any) {
-      alert("Erro ao entrar. Tente novamente.");
+      toast.error("Erro ao entrar. Tente novamente.");
     } finally {
       setAccountLoading(false);
     }
@@ -543,7 +546,7 @@ function HomeContent() {
         localStorage.setItem(getParticipantStorageKey(code), participant.id);
       router.push(`/sala/${code}`);
     } catch (e) {
-      alert("Erro ao criar sala.");
+      toast.error("Erro ao criar sala.");
     } finally {
       setLoading(false);
     }
@@ -619,7 +622,7 @@ function HomeContent() {
 
       router.push(`/sala/${normalized}`);
     } catch (e: any) {
-      alert(e.message);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }

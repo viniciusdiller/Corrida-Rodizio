@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,7 +60,7 @@ export function JoinRoomViaLink({
       onJoin();
     } catch (error) {
       console.error("Erro ao entrar como convidado:", error);
-      alert("Erro ao entrar na sala. Tente novamente.");
+      toast.error("Erro ao entrar na sala. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -84,7 +84,7 @@ export function JoinRoomViaLink({
       );
 
       if (loginError || !loginSuccess) {
-        alert("Usuário ou senha inválidos.");
+        toast.error("Usuário ou senha inválidos.");
         setLoading(false);
         return;
       }
@@ -126,7 +126,7 @@ export function JoinRoomViaLink({
       onJoin();
     } catch (error) {
       console.error("Erro ao fazer login:", error);
-      alert("Erro ao entrar com a conta. Tente novamente.");
+      toast.error("Erro ao entrar com a conta. Tente novamente.");
     } finally {
       setLoading(false);
     }

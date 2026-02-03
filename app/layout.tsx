@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
+import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/language-context";
 import "./globals.css";
@@ -101,6 +102,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <LanguageProvider>{children}</LanguageProvider>
         </ThemeProvider>
+        <Toaster richColors position="top-right" />
         <Analytics />
 
         {/* O Script agora fica aqui, gerenciado pelo Next.js corretamente */}
