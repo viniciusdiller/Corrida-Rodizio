@@ -48,7 +48,6 @@ export default function Home() {
   const [accountCodeInput, setAccountCodeInput] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [acceptTerms, setAcceptTerms] = useState(false);
   const [loginCode, setLoginCode] = useState<string | null>(null);
   const [accountLoading, setAccountLoading] = useState(false);
   const [myGroups, setMyGroups] = useState<Race[]>([]);
