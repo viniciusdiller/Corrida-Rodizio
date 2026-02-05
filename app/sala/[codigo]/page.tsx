@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Plus, ArrowLeft, Settings, Check, Copy } from "lucide-react";
+import { Plus, ArrowLeft, Settings, Check, Copy, UserPlus } from "lucide-react";
 import confetti from "canvas-confetti";
 
 import { RoomHeader } from "@/components/room/room-header";
