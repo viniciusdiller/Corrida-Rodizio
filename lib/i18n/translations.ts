@@ -206,7 +206,7 @@ export const translations = {
         "O rodízio continua amanhã.",
         "Vai com calma, herói do garfo.",
       ],
-      real_time_race: "Seguimiento de Carrera en Tiempo Real",
+      real_time_race: "Corrida em Tempo Real",
     },
     hall_of_fame: {
       title: "Hall of Fame",
@@ -1365,7 +1365,7 @@ export const translations = {
         "El rodizio continúa mañana.",
         "Ve con calma, héroe del tenedor.",
       ],
-      real_time_race: "Corrida em Tempo Real",
+      real_time_race: "Seguimiento de Carrera en Tiempo Real",
     },
     hall_of_fame: {
       title: "Salón de la Fama",
