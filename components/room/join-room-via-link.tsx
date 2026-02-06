@@ -39,8 +39,17 @@ export function JoinRoomViaLink({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  const ensureOnline = () => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      toast.error("Sem conexão com a internet. Tente novamente.");
+      return false;
+    }
+    return true;
+  };
+
   const handleJoinAsGuest = async () => {
     if (!nickname.trim()) return;
+    if (!ensureOnline()) return;
     setLoading(true);
 
     try {
@@ -96,6 +105,7 @@ export function JoinRoomViaLink({
 
   const handleLoginAndJoin = async () => {
     if (!username.trim() || !password.trim()) return;
+    if (!ensureOnline()) return;
     setLoading(true);
 
     try {

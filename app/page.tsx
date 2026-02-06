@@ -82,6 +82,14 @@ export default function Home() {
     }
   };
 
+  const ensureOnline = () => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      toast.error("Sem conexão com a internet. Tente novamente.");
+      return false;
+    }
+    return true;
+  };
+
   const formatAccountLabel = (value: string) =>
     value.length > 16 ? `${value.slice(0, 16)}...` : value;
 
@@ -143,6 +151,11 @@ export default function Home() {
   const loadPromoPermissions = async () => {
     if (!loginCode) {
       setPromoPermissions([]);
+      return;
+    }
+    if (!ensureOnline()) {
+      setPromoPermissions([]);
+      setIsLoadingPermissions(false);
       return;
     }
     setIsLoadingPermissions(true);
@@ -300,6 +313,7 @@ export default function Home() {
       toast.error(t.account.accept_terms_required);
       return;
     }
+    if (!ensureOnline()) return;
     setAccountLoading(true);
     setGroupsError(null);
     try {
@@ -336,6 +350,7 @@ export default function Home() {
 
   const handleLogin = async () => {
     if (!accountCodeInput.trim() || !accountPassword.trim()) return;
+    if (!ensureOnline()) return;
     setAccountLoading(true);
     try {
       const supabase = createClient();
@@ -369,6 +384,7 @@ export default function Home() {
   const handleLoadGroups = async (usernameOverride?: string) => {
     const codeToUse = usernameOverride || loginCode;
     if (!codeToUse) return;
+    if (!ensureOnline()) return;
 
     setIsLoadingGroups(true);
     setGroupsError(null);
@@ -472,6 +488,7 @@ export default function Home() {
       setClaimStatus("Digite o codigo.");
       return;
     }
+    if (!ensureOnline()) return;
     setIsClaiming(true);
     setClaimStatus(null);
     try {
@@ -515,6 +532,10 @@ export default function Home() {
       setPasswordStatus("A nova senha precisa de pelo menos 6 caracteres.");
       return;
     }
+    if (!ensureOnline()) {
+      setPasswordStatus("Sem conexão com a internet. Tente novamente.");
+      return;
+    }
 
     setIsUpdatingPassword(true);
     setPasswordStatus(null);
@@ -553,6 +574,7 @@ export default function Home() {
     const normalizedName = playerName.trim();
     const roomOwnerName = loginCode?.trim() || normalizedName;
     if (!normalizedName || !roomOwnerName || !selectedFood) return;
+    if (!ensureOnline()) return;
     setLoading(true);
     try {
       const supabase = createClient();
@@ -616,6 +638,7 @@ export default function Home() {
     const normalizedName = playerName.trim();
     if (!isSpectator && !normalizedName) return;
     if (!roomCode.trim()) return;
+    if (!ensureOnline()) return;
     setLoading(true);
     try {
       const supabase = createClient();
