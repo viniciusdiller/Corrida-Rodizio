@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -33,14 +33,48 @@ export function JoinRoomViaLink({
   const foodTypeLabel = getFoodTypeLabel(race.food_type, language);
   const [mode, setMode] = useState<"guest" | "login">("guest");
   const [loading, setLoading] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
 
   // Estados do formulário
   const [nickname, setNickname] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  const ensureOnline = () => {
+    if (!isOnline) {
+      toast.error("Sem conexão com a internet. Tente novamente.", {
+        id: "offline-connection",
+      });
+      return false;
+    }
+    return true;
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const updateStatus = () => setIsOnline(window.navigator.onLine);
+    updateStatus();
+    window.addEventListener("online", updateStatus);
+    window.addEventListener("offline", updateStatus);
+    return () => {
+      window.removeEventListener("online", updateStatus);
+      window.removeEventListener("offline", updateStatus);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOnline) {
+      toast.error("Sem conexão com a internet. Tente novamente.", {
+        id: "offline-connection",
+      });
+      return;
+    }
+    toast.dismiss("offline-connection");
+  }, [isOnline]);
+
   const handleJoinAsGuest = async () => {
     if (!nickname.trim()) return;
+    if (!ensureOnline()) return;
     setLoading(true);
 
     try {
@@ -96,6 +130,7 @@ export function JoinRoomViaLink({
 
   const handleLoginAndJoin = async () => {
     if (!username.trim() || !password.trim()) return;
+    if (!ensureOnline()) return;
     setLoading(true);
 
     try {
@@ -256,7 +291,7 @@ export function JoinRoomViaLink({
                 <Button
                   className="w-full h-11 text-lg font-bold uppercase rounded-xl"
                   onClick={handleJoinAsGuest}
-                  disabled={loading || !nickname.trim()}
+                  disabled={loading || !nickname.trim() || !isOnline}
                 >
                   {loading ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
@@ -292,7 +327,9 @@ export function JoinRoomViaLink({
                 <Button
                   className="w-full h-11 text-lg font-bold uppercase rounded-xl"
                   onClick={handleLoginAndJoin}
-                  disabled={loading || !username.trim() || !password.trim()}
+                  disabled={
+                    loading || !username.trim() || !password.trim() || !isOnline
+                  }
                 >
                   {loading ? (
                     <Loader2 className="h-5 w-5 animate-spin" />

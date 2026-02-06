@@ -16,6 +16,7 @@ interface CreateRaceFormProps {
   setSelectedFood: (val: FoodType) => void;
   foodTypes: any[];
   loading: boolean;
+  isOffline: boolean;
   onCreate: () => void;
   onBack: () => void;
 }
@@ -29,6 +30,7 @@ export function CreateRaceForm({
   setSelectedFood,
   foodTypes,
   loading,
+  isOffline,
   onCreate,
   onBack,
 }: CreateRaceFormProps) {
@@ -150,7 +152,13 @@ export function CreateRaceForm({
           size="lg"
           className="w-full h-14 rounded-xl font-bold text-lg shadow-xl shadow-primary/20 cursor-pointer"
           onClick={onCreate}
-          disabled={!playerName.trim() || !selectedFood || loading || !agreed}
+          disabled={
+            !playerName.trim() ||
+            !selectedFood ||
+            loading ||
+            !agreed ||
+            isOffline
+          }
         >
           {loading ? (
             <>
