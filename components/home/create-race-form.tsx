@@ -12,8 +12,8 @@ interface CreateRaceFormProps {
   setPlayerName: (val: string) => void;
   isTeamMode: boolean;
   setIsTeamMode: (val: boolean) => void;
-  photoMode: boolean;
-  setPhotoMode: (val: boolean) => void;
+  photoMode: "optional" | "mandatory";
+  setPhotoMode: (val: "optional" | "mandatory") => void;
   canEnablePhotoMode: boolean;
   requireTerms: boolean;
   onTermsAccepted: (accepted: boolean) => void;
@@ -45,6 +45,8 @@ export function CreateRaceForm({
   const { t } = useLanguage();
   // Estado para controlar o checkbox
   const [agreed, setAgreed] = useState(false);
+  const isOptional = photoMode === "optional";
+  const isMandatory = photoMode === "mandatory";
 
   useEffect(() => {
     if (!requireTerms) {
@@ -105,40 +107,47 @@ export function CreateRaceForm({
       </div>
 
       {canEnablePhotoMode && (
-        <div
-          onClick={() => {
-            if (!photoMode) setAgreed(false);
-            setPhotoMode(!photoMode);
-          }}
-          className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer ${
-            photoMode
-              ? "bg-primary/5 border-primary/20 shadow-inner"
-              : "bg-background border-muted"
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <Camera
-              className={`h-5 w-5 ${
-                photoMode ? "text-primary" : "text-muted-foreground"
-              }`}
-            />
-            <div className="text-left">
-              <p className="text-sm font-bold">{t.home.photo_mode}</p>
-              <p className="text-[10px] text-muted-foreground uppercase">
-                {t.home.photo_mode_desc}
-              </p>
-            </div>
+        <div className="space-y-3 rounded-xl border border-muted bg-background p-4">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            <Camera className="h-4 w-4" />
+            {t.home.photo_mode}
           </div>
-          <div
-            className={`w-10 h-6 rounded-full relative ${
-              photoMode ? "bg-primary" : "bg-muted"
-            }`}
-          >
-            <div
-              className={`absolute w-4 h-4 bg-white rounded-full top-1 transition-all ${
-                photoMode ? "left-5" : "left-1"
-              }`}
-            />
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2 rounded-2xl border border-muted bg-muted/40 p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isOptional) setAgreed(false);
+                  setPhotoMode("optional");
+                }}
+                className={`rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition ${
+                  isOptional
+                    ? "bg-background text-primary shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.home.photo_optional}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isMandatory) setAgreed(false);
+                  setPhotoMode("mandatory");
+                }}
+                className={`rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition ${
+                  isMandatory
+                    ? "bg-background text-primary shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.home.photo_mandatory}
+              </button>
+            </div>
+            <p className="text-[10px] uppercase text-muted-foreground">
+              {isMandatory
+                ? t.home.photo_mandatory_desc
+                : t.home.photo_optional_desc}
+            </p>
           </div>
         </div>
       )}
@@ -171,7 +180,7 @@ export function CreateRaceForm({
       {requireTerms && (
         <div
           className={`flex items-center gap-3 px-1 ${
-            photoMode && !agreed ? "rounded-lg border border-primary/40 p-2" : ""
+            !agreed ? "rounded-lg border border-primary/40 p-2" : ""
           }`}
         >
           <input

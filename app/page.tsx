@@ -35,7 +35,9 @@ export default function Home() {
   const [roomCode, setRoomCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [isTeamMode, setIsTeamMode] = useState(false);
-  const [photoMode, setPhotoMode] = useState(false);
+  const [photoMode, setPhotoMode] = useState<
+    "optional" | "mandatory"
+  >("optional");
   const [hasEditedName, setHasEditedName] = useState(false);
   const [isSpectator, setIsSpectator] = useState(false);
   const [defaultAvatar, setDefaultAvatar] = useState<string | null>(
@@ -56,6 +58,8 @@ export default function Home() {
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [groupsError, setGroupsError] = useState<string | null>(null);
   const [roomsWithPhotos, setRoomsWithPhotos] = useState<string[]>([]);
+  const photoModeEnabled = !!loginCode;
+  const photoRequired = photoMode === "mandatory";
 
   const [showHistory, setShowHistory] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -231,7 +235,7 @@ export default function Home() {
     if (flow === null) {
       setHasEditedName(false);
       setIsSpectator(false);
-      setPhotoMode(false);
+      setPhotoMode("optional");
     }
   }, [flow]);
 
@@ -621,7 +625,7 @@ export default function Home() {
     const normalizedName = playerName.trim();
     const roomOwnerName = loginCode?.trim() || normalizedName;
     if (!normalizedName || !roomOwnerName || !selectedFood) return;
-    if (photoMode && !loginCode) {
+    if (photoModeEnabled && !loginCode) {
       toast.error("Você precisa estar logado para o modo foto.");
       return;
     }
@@ -638,7 +642,8 @@ export default function Home() {
           room_code: code,
           is_active: true,
           is_team_mode: isTeamMode,
-          photo_mode: !!photoMode && !!loginCode,
+          photo_mode: !!photoModeEnabled && !!loginCode,
+          photo_required: !!photoRequired && !!loginCode,
         })
         .select()
         .single();
@@ -646,7 +651,8 @@ export default function Home() {
       if (
         raceError &&
         (isMissingColumn(raceError, "is_team_mode") ||
-          isMissingColumn(raceError, "photo_mode"))
+          isMissingColumn(raceError, "photo_mode") ||
+          isMissingColumn(raceError, "photo_required"))
       ) {
         const fallback = await supabase
           .from("races")
@@ -1028,7 +1034,9 @@ export default function Home() {
                   photoMode={photoMode}
                   setPhotoMode={setPhotoMode}
                   canEnablePhotoMode={!!loginCode}
-                  requireTerms={!loginCode || !hasAcceptedTerms || photoMode}
+                  requireTerms={
+                    !loginCode || !hasAcceptedTerms || photoModeEnabled
+                  }
                   onTermsAccepted={handleRaceTermsAccepted}
                   selectedFood={selectedFood}
                   setSelectedFood={setSelectedFood}

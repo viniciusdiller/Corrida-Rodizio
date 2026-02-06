@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Participant } from "@/types/database";
 import { Card } from "@/components/ui/card";
 import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
@@ -34,6 +34,46 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
     (a, b) =>
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
+  const baseSpeed = 1.1;
+  const speedFactor = Math.min(1.8, 1 + (currentMax / 10) * 0.8);
+  const trackSpeed = Math.max(0.6, baseSpeed / speedFactor);
+  const tailProgress = Math.min(1, Math.max(0, (currentMax - 3) / 7));
+  const showTails = currentMax >= 3;
+  const [scrollX, setScrollX] = useState(0);
+  const speedRef = useRef(0);
+  const targetSpeedRef = useRef(0);
+  const lastFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const pixelsPerSecond = 1400 / (trackSpeed * 7);
+    targetSpeedRef.current = pixelsPerSecond;
+  }, [trackSpeed]);
+
+  useEffect(() => {
+    if (!enableAnimations) {
+      lastFrameRef.current = null;
+      return;
+    }
+    let raf = 0;
+    const tick = (time: number) => {
+      if (lastFrameRef.current === null) {
+        lastFrameRef.current = time;
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      const delta = (time - lastFrameRef.current) / 1000;
+      lastFrameRef.current = time;
+      const targetSpeed = targetSpeedRef.current;
+      speedRef.current += (targetSpeed - speedRef.current) * 0.08;
+      setScrollX((prev) => {
+        const next = prev + speedRef.current * delta;
+        return next % 1400;
+      });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [enableAnimations]);
 
   return (
     <div className="space-y-3 w-full overflow-hidden">
@@ -42,10 +82,10 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
         /* 1. Animação da Pista (Efeito de velocidade/scrolling) */
         @keyframes road-scroll {
           from {
-            background-position: 0 0;
+            background-position: 0 var(--dot-offset, 0px);
           }
           to {
-            background-position: -30px 0px;
+            background-position: -1400px var(--dot-offset, 0px);
           } /* Ajuste os valores para mudar a direção/velocidade */
         }
         .animate-road {
@@ -64,6 +104,35 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
         }
         .animate-avatar {
           animation: run-bounce 0.6s infinite ease-in-out;
+        }
+
+        @keyframes speed-streak {
+          0% {
+            opacity: 0.2;
+            transform: translateX(0) scaleX(0.6);
+          }
+          50% {
+            opacity: 0.6;
+            transform: translateX(-6px) scaleX(1);
+          }
+          100% {
+            opacity: 0.2;
+            transform: translateX(-10px) scaleX(0.6);
+          }
+        }
+        @keyframes streak-wave {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-3px);
+          }
+        }
+        .animate-streak {
+          animation:
+            speed-streak 0.7s infinite ease-in-out,
+            streak-wave 0.6s infinite ease-in-out;
         }
       `}</style>
 
@@ -103,12 +172,13 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-[repeating-linear-gradient(45deg,#ef4444,#ef4444_8px,#fff_8px,#fff_16px)] opacity-30" />
 
         <div
-          className={`py-6 pl-2 pr-12 space-y-1 relative min-h-[160px] bg-[#222] ${
-            enableAnimations ? "animate-road" : ""
-          }`}
+          className="py-6 pl-2 pr-12 space-y-1 relative min-h-[160px] bg-[#222]"
           style={{
-            backgroundImage: "radial-gradient(#444 1px, transparent 1px)",
-            backgroundSize: "15px 15px",
+            ["--dot-offset" as any]: "20px",
+            backgroundImage:
+              "radial-gradient(#444 6px, transparent 6px), repeating-linear-gradient(to right, rgba(255,255,255,0.18) 0 4px, transparent 4px 220px)",
+            backgroundSize: "100px 52px, 200px 100%",
+            backgroundPosition: `${-scrollX}px var(--dot-offset), ${-scrollX}px 0`,
           }}
         >
           <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-white/10 z-0">
@@ -160,6 +230,11 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
                         {isLeader && (
                           <Trophy className="h-3 w-3 text-yellow-500 fill-yellow-500" />
                         )}
+                        {participant.is_vip && (
+                          <span className="text-[11px]" aria-hidden="true">
+                            💎
+                          </span>
+                        )}
                         {participant.name.split(" ")[0]}
                       </span>
                     </span>
@@ -181,6 +256,34 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
                       animationDelay: `${index * 0.15}s`,
                     }}
                   >
+                    {enableAnimations && showTails && (
+                      <>
+                        <span
+                          className={`pointer-events-none absolute right-full top-[35%] h-2 translate-x-4 rounded-full bg-gradient-to-l ${
+                            isLeader
+                              ? "from-orange-400/70 via-orange-200/30"
+                              : "from-white/40 via-white/10"
+                          } to-transparent md:h-2.5 animate-streak -z-10`}
+                          style={{ width: `${40 + tailProgress * 60}px` }}
+                        />
+                        <span
+                          className={`pointer-events-none absolute right-full top-1/2 h-1.5 -translate-y-1/2 translate-x-5 rounded-full bg-gradient-to-l ${
+                            isLeader
+                              ? "from-orange-300/60 via-orange-200/25"
+                              : "from-white/30 via-white/10"
+                          } to-transparent md:h-2 animate-streak delay-150 -z-10`}
+                          style={{ width: `${30 + tailProgress * 50}px` }}
+                        />
+                        <span
+                          className={`pointer-events-none absolute right-full top-[65%] h-1 translate-x-6 rounded-full bg-gradient-to-l ${
+                            isLeader
+                              ? "from-orange-300/50 via-orange-200/20"
+                              : "from-white/20 via-white/10"
+                          } to-transparent md:h-1.5 animate-streak delay-300 -z-10`}
+                          style={{ width: `${22 + tailProgress * 40}px` }}
+                        />
+                      </>
+                    )}
                     {isImageAvatar(participant.avatar) ? (
                       <img
                         src={getAvatarUrl(participant.avatar)}
@@ -190,7 +293,6 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
                     ) : (
                       <span className="inline-block h-11 w-11 rounded-full bg-white/10 md:h-14 md:w-14" />
                     )}
-
                     {/* Indicador de time */}
                     {isTeamMode && participant.team && (
                       <div

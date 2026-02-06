@@ -9,7 +9,15 @@ import {
 } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Plus, ArrowLeft, Settings, Check, Copy, UserPlus } from "lucide-react";
+import {
+  Plus,
+  ArrowLeft,
+  Settings,
+  Check,
+  Copy,
+  UserPlus,
+  Camera,
+} from "lucide-react";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
 
@@ -94,6 +102,8 @@ export default function RoomPage() {
     itemNumber: number;
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const isPhotoModeEnabled = !!race?.photo_mode;
+  const isPhotoRequired = !!race?.photo_mode && !!race?.photo_required;
 
   const handleCopyCode = () => {
     const inviteUrl = window.location.href;
@@ -274,44 +284,58 @@ export default function RoomPage() {
     }, 1500);
   };
 
+  const checkAddCooldown = (event?: MouseEvent<HTMLButtonElement>) => {
+    const now = Date.now();
+    const lastAddAt = lastAddAtRef.current ?? 0;
+    const remaining = addCooldownMs - (now - lastAddAt);
+    if (remaining > 0) {
+      showCooldownMessage(event);
+      return false;
+    }
+    lastAddAtRef.current = now;
+    setIsAddCooldownActive(true);
+    if (addCooldownTimeoutRef.current) {
+      clearTimeout(addCooldownTimeoutRef.current);
+    }
+    addCooldownTimeoutRef.current = setTimeout(() => {
+      setIsAddCooldownActive(false);
+    }, addCooldownMs);
+    return true;
+  };
+
+  const handlePhotoIncrement = (
+    participantId: string,
+    event?: MouseEvent<HTMLButtonElement>,
+  ) => {
+    if (!race) return;
+    if (!checkAddCooldown(event)) return;
+    if (!loggedUsername) {
+      toast.error("Faça login para usar o modo foto.");
+      return;
+    }
+    const participant = participants.find((item) => item.id === participantId);
+    if (!participant?.login_code) {
+      toast.error("Você precisa estar logado para usar o modo foto.");
+      return;
+    }
+    if (isUploadingPhoto) return;
+    const nextCount = Math.max(0, participant.items_eaten + 1);
+    setPhotoTarget({ participantId, itemNumber: nextCount });
+    fileInputRef.current?.click();
+  };
+
   const handleUpdateCount = async (
     participantId: string,
     change: number,
     event?: MouseEvent<HTMLButtonElement>,
   ) => {
-    if (race?.photo_mode && change > 0) {
-      if (!loggedUsername) {
-        toast.error("Faça login para usar o modo foto.");
-        return;
-      }
-      const participant = participants.find((item) => item.id === participantId);
-      if (!participant?.login_code) {
-        toast.error("Você precisa estar logado para usar o modo foto.");
-        return;
-      }
-      if (isUploadingPhoto) return;
-      const nextCount = Math.max(0, participant.items_eaten + change);
-      setPhotoTarget({ participantId, itemNumber: nextCount });
-      fileInputRef.current?.click();
+    if (change > 0 && isPhotoRequired) {
+      handlePhotoIncrement(participantId, event);
       return;
     }
 
-    if (change > 0) {
-      const now = Date.now();
-      const lastAddAt = lastAddAtRef.current ?? 0;
-      const remaining = addCooldownMs - (now - lastAddAt);
-      if (remaining > 0) {
-        showCooldownMessage(event);
-        return;
-      }
-      lastAddAtRef.current = now;
-      setIsAddCooldownActive(true);
-      if (addCooldownTimeoutRef.current) {
-        clearTimeout(addCooldownTimeoutRef.current);
-      }
-      addCooldownTimeoutRef.current = setTimeout(() => {
-        setIsAddCooldownActive(false);
-      }, addCooldownMs);
+    if (change > 0 && !checkAddCooldown(event)) {
+      return;
     }
 
     await updateCount(participantId, change);
@@ -837,7 +861,7 @@ export default function RoomPage() {
         />
 
         {/* Botão de Encerrar (Apenas VIP) */}
-        {currentParticipant?.is_vip && (
+        {currentParticipant?.is_vip ? (
           <div className="flex justify-center">
             <Button
               variant="destructive"
@@ -847,6 +871,12 @@ export default function RoomPage() {
             >
               {isEnding ? t.room.ending : t.room.end_race}
             </Button>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <p className="text-xs font-semibold text-primary/80">
+              {t.room.vip_only_end}
+            </p>
           </div>
         )}
 
@@ -869,6 +899,10 @@ export default function RoomPage() {
             onUpdateAvatar={updateAvatar}
             isUpdatingAvatar={isUpdatingAvatar}
             isAddCooldown={isAddCooldownActive}
+            isUploadingPhoto={isUploadingPhoto}
+            photoModeEnabled={isPhotoModeEnabled}
+            photoRequired={isPhotoRequired}
+            onPhotoIncrement={handlePhotoIncrement}
             isPremium={isPremiumPlayer}
             exclusiveAvatars={exclusiveAvatars}
           />
@@ -923,7 +957,7 @@ export default function RoomPage() {
       </div>
 
       {currentParticipant && (
-        <div className="fixed right-6 flex flex-col items-end gap-2 pb-[env(safe-area-inset-bottom)] bottom-6">
+        <div className="fixed right-6 flex flex-col items-end gap-2 pb-[env(safe-area-inset-bottom)] bottom-6 z-50">
           <input
             ref={fileInputRef}
             type="file"
@@ -934,15 +968,24 @@ export default function RoomPage() {
           />
           <Button
             size="icon"
-            className={`h-14 w-14 rounded-full shadow-xl shadow-primary/30 ${
+            className={`h-14 w-14 rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/90 via-primary to-primary/70 text-white shadow-[0_16px_35px_rgba(0,0,0,0.22)] backdrop-blur transition-transform duration-200 hover:scale-105 active:scale-95 ${
               isAddCooldownActive || isUploadingPhoto ? "opacity-50 grayscale" : ""
             }`}
             onClick={(event) =>
-              handleUpdateCount(currentParticipant.id, 1, event)
+              isPhotoRequired
+                ? handlePhotoIncrement(currentParticipant.id, event)
+                : handleUpdateCount(currentParticipant.id, 1, event)
             }
             disabled={isUploadingPhoto}
           >
-            <Plus className="h-6 w-6" />
+            {isPhotoRequired ? (
+              <div className="flex flex-col items-center leading-none">
+                <Camera className="h-5 w-5" />
+                <span className="text-[10px] font-black">+1</span>
+              </div>
+            ) : (
+              <span className="text-lg font-black leading-none">+1</span>
+            )}
           </Button>
         </div>
       )}

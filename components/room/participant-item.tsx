@@ -78,6 +78,11 @@ export function ParticipantItem({
             </div>
             <div>
               <div className="flex items-center gap-2">
+                {participant.is_vip && (
+                  <span className="text-base" aria-hidden="true">
+                    🔷
+                  </span>
+                )}
                 <span className="font-bold text-base">{participant.name}</span>
                 {participant.is_vip && (
                   <Badge className="bg-yellow-500/20 text-yellow-600 border-none text-[9px] h-4">

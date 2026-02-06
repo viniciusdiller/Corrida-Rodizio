@@ -10,6 +10,7 @@ export interface Race {
   is_active: boolean;
   is_team_mode: boolean;
   photo_mode?: boolean;
+  photo_required?: boolean;
 }
 
 export interface Participant {
