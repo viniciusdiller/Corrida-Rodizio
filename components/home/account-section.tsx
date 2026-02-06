@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
+  Camera,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 
@@ -20,6 +21,7 @@ interface AccountSectionProps {
   accountPassword: string;
   acceptTerms: boolean;
   setAcceptTerms: (val: boolean) => void;
+  roomsWithPhotos: string[];
   myGroups: any[];
   isLoadingGroups: boolean;
   groupsError: string | null;
@@ -46,6 +48,7 @@ export function AccountSection({
   accountPassword,
   acceptTerms,
   setAcceptTerms,
+  roomsWithPhotos,
   myGroups,
   isLoadingGroups,
   groupsError,
@@ -150,6 +153,10 @@ export function AccountSection({
                             {new Date(group.created_at).toLocaleDateString(
                               "pt-BR",
                             )}
+                            {group.photo_mode &&
+                              roomsWithPhotos.includes(group.room_code) && (
+                                <Camera className="h-3 w-3 text-orange-500" />
+                              )}
                           </span>
                         </div>
                       </div>

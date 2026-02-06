@@ -36,6 +36,7 @@ O projeto utiliza **Next.js 14 (App Router)** para o frontend e **Supabase** par
 - 📱 **PWA Ready:** Otimizado para dispositivos móveis (instalação na tela inicial).
 - 🏆 **Hall da Fama:** Gere imagens compartilháveis para Stories do Instagram ao final da partida.
 - 🎫 **Códigos Promocionais:** Sistema para resgate de avatares e recursos exclusivos.
+- 📸 **Photo Mode (Privado):** Fotos obrigatórias por ponto (somente logados), timeline privada e expira em 2 dias.
 
 ---
 
@@ -56,6 +57,13 @@ O projeto utiliza **Next.js 14 (App Router)** para o frontend e **Supabase** par
 
 - Node.js 18+ instalado.
 - Uma conta no [Supabase](https://supabase.com/).
+
+### Photo Mode (Privado)
+
+- Execute a migration: `scripts/010_add_photo_mode_and_race_photos.sql`
+- Bucket privado necessário: `race-photos`
+- Deploy da Edge Function: `supabase/functions/cleanup-race-photos`
+- (Opcional) Agende o cleanup via SQL: `scripts/011_schedule_cleanup_race_photos.sql`
 
 ### 1. Clone o repositório
 

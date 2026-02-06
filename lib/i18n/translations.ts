@@ -37,6 +37,8 @@ export const translations = {
       room_code_placeholder: "ABCDE",
       team_mode: "Modo Equipes",
       team_mode_desc: "Disputa Coletiva",
+      photo_mode: "Modo Foto",
+      photo_mode_desc: "Foto obrigatória por ponto",
       category_label: "Escolha a Categoria",
       preparing: "Preparando Mesa...",
       locating: "Localizando...",
@@ -211,6 +213,10 @@ export const translations = {
       legendary: "🏆 Lendário Comilão",
       print_post: "Print & Post",
       home: "Início",
+      photo_timeline: "Linha do tempo",
+      timeline_loading: "Carregando...",
+      timeline_empty: "Nenhuma foto registrada.",
+      timeline_error: "Não foi possível carregar as fotos.",
       phrases: [
         "O importante é que a barriga está cheia!",
         "Na próxima você pede reforço!",
@@ -259,6 +265,14 @@ export const translations = {
           content: [
             "Não garantimos que o site estará sempre disponível, livre de erros ou interrupções.",
             "Não nos responsabilizamos por eventuais danos diretos ou indiretos decorrentes do uso ou da impossibilidade de uso do site.",
+          ],
+        },
+        {
+          title: "Modo Foto e Imagens",
+          content: [
+            "Ao ativar o Modo Foto, você concorda em enviar imagens para registrar cada ponto.",
+            "As imagens ficam visíveis apenas para participantes da sala e são removidas automaticamente após 2 dias.",
+            "As imagens são usadas somente para o funcionamento do jogo e o histórico da competição.",
           ],
         },
         {
@@ -412,6 +426,8 @@ export const translations = {
       room_code_placeholder: "ABCDE",
       team_mode: "Team Mode",
       team_mode_desc: "Co-op Dispute",
+      photo_mode: "Photo Mode",
+      photo_mode_desc: "Photo required per point",
       category_label: "Choose Category",
       preparing: "Setting Table...",
       locating: "Locating...",
@@ -586,6 +602,10 @@ export const translations = {
       legendary: "🏆 Legendary Eater",
       print_post: "Print & Post",
       home: "Home",
+      photo_timeline: "Photo Timeline",
+      timeline_loading: "Loading...",
+      timeline_empty: "No photos yet.",
+      timeline_error: "Unable to load photos.",
       phrases: [
         "The important thing is the belly is full!",
         "Next time ask for backup!",
@@ -634,6 +654,14 @@ export const translations = {
           content: [
             "We do not guarantee that the site will always be available, free of errors or interruptions.",
             "We are not responsible for any direct or indirect damages resulting from the use or inability to use the site.",
+          ],
+        },
+        {
+          title: "Photo Mode and Images",
+          content: [
+            "When Photo Mode is enabled, you agree to submit images for each point.",
+            "Images are visible only to room participants and are automatically deleted after 2 days.",
+            "Images are used only for gameplay and race history.",
           ],
         },
         {
@@ -786,6 +814,8 @@ export const translations = {
       room_code_placeholder: "ABCDE",
       team_mode: "Mode équipes",
       team_mode_desc: "Affrontement collectif",
+      photo_mode: "Mode Photo",
+      photo_mode_desc: "Photo requise par point",
       category_label: "Choisir la catégorie",
       preparing: "Préparation de la table...",
       locating: "Localisation...",
@@ -1009,6 +1039,14 @@ export const translations = {
           ],
         },
         {
+          title: "Mode Photo et Images",
+          content: [
+            "Lorsque le mode photo est activé, vous acceptez d’envoyer des images pour chaque point.",
+            "Les images sont visibles uniquement par les participants et sont supprimées automatiquement après 2 jours.",
+            "Les images sont utilisées uniquement pour le fonctionnement du jeu et l’historique.",
+          ],
+        },
+        {
           title: "Contenu de tiers",
           content: [
             "Le site peut afficher du contenu tiers ou des publicités. Nous ne sommes pas responsables de l’exactitude, de la qualité ou de la légalité de ce contenu.",
@@ -1160,6 +1198,8 @@ export const translations = {
       room_code_placeholder: "ABCDE",
       team_mode: "Modo Equipos",
       team_mode_desc: "Disputa Colectiva",
+      photo_mode: "Modo Foto",
+      photo_mode_desc: "Foto obligatoria por punto",
       category_label: "Elige la Categoría",
       preparing: "Preparando Mesa...",
       locating: "Localizando...",
@@ -1383,6 +1423,14 @@ export const translations = {
           content: [
             "No garantizamos que el sitio esté siempre disponible, libre de errores o interrupciones.",
             "No nos hacemos responsables de los daños directos o indirectos derivados del uso o la imposibilidad de uso del sitio.",
+          ],
+        },
+        {
+          title: "Modo Foto e Imágenes",
+          content: [
+            "Al activar el modo foto, aceptas enviar imágenes por cada punto.",
+            "Las imágenes solo son visibles para los participantes y se eliminan automáticamente después de 2 días.",
+            "Las imágenes se usan únicamente para el funcionamiento del juego y el historial.",
           ],
         },
         {

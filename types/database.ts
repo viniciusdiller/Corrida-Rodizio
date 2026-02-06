@@ -9,6 +9,7 @@ export interface Race {
   ended_at: string | null;
   is_active: boolean;
   is_team_mode: boolean;
+  photo_mode?: boolean;
 }
 
 export interface Participant {
@@ -22,4 +23,14 @@ export interface Participant {
   team: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface RacePhoto {
+  id: string;
+  race_id: string;
+  participant_id: string;
+  item_number: number;
+  image_path: string;
+  created_at: string;
+  expires_at?: string | null;
 }

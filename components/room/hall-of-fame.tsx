@@ -6,6 +6,7 @@ import { Race, Participant } from "@/types/database";
 import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
 import { useLanguage } from "@/contexts/language-context";
 import { ShareStoryButton } from "./share-story-button";
+import { useEffect, useState } from "react";
 
 const TEAM_OPTIONS = [
   { id: "AZUL", shortLabel: "Azul", pillClass: "bg-blue-500/20 text-blue-300" },
@@ -32,6 +33,7 @@ interface HallOfFameProps {
   maxScore: number;
   getItemLabel: (count: number) => string;
   onHome: () => void;
+  currentParticipantId?: string | null;
 }
 
 export function HallOfFame({
@@ -40,9 +42,51 @@ export function HallOfFame({
   maxScore,
   getItemLabel,
   onHome,
+  currentParticipantId,
 }: HallOfFameProps) {
   const { t } = useLanguage();
   const MOTIVATIONAL_PHRASES = t.hall_of_fame.phrases;
+  const [timeline, setTimeline] = useState<
+    {
+      id: string;
+      createdAt: string;
+      itemNumber: number;
+      participantName: string;
+      signedUrl: string | null;
+    }[]
+  >([]);
+  const [isLoadingTimeline, setIsLoadingTimeline] = useState(false);
+  const [timelineError, setTimelineError] = useState(false);
+  const [activePhoto, setActivePhoto] = useState<string | null>(null);
+  const [isSharingPhoto, setIsSharingPhoto] = useState(false);
+
+  useEffect(() => {
+    const loadTimeline = async () => {
+      if (!race.photo_mode || !currentParticipantId) return;
+      setIsLoadingTimeline(true);
+      setTimelineError(false);
+      try {
+        const response = await fetch(
+          `/api/race-photos/timeline?roomCode=${encodeURIComponent(
+            race.room_code
+          )}&participantId=${encodeURIComponent(currentParticipantId)}`
+        );
+        if (response.status === 403) {
+          setTimeline([]);
+          return;
+        }
+        const data = await response.json().catch(() => ({}));
+        const photos = Array.isArray(data?.photos) ? data.photos : [];
+        setTimeline(photos);
+      } catch {
+        setTimelineError(true);
+      } finally {
+        setIsLoadingTimeline(false);
+      }
+    };
+
+    loadTimeline();
+  }, [race.photo_mode, race.room_code, currentParticipantId]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white p-6 flex flex-col items-center justify-center animate-in fade-in duration-1000">
@@ -88,7 +132,7 @@ export function HallOfFame({
                   </div>
                   <span
                     className={`text-2xl font-black ${
-                      isWinner ? "text-orange-500" : "text-zinc-700"
+                      isWinner ? "text-orange-500" : "text-zinc-200"
                     }`}
                   >
                     #{i + 1}
@@ -124,6 +168,75 @@ export function HallOfFame({
           })}
         </div>
         <div className="flex flex-col items-center gap-4 pt-4 w-full">
+          {race.photo_mode && currentParticipantId && (
+            <div className="w-full space-y-3">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">
+                {t.hall_of_fame.photo_timeline}
+              </p>
+              {isLoadingTimeline && (
+                <p className="text-xs text-muted-foreground">
+                  {t.hall_of_fame.timeline_loading}
+                </p>
+              )}
+              {!isLoadingTimeline && timelineError && (
+                <p className="text-xs text-muted-foreground">
+                  {t.hall_of_fame.timeline_error}
+                </p>
+              )}
+              {!isLoadingTimeline && !timelineError && timeline.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {t.hall_of_fame.timeline_empty}
+                </p>
+              )}
+              {timeline.length > 0 && (
+                <div className="space-y-2">
+                  {timeline.map((photo) => (
+                    <div key={photo.id} className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                        <span className="w-10 text-right">
+                          {new Date(photo.createdAt).toLocaleTimeString(
+                            "pt-BR",
+                            { hour: "2-digit", minute: "2-digit" }
+                          )}
+                        </span>
+                        <div className="relative flex items-center">
+                          <span className="h-2 w-2 rounded-full bg-orange-400" />
+                          <span className="ml-1 h-px w-6 bg-white/20" />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/10"
+                        onClick={() => {
+                          if (photo.signedUrl) setActivePhoto(photo.signedUrl);
+                        }}
+                      >
+                        {photo.signedUrl ? (
+                          <img
+                            src={photo.signedUrl}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="block h-full w-full" />
+                        )}
+                      </button>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold">
+                          {photo.participantName} · #{photo.itemNumber}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {new Date(photo.createdAt).toLocaleDateString(
+                            "pt-BR"
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <ShareStoryButton
             race={race}
             participants={participants}
@@ -140,6 +253,55 @@ export function HallOfFame({
           </Button>
         </div>
       </div>
+      {activePhoto && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+            onClick={() => setActivePhoto(null)}
+          />
+          <div className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/10 bg-zinc-950 p-3">
+            <img
+              src={activePhoto}
+              alt=""
+              className="w-full rounded-xl object-contain"
+            />
+            <div className="mt-3 flex justify-end">
+              <Button
+                variant="outline"
+                className="border-white/10 bg-white/5 hover:bg-white/10"
+                disabled={isSharingPhoto}
+                onClick={async () => {
+                  if (!activePhoto) return;
+                  setIsSharingPhoto(true);
+                  try {
+                    const response = await fetch(activePhoto);
+                    const blob = await response.blob();
+                    const file = new File([blob], "photo.jpg", {
+                      type: blob.type || "image/jpeg",
+                    });
+                    if (navigator.canShare?.({ files: [file] })) {
+                      await navigator.share({ files: [file] });
+                    } else {
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement("a");
+                      link.href = url;
+                      link.download = "photo.jpg";
+                      link.click();
+                      URL.revokeObjectURL(url);
+                    }
+                  } catch {
+                    return;
+                  } finally {
+                    setIsSharingPhoto(false);
+                  }
+                }}
+              >
+                {isSharingPhoto ? "..." : "Compartilhar foto"}
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

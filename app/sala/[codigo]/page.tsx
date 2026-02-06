@@ -1,10 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ChangeEvent,
+} from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Plus, ArrowLeft, Settings, Check, Copy, UserPlus } from "lucide-react";
 import confetti from "canvas-confetti";
+import { toast } from "sonner";
 
 import { RoomHeader } from "@/components/room/room-header";
 import { RoomInfo } from "@/components/room/room-info";
@@ -81,6 +88,12 @@ export default function RoomPage() {
     y: number;
   } | null>(null);
   const [isAddCooldownActive, setIsAddCooldownActive] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoTarget, setPhotoTarget] = useState<{
+    participantId: string;
+    itemNumber: number;
+  } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleCopyCode = () => {
     const inviteUrl = window.location.href;
@@ -266,6 +279,23 @@ export default function RoomPage() {
     change: number,
     event?: MouseEvent<HTMLButtonElement>,
   ) => {
+    if (race?.photo_mode && change > 0) {
+      if (!loggedUsername) {
+        toast.error("Faça login para usar o modo foto.");
+        return;
+      }
+      const participant = participants.find((item) => item.id === participantId);
+      if (!participant?.login_code) {
+        toast.error("Você precisa estar logado para usar o modo foto.");
+        return;
+      }
+      if (isUploadingPhoto) return;
+      const nextCount = Math.max(0, participant.items_eaten + change);
+      setPhotoTarget({ participantId, itemNumber: nextCount });
+      fileInputRef.current?.click();
+      return;
+    }
+
     if (change > 0) {
       const now = Date.now();
       const lastAddAt = lastAddAtRef.current ?? 0;
@@ -285,6 +315,95 @@ export default function RoomPage() {
     }
 
     await updateCount(participantId, change);
+  };
+
+  const handlePhotoSelected = async (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !photoTarget || !race) {
+      setPhotoTarget(null);
+      return;
+    }
+
+    const compressImage = async (input: File) => {
+      if (input.type === "image/gif") return input;
+      const maxSize = 1024;
+      let quality = 0.7;
+      let bitmap: ImageBitmap | null = null;
+      try {
+        bitmap = await createImageBitmap(input);
+        let ratio = Math.min(
+          1,
+          maxSize / Math.max(bitmap.width, bitmap.height)
+        );
+        let blob: Blob | null = null;
+        let targetWidth = Math.round(bitmap.width * ratio);
+        let targetHeight = Math.round(bitmap.height * ratio);
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return input;
+
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
+          ctx.clearRect(0, 0, targetWidth, targetHeight);
+          ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+          blob = await new Promise<Blob | null>((resolve) =>
+            canvas.toBlob(resolve, "image/jpeg", quality)
+          );
+          if (blob && blob.size <= 1_000_000) break;
+          quality = Math.max(0.5, quality - 0.1);
+          ratio = ratio * 0.85;
+          targetWidth = Math.max(320, Math.round(bitmap.width * ratio));
+          targetHeight = Math.max(320, Math.round(bitmap.height * ratio));
+        }
+
+        if (!blob) return input;
+        return new File([blob], input.name.replace(/\.\w+$/, ".jpg"), {
+          type: "image/jpeg",
+        });
+      } catch {
+        return input;
+      } finally {
+        bitmap?.close();
+      }
+    };
+
+    if (!loggedUsername) {
+      toast.error("Faça login para usar o modo foto.");
+      setPhotoTarget(null);
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      const compressed = await compressImage(file);
+      const formData = new FormData();
+      formData.append("roomCode", roomCode);
+      formData.append("participantId", photoTarget.participantId);
+      formData.append("itemNumber", String(photoTarget.itemNumber));
+      formData.append("loginCode", loggedUsername);
+      formData.append("file", compressed);
+
+      const response = await fetch("/api/race-photos/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        toast.error("Nao foi possivel enviar a foto.");
+        return;
+      }
+
+      await updateCount(photoTarget.participantId, 1);
+    } catch {
+      toast.error("Nao foi possivel enviar a foto.");
+    } finally {
+      setIsUploadingPhoto(false);
+      setPhotoTarget(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const updateAvatar = async (avatar: string) => {
@@ -659,6 +778,7 @@ export default function RoomPage() {
         maxScore={maxScore}
         getItemLabel={getItemLabel}
         onHome={() => router.push("/")}
+        currentParticipantId={currentParticipantId}
       />
     );
   }
@@ -804,14 +924,23 @@ export default function RoomPage() {
 
       {currentParticipant && (
         <div className="fixed right-6 flex flex-col items-end gap-2 pb-[env(safe-area-inset-bottom)] bottom-6">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handlePhotoSelected}
+          />
           <Button
             size="icon"
             className={`h-14 w-14 rounded-full shadow-xl shadow-primary/30 ${
-              isAddCooldownActive ? "opacity-50 grayscale" : ""
+              isAddCooldownActive || isUploadingPhoto ? "opacity-50 grayscale" : ""
             }`}
             onClick={(event) =>
               handleUpdateCount(currentParticipant.id, 1, event)
             }
+            disabled={isUploadingPhoto}
           >
             <Plus className="h-6 w-6" />
           </Button>

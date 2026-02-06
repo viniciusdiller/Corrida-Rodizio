@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users2, ArrowRight, Loader2 } from "lucide-react";
+import { Users2, ArrowRight, Loader2, Camera } from "lucide-react";
 import { FoodType } from "@/types/database";
 import { useLanguage } from "@/contexts/language-context";
 
@@ -12,6 +12,11 @@ interface CreateRaceFormProps {
   setPlayerName: (val: string) => void;
   isTeamMode: boolean;
   setIsTeamMode: (val: boolean) => void;
+  photoMode: boolean;
+  setPhotoMode: (val: boolean) => void;
+  canEnablePhotoMode: boolean;
+  requireTerms: boolean;
+  onTermsAccepted: (accepted: boolean) => void;
   selectedFood: FoodType | null;
   setSelectedFood: (val: FoodType) => void;
   foodTypes: any[];
@@ -25,6 +30,11 @@ export function CreateRaceForm({
   setPlayerName,
   isTeamMode,
   setIsTeamMode,
+  photoMode,
+  setPhotoMode,
+  canEnablePhotoMode,
+  requireTerms,
+  onTermsAccepted,
   selectedFood,
   setSelectedFood,
   foodTypes,
@@ -35,6 +45,12 @@ export function CreateRaceForm({
   const { t } = useLanguage();
   // Estado para controlar o checkbox
   const [agreed, setAgreed] = useState(false);
+
+  useEffect(() => {
+    if (!requireTerms) {
+      setAgreed(true);
+    }
+  }, [requireTerms]);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
@@ -88,6 +104,45 @@ export function CreateRaceForm({
         </div>
       </div>
 
+      {canEnablePhotoMode && (
+        <div
+          onClick={() => {
+            if (!photoMode) setAgreed(false);
+            setPhotoMode(!photoMode);
+          }}
+          className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer ${
+            photoMode
+              ? "bg-primary/5 border-primary/20 shadow-inner"
+              : "bg-background border-muted"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <Camera
+              className={`h-5 w-5 ${
+                photoMode ? "text-primary" : "text-muted-foreground"
+              }`}
+            />
+            <div className="text-left">
+              <p className="text-sm font-bold">{t.home.photo_mode}</p>
+              <p className="text-[10px] text-muted-foreground uppercase">
+                {t.home.photo_mode_desc}
+              </p>
+            </div>
+          </div>
+          <div
+            className={`w-10 h-6 rounded-full relative ${
+              photoMode ? "bg-primary" : "bg-muted"
+            }`}
+          >
+            <div
+              className={`absolute w-4 h-4 bg-white rounded-full top-1 transition-all ${
+                photoMode ? "left-5" : "left-1"
+              }`}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         <Label className="text-xs uppercase font-bold text-muted-foreground px-1">
           {t.home.category_label}
@@ -113,44 +168,59 @@ export function CreateRaceForm({
       </div>
 
       {/* CHECKBOX DE TERMOS E PRIVACIDADE */}
-      <div className="flex items-center gap-3 px-1">
-        <input
-          type="checkbox"
-          id="terms-create"
-          checked={agreed}
-          onChange={(e) => setAgreed(e.target.checked)}
-          className=" h-4 w-4 rounded border-primary text-primary focus:ring-primary accent-primary cursor-pointer"
-        />
-        <label
-          htmlFor="terms-create"
-          className="text-xs text-muted-foreground leading-tight cursor-pointer select-none"
+      {requireTerms && (
+        <div
+          className={`flex items-center gap-3 px-1 ${
+            photoMode && !agreed ? "rounded-lg border border-primary/40 p-2" : ""
+          }`}
         >
-          {t.common.terms_pre_link}
-          <Link
-            href="/terms"
-            className="underline hover:text-primary"
-            target="_blank"
+          <input
+            type="checkbox"
+            id="terms-create"
+            checked={agreed}
+            onChange={(e) => {
+              const value = e.target.checked;
+              setAgreed(value);
+              if (value) onTermsAccepted(true);
+            }}
+            className=" h-4 w-4 rounded border-primary text-primary focus:ring-primary accent-primary cursor-pointer"
+          />
+          <label
+            htmlFor="terms-create"
+            className="text-xs text-muted-foreground leading-tight cursor-pointer select-none"
           >
-            {t.common.terms_link}
-          </Link>
-          {t.common.privacy_connector}
-          <Link
-            href="/privacy"
-            className="underline hover:text-primary"
-            target="_blank"
-          >
-            {t.common.privacy_link}
-          </Link>
-          {t.common.terms_post_link}
-        </label>
-      </div>
+            {t.common.terms_pre_link}
+            <Link
+              href="/terms"
+              className="underline hover:text-primary"
+              target="_blank"
+            >
+              {t.common.terms_link}
+            </Link>
+            {t.common.privacy_connector}
+            <Link
+              href="/privacy"
+              className="underline hover:text-primary"
+              target="_blank"
+            >
+              {t.common.privacy_link}
+            </Link>
+            {t.common.terms_post_link}
+          </label>
+        </div>
+      )}
 
       <div className="pt-2 space-y-4">
         <Button
           size="lg"
           className="w-full h-14 rounded-xl font-bold text-lg shadow-xl shadow-primary/20 cursor-pointer"
           onClick={onCreate}
-          disabled={!playerName.trim() || !selectedFood || loading || !agreed}
+          disabled={
+            !playerName.trim() ||
+            !selectedFood ||
+            loading ||
+            (requireTerms && !agreed)
+          }
         >
           {loading ? (
             <>
