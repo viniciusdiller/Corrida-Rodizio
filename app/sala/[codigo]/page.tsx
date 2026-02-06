@@ -24,7 +24,6 @@ import type { Race, Participant } from "@/types/database";
 import { TeamSelection } from "@/components/room/team-selection";
 import { useLanguage } from "@/contexts/language-context";
 import { getFoodTypeUnit } from "@/lib/utils/food-type";
-import { toast } from "sonner";
 
 export default function RoomPage() {
   const { t, language } = useLanguage();
@@ -72,7 +71,6 @@ export default function RoomPage() {
   const [isClaiming, setIsClaiming] = useState(false);
   const [promoPermissions, setPromoPermissions] = useState<string[]>([]);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
   const [currentParticipantId, setCurrentParticipantId] = useState<
     string | null
   >(null);
@@ -83,17 +81,6 @@ export default function RoomPage() {
     y: number;
   } | null>(null);
   const [isAddCooldownActive, setIsAddCooldownActive] = useState(false);
-  const isOffline = !isOnline;
-
-  const ensureOnline = () => {
-    if (!isOnline) {
-      toast.error("Sem conexão com a internet. Tente novamente.", {
-        id: "offline-connection",
-      });
-      return false;
-    }
-    return true;
-  };
 
   const handleCopyCode = () => {
     const inviteUrl = window.location.href;
@@ -126,11 +113,6 @@ export default function RoomPage() {
       setPromoPermissions([]);
       return;
     }
-    if (!ensureOnline()) {
-      setPromoPermissions([]);
-      setIsLoadingPermissions(false);
-      return;
-    }
     setIsLoadingPermissions(true);
     try {
       const response = await fetch(
@@ -155,7 +137,6 @@ export default function RoomPage() {
       setClaimStatus("Digite o codigo.");
       return;
     }
-    if (!ensureOnline()) return;
     setIsClaiming(true);
     setClaimStatus(null);
     try {
@@ -252,7 +233,6 @@ export default function RoomPage() {
 
   const updateCount = async (participantId: string, change: number) => {
     if (participantId !== currentParticipantId || !race?.is_active) return;
-    if (!ensureOnline()) return;
     const p = participants.find((item) => item.id === participantId);
     if (!p) return;
 
@@ -286,7 +266,6 @@ export default function RoomPage() {
     change: number,
     event?: MouseEvent<HTMLButtonElement>,
   ) => {
-    if (!ensureOnline()) return;
     if (change > 0) {
       const now = Date.now();
       const lastAddAt = lastAddAtRef.current ?? 0;
@@ -310,7 +289,6 @@ export default function RoomPage() {
 
   const updateAvatar = async (avatar: string) => {
     if (!currentParticipantId || isUpdatingAvatar) return;
-    if (!ensureOnline()) return;
     setIsUpdatingAvatar(true);
     try {
       const supabase = createClient();
@@ -327,7 +305,6 @@ export default function RoomPage() {
 
   const updateTeam = async (teamId: string) => {
     if (!currentParticipantId || isUpdatingAvatar) return;
-    if (!ensureOnline()) return;
     setIsUpdatingAvatar(true);
     try {
       const supabase = createClient();
@@ -344,7 +321,6 @@ export default function RoomPage() {
 
   const endRace = async () => {
     if (!race) return;
-    if (!ensureOnline()) return;
     setIsEnding(true);
     try {
       const supabase = createClient();
@@ -419,10 +395,6 @@ export default function RoomPage() {
     }
     if (trimmedNew.length < 6) {
       setPasswordStatus("A nova senha precisa de pelo menos 6 caracteres.");
-      return;
-    }
-    if (!ensureOnline()) {
-      setPasswordStatus("Sem conexão com a internet. Tente novamente.");
       return;
     }
 
@@ -519,7 +491,6 @@ export default function RoomPage() {
 
   const handleConnectLogin = async () => {
     if (!accountUsername.trim() || !accountPassword.trim()) return;
-    if (!ensureOnline()) return;
     setAccountLoading(true);
     setAccountStatus(null);
     try {
@@ -551,7 +522,6 @@ export default function RoomPage() {
       setAccountStatus(t.account.password_too_short);
       return;
     }
-    if (!ensureOnline()) return;
     setAccountLoading(true);
     setAccountStatus(null);
     try {
@@ -616,28 +586,6 @@ export default function RoomPage() {
       supabase.removeChannel(channel);
     };
   }, [roomCode, isSpectator]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const updateStatus = () => setIsOnline(window.navigator.onLine);
-    updateStatus();
-    window.addEventListener("online", updateStatus);
-    window.addEventListener("offline", updateStatus);
-    return () => {
-      window.removeEventListener("online", updateStatus);
-      window.removeEventListener("offline", updateStatus);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isOnline) {
-      toast.error("Sem conexão com a internet. Tente novamente.", {
-        id: "offline-connection",
-      });
-      return;
-    }
-    toast.dismiss("offline-connection");
-  }, [isOnline]);
 
   useEffect(() => {
     loadPromoPermissions();
@@ -775,7 +723,7 @@ export default function RoomPage() {
               variant="destructive"
               className="w-full max-w-xs rounded-xl font-bold shadow-lg shadow-destructive/20 cursor-pointer transition-all hover:scale-105"
               onClick={handleEndRace}
-              disabled={isEnding || isOffline}
+              disabled={isEnding}
             >
               {isEnding ? t.room.ending : t.room.end_race}
             </Button>
@@ -789,7 +737,6 @@ export default function RoomPage() {
             <TeamSelection
               onUpdateTeam={updateTeam}
               isUpdating={isUpdatingAvatar}
-              isOffline={isOffline}
             />
           )}
 
@@ -804,7 +751,6 @@ export default function RoomPage() {
             isAddCooldown={isAddCooldownActive}
             isPremium={isPremiumPlayer}
             exclusiveAvatars={exclusiveAvatars}
-            isOffline={isOffline}
           />
         )}
 
@@ -866,7 +812,6 @@ export default function RoomPage() {
             onClick={(event) =>
               handleUpdateCount(currentParticipant.id, 1, event)
             }
-            disabled={isOffline}
           >
             <Plus className="h-6 w-6" />
           </Button>
@@ -963,8 +908,7 @@ export default function RoomPage() {
                   disabled={
                     accountLoading ||
                     !accountUsername.trim() ||
-                    !accountPassword.trim() ||
-                    isOffline
+                    !accountPassword.trim()
                   }
                   onClick={
                     accountFlow === "login"
@@ -1067,7 +1011,7 @@ export default function RoomPage() {
                   <Button
                     className="h-10 md:w-40"
                     onClick={handleClaimExclusiveAvatar}
-                    disabled={isClaiming || isOffline}
+                    disabled={isClaiming}
                   >
                     {isClaiming ? "..." : "OK"}
                   </Button>
@@ -1125,7 +1069,7 @@ export default function RoomPage() {
                 <Button
                   className="w-full h-10 rounded-xl font-bold"
                   onClick={handleChangePassword}
-                  disabled={isUpdatingPassword || isOffline}
+                  disabled={isUpdatingPassword}
                 >
                   {isUpdatingPassword
                     ? t.account.updating
