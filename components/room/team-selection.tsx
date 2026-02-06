@@ -8,13 +8,11 @@ import { useLanguage } from "@/contexts/language-context";
 interface TeamSelectionProps {
   onUpdateTeam: (teamId: string) => void;
   isUpdating: boolean;
-  isOffline: boolean;
 }
 
 export function TeamSelection({
   onUpdateTeam,
   isUpdating,
-  isOffline,
 }: TeamSelectionProps) {
   const { t } = useLanguage();
 
@@ -59,7 +57,7 @@ export function TeamSelection({
               variant="outline"
               className={`h-11 rounded-xl font-bold ${team.class}`}
               onClick={() => onUpdateTeam(team.id)}
-              disabled={isUpdating || isOffline}
+              disabled={isUpdating}
             >
               {team.label}
             </Button>
