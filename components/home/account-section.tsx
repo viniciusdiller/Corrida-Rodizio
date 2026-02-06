@@ -26,6 +26,7 @@ interface AccountSectionProps {
   showHistory: boolean;
   currentPage: number;
   itemsPerPage: number;
+  isOffline: boolean;
   onToggleHistory: () => void;
   setCurrentPage: (page: number) => void;
   onLoadGroups: () => void;
@@ -52,6 +53,7 @@ export function AccountSection({
   showHistory,
   currentPage,
   itemsPerPage,
+  isOffline,
   onLoadGroups,
   onLogin,
   onCreateLogin,
@@ -235,7 +237,7 @@ export function AccountSection({
               <Button
                 className="w-full h-12 rounded-xl font-bold"
                 onClick={onLogin}
-                disabled={accountLoading}
+                disabled={accountLoading || isOffline}
               >
                 <LogIn className="mr-2 h-4 w-4" />{" "}
                 {accountLoading ? t.common.loading : t.account.login_btn}
@@ -296,7 +298,7 @@ export function AccountSection({
               <Button
                 className="w-full h-12 rounded-xl font-bold"
                 onClick={onCreateLogin}
-                disabled={accountLoading}
+                disabled={accountLoading || isOffline}
               >
                 {accountLoading ? t.common.loading : t.account.create_btn}
               </Button>

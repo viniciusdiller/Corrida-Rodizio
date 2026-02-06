@@ -12,6 +12,7 @@ interface JoinRaceFormProps {
   roomCode: string;
   setRoomCode: (val: string) => void;
   loading: boolean;
+  isOffline: boolean;
   isSpectator: boolean;
   setIsSpectator: (val: boolean) => void;
   onJoin: () => void;
@@ -24,6 +25,7 @@ export function JoinRaceForm({
   roomCode,
   setRoomCode,
   loading,
+  isOffline,
   isSpectator,
   setIsSpectator,
   onJoin,
@@ -138,7 +140,9 @@ export function JoinRaceForm({
         <Button
           className="w-full h-14 rounded-xl font-bold text-lg shadow-xl shadow-primary/20 cursor-pointer"
           onClick={onJoin}
-          disabled={!hasName || !roomCode.trim() || loading || !agreed}
+          disabled={
+            !hasName || !roomCode.trim() || loading || !agreed || isOffline
+          }
         >
           {loading ? (
             <>
