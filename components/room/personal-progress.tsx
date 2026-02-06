@@ -28,6 +28,7 @@ interface PersonalProgressProps {
   isAddCooldown: boolean;
   isPremium: boolean;
   exclusiveAvatars: string[];
+  isOffline: boolean;
 }
 
 export function PersonalProgress({
@@ -39,6 +40,7 @@ export function PersonalProgress({
   isAddCooldown,
   isPremium,
   exclusiveAvatars,
+  isOffline,
 }: PersonalProgressProps) {
   const { t } = useLanguage();
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
@@ -47,6 +49,7 @@ export function PersonalProgress({
   useEffect(() => {
     let isMounted = true;
     const loadAvatars = async () => {
+      if (isOffline) return;
       try {
         const response = await fetch("/api/avatars");
         if (!response.ok) return;
@@ -69,7 +72,7 @@ export function PersonalProgress({
     return () => {
       isMounted = false;
     };
-  }, [exclusiveAvatars, isPremium, participant.avatar]);
+  }, [exclusiveAvatars, isOffline, isPremium, participant.avatar]);
 
   return (
     <div className="space-y-2">
@@ -114,7 +117,7 @@ export function PersonalProgress({
                 size="icon"
                 className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive active:scale-75 transition-all duration-200 cursor-pointer"
                 onClick={(event) => onUpdateCount(participant.id, -1, event)}
-                disabled={participant.items_eaten === 0}
+                disabled={participant.items_eaten === 0 || isOffline}
               >
                 <Minus className="h-3.5 w-3.5" />
               </Button>
@@ -131,6 +134,7 @@ export function PersonalProgress({
                   isAddCooldown ? "opacity-50 grayscale" : ""
                 }`}
                 onClick={(event) => onUpdateCount(participant.id, 1, event)}
+                disabled={isOffline}
               >
                 <Plus className="h-3.5 w-3.5" />
               </Button>
@@ -142,7 +146,7 @@ export function PersonalProgress({
               variant="outline"
               className="w-full justify-between rounded-xl text-[11px] font-black uppercase tracking-[0.18em] hover:cursor-pointer"
               onClick={() => setShowAvatarPicker((prev) => !prev)}
-              disabled={isUpdatingAvatar}
+              disabled={isUpdatingAvatar || isOffline}
             >
               {t.room.change_avatar}
               <ChevronDown
@@ -167,7 +171,7 @@ export function PersonalProgress({
                   return (
                     <button
                       key={opt}
-                      disabled={isUpdatingAvatar}
+                      disabled={isUpdatingAvatar || isOffline}
                       onClick={() => {
                         onUpdateAvatar(opt);
                         setShowAvatarPicker(false);
