@@ -75,11 +75,23 @@ export default function Home() {
   const [isClaiming, setIsClaiming] = useState(false);
   const [promoPermissions, setPromoPermissions] = useState<string[]>([]);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const isOffline = !isOnline;
 
   const notifyLoginUpdated = () => {
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("rodizio-login-updated"));
     }
+  };
+
+  const ensureOnline = () => {
+    if (!isOnline) {
+      toast.error("Sem conexão com a internet. Tente novamente.", {
+        id: "offline-connection",
+      });
+      return false;
+    }
+    return true;
   };
 
   const formatAccountLabel = (value: string) =>
@@ -140,9 +152,36 @@ export default function Home() {
     setIsStandalone(standalone);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const updateStatus = () => setIsOnline(window.navigator.onLine);
+    updateStatus();
+    window.addEventListener("online", updateStatus);
+    window.addEventListener("offline", updateStatus);
+    return () => {
+      window.removeEventListener("online", updateStatus);
+      window.removeEventListener("offline", updateStatus);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOnline) {
+      toast.error("Sem conexão com a internet. Tente novamente.", {
+        id: "offline-connection",
+      });
+      return;
+    }
+    toast.dismiss("offline-connection");
+  }, [isOnline]);
+
   const loadPromoPermissions = async () => {
     if (!loginCode) {
       setPromoPermissions([]);
+      return;
+    }
+    if (!ensureOnline()) {
+      setPromoPermissions([]);
+      setIsLoadingPermissions(false);
       return;
     }
     setIsLoadingPermissions(true);
@@ -300,6 +339,7 @@ export default function Home() {
       toast.error(t.account.accept_terms_required);
       return;
     }
+    if (!ensureOnline()) return;
     setAccountLoading(true);
     setGroupsError(null);
     try {
@@ -336,6 +376,7 @@ export default function Home() {
 
   const handleLogin = async () => {
     if (!accountCodeInput.trim() || !accountPassword.trim()) return;
+    if (!ensureOnline()) return;
     setAccountLoading(true);
     try {
       const supabase = createClient();
@@ -369,6 +410,7 @@ export default function Home() {
   const handleLoadGroups = async (usernameOverride?: string) => {
     const codeToUse = usernameOverride || loginCode;
     if (!codeToUse) return;
+    if (!ensureOnline()) return;
 
     setIsLoadingGroups(true);
     setGroupsError(null);
@@ -472,6 +514,7 @@ export default function Home() {
       setClaimStatus("Digite o codigo.");
       return;
     }
+    if (!ensureOnline()) return;
     setIsClaiming(true);
     setClaimStatus(null);
     try {
@@ -515,6 +558,10 @@ export default function Home() {
       setPasswordStatus("A nova senha precisa de pelo menos 6 caracteres.");
       return;
     }
+    if (!ensureOnline()) {
+      setPasswordStatus("Sem conexão com a internet. Tente novamente.");
+      return;
+    }
 
     setIsUpdatingPassword(true);
     setPasswordStatus(null);
@@ -553,6 +600,7 @@ export default function Home() {
     const normalizedName = playerName.trim();
     const roomOwnerName = loginCode?.trim() || normalizedName;
     if (!normalizedName || !roomOwnerName || !selectedFood) return;
+    if (!ensureOnline()) return;
     setLoading(true);
     try {
       const supabase = createClient();
@@ -616,6 +664,7 @@ export default function Home() {
     const normalizedName = playerName.trim();
     if (!isSpectator && !normalizedName) return;
     if (!roomCode.trim()) return;
+    if (!ensureOnline()) return;
     setLoading(true);
     try {
       const supabase = createClient();
@@ -900,6 +949,7 @@ export default function Home() {
                   setAccountPassword={setAccountPassword}
                   onMenuStateChange={setIsAccountMenuOpen}
                   router={router}
+                  isOffline={isOffline}
                 />
               )}
               {showPasswordSuccess && (
@@ -951,6 +1001,7 @@ export default function Home() {
                     setSelectedFood={setSelectedFood}
                     foodTypes={foodTypes}
                     loading={loading}
+                    isOffline={isOffline}
                     onCreate={handleCreateRoom}
                     onBack={() => {
                       setFlow(null);
@@ -964,6 +1015,7 @@ export default function Home() {
                     roomCode={roomCode}
                     setRoomCode={setRoomCode}
                     loading={loading}
+                    isOffline={isOffline}
                     isSpectator={isSpectator}
                     setIsSpectator={setIsSpectator}
                     onJoin={handleJoinRoom}
