@@ -34,9 +34,11 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
     (a, b) =>
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
-  const baseSpeed = 1.1;
-  const speedFactor = Math.min(1.8, 1 + (currentMax / 10) * 0.8);
-  const trackSpeed = Math.max(0.6, baseSpeed / speedFactor);
+  const baseSpeed = 1.9;
+  const maxSpeedFactor = 2.0;
+  const progressToTen = Math.min(currentMax, 10) / 10;
+  const speedFactor = 1 + progressToTen * (maxSpeedFactor - 1);
+  const trackSpeed = baseSpeed / speedFactor;
   const tailProgress = Math.min(1, Math.max(0, (currentMax - 3) / 7));
   const showTails = currentMax >= 3;
   const [scrollX, setScrollX] = useState(0);
@@ -45,7 +47,7 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
   const lastFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const pixelsPerSecond = 1400 / (trackSpeed * 7);
+    const pixelsPerSecond = 1400 / (trackSpeed * 11);
     targetSpeedRef.current = pixelsPerSecond;
   }, [trackSpeed]);
 
@@ -175,17 +177,12 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
           className="py-6 pl-2 pr-12 space-y-1 relative min-h-[160px] bg-[#222]"
           style={{
             ["--dot-offset" as any]: "20px",
-            backgroundImage:
-              "radial-gradient(#444 6px, transparent 6px), repeating-linear-gradient(to right, rgba(255,255,255,0.18) 0 4px, transparent 4px 220px)",
-            backgroundSize: "100px 52px, 200px 100%",
-            backgroundPosition: `${-scrollX}px var(--dot-offset), ${-scrollX}px 0`,
+            backgroundImage: "radial-gradient(#444 1px, transparent 1px)",
+            backgroundSize: "15px 15px",
+            backgroundPosition: `${-scrollX}px var(--dot-offset)`,
           }}
         >
-          <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-white/10 z-0">
-            <span className="absolute -top-4 -left-1 text-[8px] text-muted-foreground font-mono">
-              {currentMin}
-            </span>
-          </div>
+          <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-white/10 z-0" />
 
           <div
             className="absolute right-0 top-0 bottom-0 w-8 md:w-12 opacity-20 pointer-events-none"
@@ -209,7 +206,7 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
                 key={participant.id}
                 className="relative h-12 flex items-center"
               >
-                <div className="absolute bottom-0 left-2 right-2 h-px bg-white/5" />
+                
 
                 <div
                   className={`absolute flex items-center gap-1 ${
@@ -313,3 +310,4 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
     </div>
   );
 }
+

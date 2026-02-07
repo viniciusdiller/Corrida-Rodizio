@@ -46,6 +46,8 @@ export function JoinRoomViaLink({
     try {
       const supabase = createClient();
       const normalizedNickname = nickname.trim();
+      const storedLogin = localStorage.getItem("rodizio-race-login");
+      const normalizedLogin = storedLogin?.trim().toUpperCase() || null;
       const { data: existingByName } = await supabase
         .from("participants")
         .select("id, login_code")
@@ -58,12 +60,26 @@ export function JoinRoomViaLink({
       const storageKey = getParticipantStorageKey(roomCode);
 
       if (existingByName) {
-        if (existingByName.login_code) {
+        const existingLogin = existingByName.login_code?.trim().toUpperCase();
+        if (existingLogin && normalizedLogin && existingLogin !== normalizedLogin) {
           toast.error(
             t.room?.codename_taken ??
-              "Outro jogador já está usando esse codinome.",
+              "Outro jogador j? est? usando esse codinome.",
           );
           return;
+        }
+        if (existingLogin && !normalizedLogin) {
+          toast.error(
+            t.room?.codename_taken ??
+              "Outro jogador j? est? usando esse codinome.",
+          );
+          return;
+        }
+        if (!existingLogin && normalizedLogin) {
+          await supabase
+            .from("participants")
+            .update({ login_code: normalizedLogin })
+            .eq("id", existingByName.id);
         }
 
         localStorage.setItem(storageKey, existingByName.id);
@@ -77,6 +93,7 @@ export function JoinRoomViaLink({
           race_id: race.id,
           name: normalizedNickname,
           items_eaten: 0,
+          login_code: normalizedLogin,
         })
         .select()
         .single();
@@ -93,6 +110,7 @@ export function JoinRoomViaLink({
       setLoading(false);
     }
   };
+
 
   const handleLoginAndJoin = async () => {
     if (!username.trim() || !password.trim()) return;
