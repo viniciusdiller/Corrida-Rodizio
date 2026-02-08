@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   useEffect,
@@ -87,6 +87,7 @@ export default function RoomPage() {
   const [claimStatus, setClaimStatus] = useState<string | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const [promoPermissions, setPromoPermissions] = useState<string[]>([]);
+  const [needsJoinPrompt, setNeedsJoinPrompt] = useState(true);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
   const [currentParticipantId, setCurrentParticipantId] = useState<
     string | null
@@ -531,6 +532,15 @@ export default function RoomPage() {
 
   const handleLogout = () => {
     localStorage.removeItem(LOGIN_STORAGE_KEY);
+    const participantKey = getParticipantStorageKey(roomCode);
+    localStorage.removeItem(participantKey);
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem(`rodizio-join-prompt-${roomCode}`);
+      window.dispatchEvent(new Event("rodizio-login-updated"));
+    }
+    setLoggedUsername(null);
+    setCurrentParticipantId(null);
+    setNeedsJoinPrompt(true);
     setShowAccountOverlay(false);
     setShowPasswordForm(false);
     setNameStatus(null);
@@ -759,7 +769,7 @@ export default function RoomPage() {
     const storedLogin = localStorage.getItem(LOGIN_STORAGE_KEY);
     setLoggedUsername(storedLogin || null);
     if (typeof document !== "undefined") {
-      document.title = `Voc?? foi convidado para uma batalha! Sala ${roomCode}`;
+      document.title = `Sala ${roomCode}`;
     }
     if (typeof window !== "undefined") {
       const ua = window.navigator.userAgent.toLowerCase();
@@ -797,6 +807,13 @@ export default function RoomPage() {
       supabase.removeChannel(channel);
     };
   }, [roomCode, isSpectator]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const joinPromptKey = `rodizio-join-prompt-${roomCode}`;
+    const hasJoined = sessionStorage.getItem(joinPromptKey);
+    setNeedsJoinPrompt(!hasJoined);
+  }, [roomCode]);
 
   useEffect(() => {
     const handleLoginUpdated = () => {
@@ -886,13 +903,21 @@ export default function RoomPage() {
     );
   }
 
+  const handleJoinFromInvite = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(`rodizio-join-prompt-${roomCode}`, "1");
+    }
+    setNeedsJoinPrompt(false);
+    loadRoomData();
+  };
+
   // --- ALTERA????O AQUI: Se n??o estiver participando, mostra o novo componente ---
-  if (!currentParticipantId && !isSpectator) {
+  if (!isSpectator && needsJoinPrompt && !currentParticipantId) {
     return (
       <JoinRoomViaLink
         race={race}
         roomCode={roomCode}
-        onJoin={loadRoomData}
+        onJoin={handleJoinFromInvite}
         onBack={() => router.push("/")}
       />
     );

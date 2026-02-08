@@ -13,13 +13,15 @@ const INVITE_TITLE_BY_LANG: Record<string, string> = {
   es: "Fuiste invitado a una batalla! Sala {room}",
 };
 
-export function generateMetadata({
+export async function generateMetadata({
   params,
   searchParams,
-}: SalaPageProps): Metadata {
-  const rawRoom = params?.codigo ? String(params.codigo) : "";
+}: SalaPageProps): Promise<Metadata> {
+  const resolvedParams = await Promise.resolve(params);
+  const resolvedSearchParams = await Promise.resolve(searchParams);
+  const rawRoom = resolvedParams?.codigo ? String(resolvedParams.codigo) : "";
   const room = rawRoom && rawRoom !== "undefined" && rawRoom !== "null" ? rawRoom : "";
-  const lang = searchParams?.lang?.toLowerCase() ?? "pt";
+  const lang = resolvedSearchParams?.lang?.toLowerCase() ?? "pt";
   const template = INVITE_TITLE_BY_LANG[lang] ?? INVITE_TITLE_BY_LANG.pt;
   const title = room
     ? template.replace("{room}", room)

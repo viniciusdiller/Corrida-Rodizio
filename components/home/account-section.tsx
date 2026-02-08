@@ -119,7 +119,15 @@ export function AccountSection({
                       key={group.id}
                       type="button"
                       className="w-full text-left flex flex-wrap items-center justify-between gap-2 rounded-xl border border-muted/60 bg-background/70 px-4 py-3 hover:border-primary/40 transition-colors"
-                      onClick={() => router.push(`/sala/${group.room_code}`)}
+                      onClick={() => {
+                        if (typeof window !== "undefined") {
+                          sessionStorage.setItem(
+                            `rodizio-join-prompt-${group.room_code}`,
+                            "1",
+                          );
+                        }
+                        router.push(`/sala/${group.room_code}`);
+                      }}
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
@@ -175,9 +183,13 @@ export function AccountSection({
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                        Página {currentPage} de {totalPages}
-                      </span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                          {t.account?.page_of
+                            ? t.account.page_of
+                                .replace("{current}", String(currentPage))
+                                .replace("{total}", String(totalPages))
+                            : `Página ${currentPage} de ${totalPages}`}
+                        </span>
                       <Button
                         variant="ghost"
                         size="sm"

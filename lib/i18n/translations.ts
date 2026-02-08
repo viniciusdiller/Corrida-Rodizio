@@ -1,4 +1,4 @@
-// lib/i18n/translations.ts
+﻿// lib/i18n/translations.ts
 
 export type Language = "pt" | "en" | "es" | "fr";
 
@@ -66,6 +66,8 @@ export const translations = {
       connect_title: "Salvar progresso",
       connect_description:
         "Entre ou crie uma conta para salvar esta corrida e não perder seu avanço.",
+      logged_as: "Conectado como",
+      use_other_account: "Usar outra conta",
       login_tab: "Entrar",
       create_tab: "Criar",
       invalid_credentials: "Usuário ou senha inválidos.",
@@ -88,6 +90,7 @@ export const translations = {
       register_avatar: "Registrar avatar exclusivo",
       manage_codes: "Gerenciar códigos promocionais",
       history_empty: "Nenhuma competição encontrada.",
+      page_of: "Página {current} de {total}",
       guest: "Convidado",
       enter_btn: "Entrar com uma conta",
       current_password: "Senha atual",
@@ -292,7 +295,7 @@ export const translations = {
           title: "Modo Foto e Imagens",
           content: [
             "Ao ativar o Modo Foto, você concorda em enviar imagens para registrar cada ponto.",
-            "As imagens ficam visíveis apenas para participantes da sala e são removidas automaticamente após 2 dias.",
+            "As imagens ficam visíveis apenas para participantes da sala, acessíveis pela página da sala e armazenadas no banco de dados por até 2 dias.",
             "As imagens são usadas somente para o funcionamento do jogo e o histórico da competição.",
           ],
         },
@@ -476,6 +479,8 @@ export const translations = {
       connect_title: "Save your progress",
       connect_description:
         "Log in or create an account to save this race so you don't lose your progress.",
+      logged_as: "Logged in as",
+      use_other_account: "Use another account",
       login_tab: "Login",
       create_tab: "Create",
       invalid_credentials: "Invalid username or password.",
@@ -498,6 +503,7 @@ export const translations = {
       register_avatar: "Register exclusive avatar",
       manage_codes: "Manage promo codes",
       history_empty: "No competitions found.",
+      page_of: "Page {current} of {total}",
       enter_btn: "Login with account",
       guest: "As a guest",
       current_password: "Current password",
@@ -702,7 +708,7 @@ export const translations = {
           title: "Photo Mode and Images",
           content: [
             "When Photo Mode is enabled, you agree to submit images for each point.",
-            "Images are visible only to room participants and are automatically deleted after 2 days.",
+            "Images are visible only to room participants, accessible from the room page, and stored in the database for up to 2 days.",
             "Images are used only for gameplay and race history.",
           ],
         },
@@ -885,6 +891,8 @@ export const translations = {
       connect_title: "Sauvegarder votre progression",
       connect_description:
         "Connectez-vous ou créez un compte pour enregistrer cette course et ne pas perdre votre progression.",
+      logged_as: "Connecté en tant que",
+      use_other_account: "Utiliser un autre compte",
       login_tab: "Connexion",
       create_tab: "Créer",
       invalid_credentials: "Nom d’utilisateur ou mot de passe invalide.",
@@ -905,6 +913,7 @@ export const translations = {
       register_avatar: "Enregistrer un avatar exclusif",
       manage_codes: "Gérer les codes promo",
       history_empty: "Aucune compétition trouvée.",
+      page_of: "Page {current} sur {total}",
       enter_btn: "Se connecter avec un compte",
       guest: "Invité",
       current_password: "Mot de passe actuel",
@@ -1105,7 +1114,7 @@ export const translations = {
           title: "Mode Photo et Images",
           content: [
             "Lorsque le mode photo est activé, vous acceptez d’envoyer des images pour chaque point.",
-            "Les images sont visibles uniquement par les participants et sont supprimées automatiquement après 2 jours.",
+            "Les images sont visibles uniquement par les participants, accessibles via la page de la salle, et stockées dans la base de données pendant jusqu’à 2 jours.",
             "Les images sont utilisées uniquement pour le fonctionnement du jeu et l’historique.",
           ],
         },
@@ -1290,6 +1299,8 @@ export const translations = {
       connect_title: "Guardar progreso",
       connect_description:
         "Entra o crea una cuenta para guardar esta carrera y no perder tu avance.",
+      logged_as: "Conectado como",
+      use_other_account: "Usar otra cuenta",
       login_tab: "Entrar",
       create_tab: "Crear",
       invalid_credentials: "Usuario o contraseña inválidos.",
@@ -1310,6 +1321,7 @@ export const translations = {
       register_avatar: "Registrar avatar exclusivo",
       manage_codes: "Gestionar códigos",
       history_empty: "Ninguna competición encontrada.",
+      page_of: "Página {current} de {total}",
       enter_btn: "Entrar con una cuenta",
       guest: "Invitado",
       current_password: "Contraseña actual",
@@ -1513,7 +1525,7 @@ export const translations = {
           title: "Modo Foto e Imágenes",
           content: [
             "Al activar el modo foto, aceptas enviar imágenes por cada punto.",
-            "Las imágenes solo son visibles para los participantes y se eliminan automáticamente después de 2 días.",
+            "Las imágenes solo son visibles para los participantes, accesibles desde la página de la sala y almacenadas en la base de datos por hasta 2 días.",
             "Las imágenes se usan únicamente para el funcionamiento del juego y el historial.",
           ],
         },
