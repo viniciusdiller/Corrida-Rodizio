@@ -77,6 +77,8 @@ export default function RoomPage() {
   const [accountPassword, setAccountPassword] = useState("");
   const [accountStatus, setAccountStatus] = useState<string | null>(null);
   const [accountLoading, setAccountLoading] = useState(false);
+  const [nameStatus, setNameStatus] = useState<string | null>(null);
+  const [isUpdatingName, setIsUpdatingName] = useState(false);
   const [isIosDevice, setIsIosDevice] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showAddToHomeHelp, setShowAddToHomeHelp] = useState(false);
@@ -111,6 +113,7 @@ export default function RoomPage() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
 
   const handleExit = () => {
     if (window.history.length > 1) {
@@ -308,12 +311,18 @@ export default function RoomPage() {
     event?: MouseEvent<HTMLButtonElement>,
   ) => {
     if (!race) return;
+    const participant = participants.find((item) => item.id === participantId);
+    if (race.is_team_mode && !participant?.team) {
+      toast.error(
+        t.room.choose_team_required ?? "Escolha um time para jogar.",
+      );
+      return;
+    }
     if (!checkAddCooldown(event)) return;
     if (!loggedUsername) {
       toast.error("Faça login para usar o modo foto.");
       return;
     }
-    const participant = participants.find((item) => item.id === participantId);
     if (!participant?.login_code) {
       toast.error("Você precisa estar logado para usar o modo foto.");
       return;
@@ -329,6 +338,15 @@ export default function RoomPage() {
     change: number,
     event?: MouseEvent<HTMLButtonElement>,
   ) => {
+    if (change > 0 && race?.is_team_mode) {
+      const participant = participants.find((item) => item.id === participantId);
+      if (!participant?.team) {
+        toast.error(
+          t.room.choose_team_required ?? "Escolha um time para jogar.",
+        );
+        return;
+      }
+    }
     if (change > 0 && isPhotoRequired) {
       handlePhotoIncrement(participantId, event);
       return;
@@ -512,6 +530,7 @@ export default function RoomPage() {
     localStorage.removeItem(LOGIN_STORAGE_KEY);
     setShowAccountOverlay(false);
     setShowPasswordForm(false);
+    setNameStatus(null);
     setPasswordStatus(null);
     setShowPasswordSuccess(false);
     setCurrentPassword("");
@@ -570,6 +589,49 @@ export default function RoomPage() {
       setPasswordStatus("Nao foi possivel atualizar a senha.");
     } finally {
       setIsUpdatingPassword(false);
+    }
+  };
+
+  const handleUpdateName = async (nextName: string) => {
+    if (!race || !currentParticipant) return;
+    const trimmedName = nextName.trim().toUpperCase();
+    if (!trimmedName) {
+      setNameStatus(t.room.name_required ?? "Digite um nome valido.");
+      return;
+    }
+    setIsUpdatingName(true);
+    setNameStatus(null);
+    try {
+      const supabase = createClient();
+      const { data: conflict } = await supabase
+        .from("participants")
+        .select("id")
+        .eq("race_id", race.id)
+        .ilike("name", trimmedName)
+        .neq("id", currentParticipant.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (conflict) {
+        setNameStatus(t.room.name_taken ?? "Esse nome ja esta em uso.");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("participants")
+        .update({ name: trimmedName })
+        .eq("id", currentParticipant.id);
+
+      if (error) {
+        setNameStatus(t.account.connect_error);
+        return;
+      }
+
+      await loadRoomData();
+    } catch {
+      setNameStatus(t.account.connect_error);
+    } finally {
+      setIsUpdatingName(false);
     }
   };
 
@@ -693,6 +755,9 @@ export default function RoomPage() {
     loadRoomData();
     const storedLogin = localStorage.getItem(LOGIN_STORAGE_KEY);
     setLoggedUsername(storedLogin || null);
+    if (typeof document !== "undefined") {
+      document.title = `Você foi convidado para uma batalha! Sala ${roomCode}`;
+    }
     if (typeof window !== "undefined") {
       const ua = window.navigator.userAgent.toLowerCase();
       const isIos = /iphone|ipad|ipod/.test(ua);
@@ -897,12 +962,16 @@ export default function RoomPage() {
             getItemLabel={getItemLabel}
             onUpdateCount={handleUpdateCount}
             onUpdateAvatar={updateAvatar}
+            onUpdateName={handleUpdateName}
+            nameStatus={nameStatus}
+            isUpdatingName={isUpdatingName}
             isUpdatingAvatar={isUpdatingAvatar}
             isAddCooldown={isAddCooldownActive}
             isUploadingPhoto={isUploadingPhoto}
             photoModeEnabled={isPhotoModeEnabled}
             photoRequired={isPhotoRequired}
             onPhotoIncrement={handlePhotoIncrement}
+            isLoggedIn={!!loggedUsername}
             isPremium={isPremiumPlayer}
             exclusiveAvatars={exclusiveAvatars}
           />
@@ -1049,11 +1118,12 @@ export default function RoomPage() {
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label>{t.account.username_label}</Label>
-                  <Input
-                    value={accountUsername}
-                    onChange={(event) => setAccountUsername(event.target.value)}
-                    placeholder={t.account.username_placeholder}
-                  />
+                <Input
+                  value={accountUsername}
+                  onChange={(event) => setAccountUsername(event.target.value)}
+                  placeholder={t.account.username_placeholder}
+                  maxLength={20}
+                />
                 </div>
                 <div className="space-y-2">
                   <Label>{t.account.password_label}</Label>
@@ -1106,6 +1176,7 @@ export default function RoomPage() {
           </div>
         </>
       )}
+
       {loggedUsername && showAccountOverlay && (
         <>
           <div

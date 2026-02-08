@@ -77,6 +77,7 @@ export function JoinRaceForm({
             placeholder={t.home.codename_placeholder}
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
+            maxLength={20}
             className="bg-background/50 h-14 text-lg font-medium"
           />
         </div>

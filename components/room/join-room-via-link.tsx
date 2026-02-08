@@ -31,7 +31,7 @@ export function JoinRoomViaLink({
 }: JoinRoomViaLinkProps) {
   const { t, language } = useLanguage();
   const foodTypeLabel = getFoodTypeLabel(race.food_type, language);
-  const [mode, setMode] = useState<"guest" | "login">("guest");
+  const [mode, setMode] = useState<"guest" | "login" | "spectator">("guest");
   const [loading, setLoading] = useState(false);
 
   // Estados do formulário
@@ -119,6 +119,7 @@ export function JoinRoomViaLink({
     try {
       const supabase = createClient();
       const normalizedUsername = username.trim().toUpperCase();
+      const desiredName = nickname.trim() || normalizedUsername;
 
       // 1. Verificar credenciais
       const { data: loginSuccess, error: loginError } = await supabase.rpc(
@@ -149,46 +150,74 @@ export function JoinRoomViaLink({
       const storageKey = getParticipantStorageKey(roomCode);
 
       if (existingParticipant) {
-        // Se já existe, apenas reconecta
+        const { data: nameConflict } = await supabase
+          .from("participants")
+          .select("id, login_code")
+          .eq("race_id", race.id)
+          .ilike("name", desiredName)
+          .neq("id", existingParticipant.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (nameConflict && nameConflict.login_code !== normalizedUsername) {
+          toast.error(
+            t.room?.codename_taken ??
+              "Outro jogador j?? est?? usando esse codinome.",
+          );
+          return;
+        }
+
+        await supabase
+          .from("participants")
+          .update({ name: desiredName })
+          .eq("id", existingParticipant.id);
+
+        // Se j?? existe, apenas reconecta
         localStorage.setItem(storageKey, existingParticipant.id);
       } else {
         const { data: existingByName } = await supabase
           .from("participants")
           .select("id, login_code")
           .eq("race_id", race.id)
-          .ilike("name", normalizedUsername)
+          .ilike("name", desiredName)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
 
         if (existingByName) {
           if (!existingByName.login_code) {
-            toast.error(
-              t.room?.codename_taken ??
-                "Outro jogador já está usando esse codinome.",
-            );
+            await supabase
+              .from("participants")
+              .update({ login_code: normalizedUsername, name: desiredName })
+              .eq("id", existingByName.id);
+            localStorage.setItem(storageKey, existingByName.id);
+            onJoin();
             return;
           }
 
           if (existingByName.login_code !== normalizedUsername) {
             toast.error(
               t.room?.codename_taken ??
-                "Outro jogador já está usando esse codinome.",
+                "Outro jogador j?? est?? usando esse codinome.",
             );
             return;
           }
 
           localStorage.setItem(storageKey, existingByName.id);
+          await supabase
+            .from("participants")
+            .update({ name: desiredName })
+            .eq("id", existingByName.id);
           onJoin();
           return;
         }
 
-        // Se não existe, cria um novo vinculado à conta
         const { data: newParticipant, error: insertError } = await supabase
           .from("participants")
           .insert({
             race_id: race.id,
-            name: normalizedUsername, // Nome padrão é o usuário
+            name: desiredName,
             items_eaten: 0,
             login_code: normalizedUsername,
             is_vip: false, // VIP logicamente seria tratado no backend ou triggers, mas aqui vai false padrão
@@ -229,7 +258,7 @@ export function JoinRoomViaLink({
 
         <Card className="p-1 border-2 border-primary/20 shadow-xl bg-background/60 backdrop-blur overflow-hidden">
           {/* Tabs Simplificadas */}
-          <div className="grid grid-cols-2 p-1 gap-1 bg-muted/50 rounded-lg mb-4 m-2">
+          <div className="grid grid-cols-3 p-1 gap-1 bg-muted/50 rounded-lg mb-4 m-2">
             <button
               onClick={() => setMode("guest")}
               className={`text-xs font-bold uppercase py-2 rounded-md transition-all ${
@@ -250,6 +279,16 @@ export function JoinRoomViaLink({
             >
               {t.account?.enter_btn || "Entrar com Conta"}
             </button>
+            <button
+              onClick={() => setMode("spectator")}
+              className={`text-xs font-bold uppercase py-2 rounded-md transition-all ${
+                mode === "spectator"
+                  ? "bg-background text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.home.enter_spectator}
+            </button>
           </div>
 
           <div className="p-4 pt-0 space-y-4">
@@ -265,6 +304,7 @@ export function JoinRoomViaLink({
                       placeholder={t.account.username_placeholder}
                       value={nickname}
                       onChange={(e) => setNickname(e.target.value)}
+                      maxLength={20}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") handleJoinAsGuest();
                       }}
@@ -283,7 +323,7 @@ export function JoinRoomViaLink({
                   )}
                 </Button>
               </div>
-            ) : (
+            ) : mode === "login" ? (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="space-y-2">
                   <Label>{t.account.username_label}</Label>
@@ -292,7 +332,21 @@ export function JoinRoomViaLink({
                     placeholder={t.account.username_placeholder}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
+                    maxLength={20}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t.room.enter_nickname_to_join}</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      className="h-11 pl-9 text-lg"
+                      placeholder={t.account.username_placeholder}
+                      value={nickname}
+                      onChange={(e) => setNickname(e.target.value)}
+                      maxLength={20}
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>{t.account.password_label}</Label>
@@ -320,6 +374,18 @@ export function JoinRoomViaLink({
                       {t.account.login_btn}
                     </>
                   )}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300 text-center">
+                <p className="text-xs text-muted-foreground">
+                  {t.home.spectator_desc}
+                </p>
+                <Button
+                  className="w-full h-11 text-lg font-bold uppercase rounded-xl"
+                  onClick={() => router.push(`/sala/${roomCode}?spectator=1`)}
+                >
+                  {t.home.enter_spectator}
                 </Button>
               </div>
             )}

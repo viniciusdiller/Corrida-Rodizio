@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/language-context";
 
 const TEAM_COLORS: Record<string, string> = {
-  AZUL: "border-blue-500/50 text-blue-400 bg-blue-500/10",
-  VERMELHA: "border-red-500/50 text-red-400 bg-red-500/10",
-  VERDE: "border-emerald-500/50 text-emerald-400 bg-emerald-500/10",
-  AMARELA: "border-yellow-500/50 text-yellow-400 bg-yellow-500/10",
+  AZUL: "text-blue-400",
+  VERMELHA: "text-red-400",
+  VERDE: "text-emerald-400",
+  AMARELA: "text-yellow-400",
 };
 
 interface RaceTrackProps {
@@ -77,6 +77,7 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
     return () => cancelAnimationFrame(raf);
   }, [enableAnimations]);
 
+
   return (
     <div className="space-y-3 w-full overflow-hidden">
       {/* Definição da animação de "corrida/pulo" */}
@@ -135,6 +136,20 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
           animation:
             speed-streak 0.7s infinite ease-in-out,
             streak-wave 0.6s infinite ease-in-out;
+        }
+        @keyframes avatar-glow {
+          0% {
+            box-shadow: 0 0 0 var(--glow-color, rgba(255, 255, 255, 0));
+          }
+          30% {
+            box-shadow: 0 0 18px var(--glow-color, rgba(255, 255, 255, 0.65));
+          }
+          100% {
+            box-shadow: 0 0 0 var(--glow-color, rgba(255, 255, 255, 0));
+          }
+        }
+        .animate-glow {
+          animation: avatar-glow 0.9s ease-out;
         }
       `}</style>
 
@@ -200,6 +215,9 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
             );
             const isLeader =
               participant.items_eaten === currentMax && currentMax > 0;
+            const namePart = participant.name.split(" ")[0];
+            const nameLength = namePart.length;
+            const nameFontSize = Math.max(7, 12 - Math.floor(nameLength / 5));
 
             return (
               <div
@@ -222,7 +240,10 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
                 >
                   {/* Caixa de informações */}
                   <div className="flex flex-col min-w-[64px] p-1 text-right text-white">
-                    <span className="text-[9px] font-black uppercase leading-none truncate max-w-[80px] md:max-w-[120px]">
+                    <span
+                      className="font-black uppercase leading-tight max-w-[88px] md:max-w-[140px] whitespace-normal break-words"
+                      style={{ fontSize: `${nameFontSize}px` }}
+                    >
                       <span className="inline-flex items-center justify-end gap-1">
                         {isLeader && (
                           <Trophy className="h-3 w-3 text-yellow-500 fill-yellow-500" />
@@ -232,7 +253,15 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
                             💎
                           </span>
                         )}
-                        {participant.name.split(" ")[0]}
+                        <span
+                          className={
+                            isTeamMode && participant.team
+                              ? TEAM_COLORS[participant.team] ?? ""
+                              : ""
+                          }
+                        >
+                          {namePart}
+                        </span>
                       </span>
                     </span>
                     <span
@@ -281,25 +310,36 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
                         />
                       </>
                     )}
-                    {isImageAvatar(participant.avatar) ? (
-                      <img
-                        src={getAvatarUrl(participant.avatar)}
-                        alt=""
-                        className="h-11 w-11 md:h-14 md:w-14 object-contain"
-                      />
-                    ) : (
-                      <span className="inline-block h-11 w-11 rounded-full bg-white/10 md:h-14 md:w-14" />
-                    )}
-                    {/* Indicador de time */}
-                    {isTeamMode && participant.team && (
-                      <div
-                        className={`absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full border border-black/50 ${TEAM_COLORS[
-                          participant.team
-                        ]
-                          .split(" ")
-                          .pop()}`}
-                      />
-                    )}
+                  <div
+                      key={`${participant.id}-${participant.items_eaten}`}
+                      className="rounded-full animate-glow"
+                      style={
+                        {
+                          ["--glow-color" as any]:
+                            isTeamMode && participant.team
+                              ? participant.team === "AZUL"
+                                ? "rgba(59, 130, 246, 0.7)"
+                                : participant.team === "VERMELHA"
+                                ? "rgba(239, 68, 68, 0.7)"
+                                : participant.team === "VERDE"
+                                ? "rgba(16, 185, 129, 0.7)"
+                                : "rgba(234, 179, 8, 0.7)"
+                              : isLeader
+                              ? "rgba(251, 146, 60, 0.75)"
+                              : "rgba(255, 255, 255, 0.7)",
+                        } as React.CSSProperties
+                      }
+                    >
+                      {isImageAvatar(participant.avatar) ? (
+                        <img
+                          src={getAvatarUrl(participant.avatar)}
+                          alt=""
+                          className="h-11 w-11 md:h-14 md:w-14 object-contain"
+                        />
+                      ) : (
+                        <span className="inline-block h-11 w-11 rounded-full bg-white/10 md:h-14 md:w-14" />
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

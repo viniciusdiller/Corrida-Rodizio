@@ -216,6 +216,7 @@ export function AccountSection({
                   placeholder={t.account.username_placeholder}
                   value={accountCodeInput}
                   onChange={(e) => setAccountCodeInput(e.target.value)}
+                  maxLength={20}
                   className="h-12 text-lg font-bold"
                 />
               </div>
@@ -272,6 +273,7 @@ export function AccountSection({
                   placeholder={t.account.create_username_placeholder}
                   value={accountCodeInput}
                   onChange={(e) => setAccountCodeInput(e.target.value)}
+                  maxLength={20}
                   className="h-12 text-lg font-bold"
                 />
               </div>

@@ -89,17 +89,17 @@ export function HallOfFame({
   }, [race.photo_mode, race.room_code, currentParticipantId]);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-6 flex flex-col items-center justify-center animate-in fade-in duration-1000">
+    <div className="min-h-screen bg-background text-foreground p-6 flex flex-col items-center justify-center animate-in fade-in duration-1000">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-4">
-          <div className="inline-block p-3 bg-orange-500 rounded-2xl rotate-3 shadow-2xl shadow-orange-500/20">
-            <Trophy className="h-10 w-10 text-zinc-950" />
+          <div className="inline-block p-3 bg-primary rounded-2xl rotate-3 shadow-2xl shadow-primary/20">
+            <Trophy className="h-10 w-10 text-primary-foreground" />
           </div>
           <div className="space-y-1">
             <h1 className="text-4xl font-black italic tracking-tighter uppercase">
               {t.hall_of_fame.title}
             </h1>
-            <p className="text-orange-500 font-mono text-sm tracking-widest">
+            <p className="text-primary font-mono text-sm tracking-widest">
               {t.common.room}: {race.room_code}
             </p>
           </div>
@@ -114,8 +114,8 @@ export function HallOfFame({
                 key={p.id}
                 className={`relative overflow-hidden flex items-center justify-between p-5 rounded-3xl border-2 transition-all ${
                   isWinner
-                    ? "border-orange-500 bg-orange-500/10 scale-105 shadow-[0_0_30px_rgba(249,115,22,0.2)]"
-                    : "border-white/5 bg-white/5"
+                    ? "border-primary bg-primary/10 scale-105 shadow-[0_0_30px_rgba(249,115,22,0.2)]"
+                    : "border-border bg-card/60"
                 }`}
               >
                 <div className="flex items-center gap-4 z-10">
@@ -132,7 +132,7 @@ export function HallOfFame({
                   </div>
                   <span
                     className={`text-2xl font-black ${
-                      isWinner ? "text-orange-500" : "text-zinc-200"
+                      isWinner ? "text-primary" : "text-foreground"
                     }`}
                   >
                     #{i + 1}
@@ -148,7 +148,7 @@ export function HallOfFame({
                         </span>
                       )}
                     </p>
-                    <p className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
                       {isWinner
                         ? t.hall_of_fame.legendary
                         : MOTIVATIONAL_PHRASES[i % MOTIVATIONAL_PHRASES.length]}
@@ -159,7 +159,7 @@ export function HallOfFame({
                   <p className="text-3xl font-black leading-none">
                     {p.items_eaten}
                   </p>
-                  <p className="text-[10px] uppercase font-bold text-zinc-500 mt-1">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground mt-1">
                     {getItemLabel(p.items_eaten)}
                   </p>
                 </div>
@@ -200,13 +200,13 @@ export function HallOfFame({
                           )}
                         </span>
                         <div className="relative flex items-center">
-                          <span className="h-2 w-2 rounded-full bg-orange-400" />
-                          <span className="ml-1 h-px w-6 bg-white/20" />
+                          <span className="h-2 w-2 rounded-full bg-primary" />
+                          <span className="ml-1 h-px w-6 bg-border" />
                         </div>
                       </div>
                       <button
                         type="button"
-                        className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/10"
+                        className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-card"
                         onClick={() => {
                           if (photo.signedUrl) setActivePhoto(photo.signedUrl);
                         }}
@@ -246,7 +246,7 @@ export function HallOfFame({
 
           <Button
             variant="outline"
-            className="w-full rounded-2xl border-white/10 bg-white/5 hover:bg-white/10"
+            className="w-full rounded-2xl"
             onClick={onHome}
           >
             <Home className="h-4 w-4 mr-2" /> {t.hall_of_fame.home}
@@ -259,7 +259,7 @@ export function HallOfFame({
             className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
             onClick={() => setActivePhoto(null)}
           />
-          <div className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/10 bg-zinc-950 p-3">
+          <div className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-card p-3">
             <img
               src={activePhoto}
               alt=""
@@ -268,7 +268,7 @@ export function HallOfFame({
             <div className="mt-3 flex justify-end">
               <Button
                 variant="outline"
-                className="border-white/10 bg-white/5 hover:bg-white/10"
+                className="border-border"
                 disabled={isSharingPhoto}
                 onClick={async () => {
                   if (!activePhoto) return;

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users2, ArrowRight, Loader2, Camera } from "lucide-react";
+import { Users2, ArrowRight, Loader2, Camera, Image, User } from "lucide-react";
 import { FoodType } from "@/types/database";
 import { useLanguage } from "@/contexts/language-context";
 
@@ -68,50 +68,48 @@ export function CreateRaceForm({
           placeholder={t.home.codename_placeholder}
           value={playerName}
           onChange={(e) => setPlayerName(e.target.value)}
+          maxLength={20}
           className="bg-background/50 h-14 text-lg font-medium"
         />
       </div>
 
-      <div
-        onClick={() => setIsTeamMode(!isTeamMode)}
-        className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer ${
-          isTeamMode
-            ? "bg-primary/5 border-primary/20 shadow-inner"
-            : "bg-background border-muted"
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <Users2
-            className={`h-5 w-5 ${
-              isTeamMode ? "text-primary" : "text-muted-foreground"
-            }`}
-          />
-          <div className="text-left">
-            <p className="text-sm font-bold">{t.home.team_mode}</p>
-            <p className="text-[10px] text-muted-foreground uppercase">
-              {t.home.team_mode_desc}
-            </p>
+      <div className="space-y-4 rounded-xl border border-muted bg-background p-4">
+        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+          {t.home.modifiers}
+        </div>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-muted bg-muted/40 p-1">
+            <button
+              type="button"
+              onClick={() => setIsTeamMode(false)}
+              className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition ${
+                !isTeamMode
+                  ? "bg-background text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <User className="h-3.5 w-3.5" />
+              {t.home.free_for_all}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsTeamMode(true)}
+              className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition ${
+                isTeamMode
+                  ? "bg-background text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Users2 className="h-3.5 w-3.5" />
+              {t.home.team_mode}
+            </button>
           </div>
+          <p className="text-[10px] uppercase text-muted-foreground">
+            {isTeamMode ? t.home.team_mode_desc : t.home.free_for_all_desc}
+          </p>
         </div>
-        <div
-          className={`w-10 h-6 rounded-full relative ${
-            isTeamMode ? "bg-primary" : "bg-muted"
-          }`}
-        >
-          <div
-            className={`absolute w-4 h-4 bg-white rounded-full top-1 transition-all ${
-              isTeamMode ? "left-5" : "left-1"
-            }`}
-          />
-        </div>
-      </div>
 
-      {canEnablePhotoMode && (
-        <div className="space-y-3 rounded-xl border border-muted bg-background p-4">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            <Camera className="h-4 w-4" />
-            {t.home.photo_mode}
-          </div>
+        {canEnablePhotoMode && (
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2 rounded-2xl border border-muted bg-muted/40 p-1">
               <button
@@ -120,12 +118,13 @@ export function CreateRaceForm({
                   if (!isOptional) setAgreed(false);
                   setPhotoMode("optional");
                 }}
-                className={`rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition ${
+                className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition ${
                   isOptional
                     ? "bg-background text-primary shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
+                <Image className="h-3.5 w-3.5" />
                 {t.home.photo_optional}
               </button>
               <button
@@ -134,12 +133,13 @@ export function CreateRaceForm({
                   if (!isMandatory) setAgreed(false);
                   setPhotoMode("mandatory");
                 }}
-                className={`rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition ${
+                className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition ${
                   isMandatory
                     ? "bg-background text-primary shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
+                <Camera className="h-3.5 w-3.5" />
                 {t.home.photo_mandatory}
               </button>
             </div>
@@ -149,8 +149,8 @@ export function CreateRaceForm({
                 : t.home.photo_optional_desc}
             </p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="space-y-4">
         <Label className="text-xs uppercase font-bold text-muted-foreground px-1">

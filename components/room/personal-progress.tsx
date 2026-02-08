@@ -5,6 +5,8 @@ import { Minus, Plus, Camera, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import {
   getAvatarUrl,
   isExclusiveAvatar,
@@ -23,6 +25,9 @@ interface PersonalProgressProps {
     event?: MouseEvent<HTMLButtonElement>,
   ) => void;
   onUpdateAvatar: (avatar: string) => void;
+  onUpdateName: (name: string) => void;
+  nameStatus: string | null;
+  isUpdatingName: boolean;
   isUpdatingAvatar: boolean;
   isAddCooldown: boolean;
   isUploadingPhoto: boolean;
@@ -32,6 +37,7 @@ interface PersonalProgressProps {
     id: string,
     event?: MouseEvent<HTMLButtonElement>,
   ) => void;
+  isLoggedIn: boolean;
   isPremium: boolean;
   exclusiveAvatars: string[];
 }
@@ -41,18 +47,52 @@ export function PersonalProgress({
   getItemLabel,
   onUpdateCount,
   onUpdateAvatar,
+  onUpdateName,
+  nameStatus,
+  isUpdatingName,
   isUpdatingAvatar,
   isAddCooldown,
   isUploadingPhoto,
   photoModeEnabled,
   photoRequired,
   onPhotoIncrement,
+  isLoggedIn,
   isPremium,
   exclusiveAvatars,
 }: PersonalProgressProps) {
   const { t } = useLanguage();
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [avatarOptions, setAvatarOptions] = useState<string[]>([]);
+  const [nameDraft, setNameDraft] = useState(participant.name ?? "");
+  const [showNameIndicator, setShowNameIndicator] = useState(true);
+  const teamBadgeStyles: Record<string, string> = {
+    AZUL: "border-blue-500/40 text-blue-500",
+    VERMELHA: "border-red-500/40 text-red-500",
+    VERDE: "border-emerald-500/40 text-emerald-400",
+    AMARELA: "border-yellow-500/40 text-yellow-400",
+  };
+  const teamLabels: Record<string, string> = {
+    AZUL: t.room.team_blue,
+    VERMELHA: t.room.team_red,
+    VERDE: t.room.team_green,
+    AMARELA: t.room.team_yellow,
+  };
+  const teamLabel = participant.team
+    ? teamLabels[participant.team] ?? participant.team
+    : null;
+  const teamBadgeClass = participant.team
+    ? teamBadgeStyles[participant.team] ?? "border-muted text-muted-foreground"
+    : null;
+  const teamHighlightClass = participant.team
+    ? {
+        AZUL: "ring-blue-500/60 ring-2 shadow-[0_18px_40px_rgba(59,130,246,0.2)]",
+        VERMELHA: "ring-red-500/60 ring-2 shadow-[0_18px_40px_rgba(239,68,68,0.2)]",
+        VERDE:
+          "ring-emerald-500/60 ring-2 shadow-[0_18px_40px_rgba(16,185,129,0.2)]",
+        AMARELA:
+          "ring-yellow-500/60 ring-2 shadow-[0_18px_40px_rgba(234,179,8,0.22)]",
+      }[participant.team] ?? "ring-primary/40"
+    : "ring-primary/40";
 
   useEffect(() => {
     let isMounted = true;
@@ -81,11 +121,16 @@ export function PersonalProgress({
     };
   }, [exclusiveAvatars, isPremium, participant.avatar]);
 
+  useEffect(() => {
+    if (showAvatarPicker) {
+      setNameDraft(participant.name ?? "");
+      setShowNameIndicator(true);
+    }
+  }, [showAvatarPicker, participant.name]);
+
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2 px-1 text-[9px] font-black uppercase tracking-[0.18em] text-muted-foreground">
-        <span>{t.room.your_progress}</span>
-        <span className="opacity-60">•</span>
         <span className="text-[10px] font-bold normal-case tracking-normal text-foreground break-words">
           {participant.name}
         </span>
@@ -99,8 +144,16 @@ export function PersonalProgress({
             Premium
           </Badge>
         )}
+        {participant.team && teamLabel && (
+          <Badge
+            variant="outline"
+            className={`text-[8px] h-4 uppercase font-black ${teamBadgeClass}`}
+          >
+            {teamLabel}
+          </Badge>
+        )}
       </div>
-      <Card className="ring-1 ring-primary/40 shadow-lg border-none bg-card/80 backdrop-blur-sm">
+      <Card className={`ring-1 ${teamHighlightClass} shadow-lg border-none bg-card/80 backdrop-blur-sm`}>
         <CardContent className="px-3 py-0 space-y-2">
           <div className="flex items-center gap-3">
             <button
@@ -116,7 +169,7 @@ export function PersonalProgress({
                 <img
                   src={getAvatarUrl(participant.avatar)}
                   alt=""
-                  className="h-full w-full rounded-2xl object-cover"
+                  className="h-full w-full rounded-2xl object-contain"
                 />
               ) : (
                 <span className="inline-block h-full w-full rounded-2xl bg-muted/40" />
@@ -162,11 +215,20 @@ export function PersonalProgress({
                   <Button
                     variant="ghost"
                     className={`h-7 rounded-full px-2 text-[10px] font-black uppercase tracking-wide text-amber-700 transition-all duration-200 hover:bg-amber-200/40 hover:text-amber-800 dark:text-amber-200 dark:hover:text-amber-100 ${
-                      isAddCooldown || isUploadingPhoto
+                      isAddCooldown || isUploadingPhoto || !isLoggedIn
                         ? "opacity-50 grayscale"
                         : ""
                     }`}
-                    onClick={(event) => onPhotoIncrement(participant.id, event)}
+                    onClick={(event) => {
+                      if (!isLoggedIn) {
+                        toast.error(
+                          t.room.login_to_use_camera ??
+                            "Faça login para usar o modo câmera.",
+                        );
+                        return;
+                      }
+                      onPhotoIncrement(participant.id, event);
+                    }}
                     disabled={isUploadingPhoto}
                   >
                     <Camera className="mr-1 h-3.5 w-3.5" />
@@ -178,7 +240,51 @@ export function PersonalProgress({
           </div>
 
           {showAvatarPicker && (
-            <div className="border-t border-muted/40 pt-2 pb-0">
+            <div className="border-t border-muted/40 pt-2 pb-0 space-y-2">
+              <div className="relative flex flex-wrap items-center gap-2">
+                <Input
+                  value={nameDraft}
+                  onChange={(event) => {
+                    setNameDraft(event.target.value);
+                    setShowNameIndicator(false);
+                  }}
+                  placeholder={t.room.change_name_placeholder}
+                  className="h-10 text-sm uppercase"
+                  maxLength={20}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter") return;
+                    if (!nameDraft.trim()) return;
+                    if (nameDraft.trim() === (participant.name ?? "")) return;
+                    onUpdateName(nameDraft);
+                  }}
+                  style={{
+                    width: `${Math.max(10, Math.min(24, nameDraft.length + 4))}ch`,
+                    maxWidth: "100%",
+                  }}
+                />
+                {showNameIndicator && (
+                  <span className="text-[9px] font-black uppercase tracking-[0.16em] text-muted-foreground">
+                    {t.room.change_name_indicator}
+                  </span>
+                )}
+                {nameDraft.trim() !== (participant.name ?? "") &&
+                  nameDraft.trim().length > 0 && (
+                  <Button
+                    onClick={() => onUpdateName(nameDraft)}
+                    disabled={isUpdatingName}
+                    className="h-10 px-3 text-[10px] font-black uppercase tracking-[0.16em] ml-auto"
+                  >
+                    {isUpdatingName
+                      ? t.common.loading
+                      : t.room.change_name_save}
+                  </Button>
+                )}
+              </div>
+              {nameStatus && (
+                <p className="text-xs font-semibold text-destructive">
+                  {nameStatus}
+                </p>
+              )}
               <div className="flex flex-wrap gap-1.5">
                 {avatarOptions.map((opt) => {
                   const isSelected = participant.avatar === opt;
