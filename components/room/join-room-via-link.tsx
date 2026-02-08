@@ -138,6 +138,9 @@ export function JoinRoomViaLink({
 
       // 2. Salvar login globalmente
       localStorage.setItem("rodizio-race-login", normalizedUsername);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("rodizio-login-updated"));
+      }
 
       // 3. Verificar se já existe participante nesta sala com este login
       const { data: existingParticipant } = await supabase
