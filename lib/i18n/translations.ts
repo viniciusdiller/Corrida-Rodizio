@@ -53,6 +53,7 @@ export const translations = {
       enter_spectator: "Entrar como espectador",
       spectator_desc: "Sem nome, apenas visualização",
       enter_arena: "Entrar na Arena",
+      invite_title: "Você foi convidado para uma batalha! Sala {room}",
     },
     account: {
       username_label: "Seu Nome de Usuário",
@@ -462,6 +463,7 @@ export const translations = {
       enter_spectator: "Join as spectator",
       spectator_desc: "No name, just watching",
       enter_arena: "Enter Arena",
+      invite_title: "You were invited to a battle! Room {room}",
     },
     account: {
       username_label: "Your Username",
@@ -870,6 +872,7 @@ export const translations = {
       enter_spectator: "Entrer comme spectateur",
       spectator_desc: "Sans nom, juste regarder",
       enter_arena: "Entrer dans l’arène",
+      invite_title: "Vous avez été invité à une bataille ! Salle {room}",
     },
     account: {
       username_label: "Votre nom d’utilisateur",
@@ -1274,6 +1277,7 @@ export const translations = {
       enter_spectator: "Entrar como espectador",
       spectator_desc: "Sin nombre, solo mirar",
       enter_arena: "Entrar a la Arena",
+      invite_title: "¡Fuiste invitado a una batalla! Sala {room}",
     },
     account: {
       username_label: "Nombre de Usuario",

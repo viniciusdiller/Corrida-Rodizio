@@ -108,8 +108,10 @@ export default function RoomPage() {
   const isPhotoRequired = !!race?.photo_mode && !!race?.photo_required;
 
   const handleCopyCode = () => {
-    const inviteUrl = window.location.href;
-    navigator.clipboard.writeText(inviteUrl);
+    const lang = localStorage.getItem("rodizio-race-language") ?? "pt";
+    const url = new URL(window.location.href);
+    url.searchParams.set("lang", lang);
+    navigator.clipboard.writeText(url.toString());
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
