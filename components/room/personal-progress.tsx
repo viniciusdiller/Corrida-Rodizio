@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type MouseEvent } from "react";
-import { Minus, Plus, Camera, Pencil } from "lucide-react";
+import { Minus, Plus, Camera, Pencil, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,7 @@ interface PersonalProgressProps {
   isUpdatingAvatar: boolean;
   isAddCooldown: boolean;
   isUploadingPhoto: boolean;
+  photoSendStatus: "success" | "error" | null;
   photoModeEnabled: boolean;
   photoRequired: boolean;
   onPhotoIncrement: (
@@ -53,6 +54,7 @@ export function PersonalProgress({
   isUpdatingAvatar,
   isAddCooldown,
   isUploadingPhoto,
+  photoSendStatus,
   photoModeEnabled,
   photoRequired,
   onPhotoIncrement,
@@ -214,9 +216,17 @@ export function PersonalProgress({
                 <div className="flex flex-1 items-center justify-center rounded-2xl border border-amber-400/40 bg-amber-200/20 p-1 shadow-sm dark:bg-amber-900/20">
                   <Button
                     variant="ghost"
-                    className={`h-7 rounded-full px-2 text-[10px] font-black uppercase tracking-wide text-amber-700 transition-all duration-200 hover:bg-amber-200/40 hover:text-amber-800 dark:text-amber-200 dark:hover:text-amber-100 ${
+                    className={`relative h-7 rounded-full px-2 text-[10px] font-black uppercase tracking-wide text-amber-700 transition-all duration-200 hover:bg-amber-200/40 hover:text-amber-800 dark:text-amber-200 dark:hover:text-amber-100 ${
                       isAddCooldown || isUploadingPhoto || !isLoggedIn
                         ? "opacity-50 grayscale"
+                        : ""
+                    } ${
+                      photoSendStatus === "success"
+                        ? "ring-2 ring-emerald-300/80 animate-pulse"
+                        : ""
+                    } ${
+                      photoSendStatus === "error"
+                        ? "ring-2 ring-red-500/80 animate-pulse"
                         : ""
                     }`}
                     onClick={(event) => {
@@ -233,6 +243,21 @@ export function PersonalProgress({
                   >
                     <Camera className="mr-1 h-3.5 w-3.5" />
                     +1
+                    {photoSendStatus && (
+                      <span
+                        className={`absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-background ${
+                          photoSendStatus === "success"
+                            ? "bg-emerald-500 text-white"
+                            : "bg-red-500 text-white"
+                        } animate-in zoom-in duration-200`}
+                      >
+                        {photoSendStatus === "success" ? (
+                          <Check className="h-2.5 w-2.5" />
+                        ) : (
+                          <X className="h-2.5 w-2.5" />
+                        )}
+                      </span>
+                    )}
                   </Button>
                 </div>
               )}

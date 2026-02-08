@@ -29,6 +29,7 @@ import { HallOfFame } from "@/components/room/hall-of-fame";
 import { RaceTrack } from "@/components/room/race-track";
 import { LoadingScreen } from "@/components/room/loading-screen";
 import { JoinRoomViaLink } from "@/components/room/join-room-via-link"; // NOVO IMPORT
+import { PhotoFeed } from "@/components/room/photo-feed";
 
 import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
 import { Button } from "@/components/ui/button";
@@ -88,11 +89,16 @@ export default function RoomPage() {
   const [isClaiming, setIsClaiming] = useState(false);
   const [promoPermissions, setPromoPermissions] = useState<string[]>([]);
   const [needsJoinPrompt, setNeedsJoinPrompt] = useState(true);
+  const [raceView, setRaceView] = useState<"live" | "photos">("live");
+  const [hasPhotoTimeline, setHasPhotoTimeline] = useState(false);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
   const [currentParticipantId, setCurrentParticipantId] = useState<
     string | null
   >(null);
   const [showEndRaceToast, setShowEndRaceToast] = useState(false);
+  const [showManageMenu, setShowManageMenu] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<Participant | null>(null);
+  const [isRemovingPlayer, setIsRemovingPlayer] = useState(false);
   const [cooldownToast, setCooldownToast] = useState<{
     text: string;
     x: number;
@@ -100,6 +106,12 @@ export default function RoomPage() {
   } | null>(null);
   const [isAddCooldownActive, setIsAddCooldownActive] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoSendStatus, setPhotoSendStatus] = useState<
+    "success" | "error" | null
+  >(null);
+  const photoSendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [photoTarget, setPhotoTarget] = useState<{
     participantId: string;
     itemNumber: number;
@@ -107,6 +119,40 @@ export default function RoomPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isPhotoModeEnabled = !!race?.photo_mode;
   const isPhotoRequired = !!race?.photo_mode && !!race?.photo_required;
+
+  useEffect(() => {
+    if (!isPhotoModeEnabled || !race?.room_code || !currentParticipantId) {
+      setHasPhotoTimeline(false);
+      return;
+    }
+    let ignore = false;
+    fetch(
+      `/api/race-photos/timeline?roomCode=${encodeURIComponent(
+        race.room_code,
+      )}&participantId=${encodeURIComponent(currentParticipantId)}`,
+    )
+      .then((response) => {
+        if (response.status === 403) return { photos: [] };
+        return response.json().catch(() => ({ photos: [] }));
+      })
+      .then((data) => {
+        if (ignore) return;
+        const photos = Array.isArray(data?.photos) ? data.photos : [];
+        setHasPhotoTimeline(photos.length > 0);
+      })
+      .catch(() => {
+        if (!ignore) setHasPhotoTimeline(false);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [isPhotoModeEnabled, race?.room_code, currentParticipantId]);
+
+  useEffect(() => {
+    if (!hasPhotoTimeline && raceView === "photos") {
+      setRaceView("live");
+    }
+  }, [hasPhotoTimeline, raceView]);
 
   const handleCopyCode = () => {
     const lang =
@@ -418,11 +464,13 @@ export default function RoomPage() {
 
     if (!loggedUsername) {
       toast.error("Fa??a login para usar o modo foto.");
+      setPhotoSendStatus("error");
       setPhotoTarget(null);
       return;
     }
 
     setIsUploadingPhoto(true);
+    setPhotoSendStatus(null);
     try {
       const compressed = await compressImage(file);
       const formData = new FormData();
@@ -439,12 +487,15 @@ export default function RoomPage() {
 
       if (!response.ok) {
         toast.error("Nao foi possivel enviar a foto.");
+        setPhotoSendStatus("error");
         return;
       }
 
       await updateCount(photoTarget.participantId, 1);
+      setPhotoSendStatus("success");
     } catch {
       toast.error("Nao foi possivel enviar a foto.");
+      setPhotoSendStatus("error");
     } finally {
       setIsUploadingPhoto(false);
       setPhotoTarget(null);
@@ -510,6 +561,37 @@ export default function RoomPage() {
     if (isEnding) return;
     await endRace();
     setShowEndRaceToast(false);
+  };
+
+  const handleRemovePlayer = async () => {
+    if (!removeTarget || !race || isRemovingPlayer || !currentParticipantId)
+      return;
+    setIsRemovingPlayer(true);
+    try {
+      const response = await fetch("/api/participants/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roomCode,
+          requesterId: currentParticipantId,
+          targetId: removeTarget.id,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("remove_failed");
+      }
+      if (removeTarget.id === currentParticipantId) {
+        const participantKey = getParticipantStorageKey(roomCode);
+        localStorage.removeItem(participantKey);
+        setCurrentParticipantId(null);
+        setNeedsJoinPrompt(true);
+      }
+      setRemoveTarget(null);
+    } catch {
+      toast.error("Nao foi possivel remover o jogador.");
+    } finally {
+      setIsRemovingPlayer(false);
+    }
   };
 
   const toggleAccountOverlay = () => {
@@ -804,9 +886,22 @@ export default function RoomPage() {
       if (addCooldownTimeoutRef.current) {
         clearTimeout(addCooldownTimeoutRef.current);
       }
+      if (photoSendTimeoutRef.current) {
+        clearTimeout(photoSendTimeoutRef.current);
+      }
       supabase.removeChannel(channel);
     };
   }, [roomCode, isSpectator]);
+
+  useEffect(() => {
+    if (!photoSendStatus) return;
+    if (photoSendTimeoutRef.current) {
+      clearTimeout(photoSendTimeoutRef.current);
+    }
+    photoSendTimeoutRef.current = setTimeout(() => {
+      setPhotoSendStatus(null);
+    }, 1400);
+  }, [photoSendStatus]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -899,6 +994,7 @@ export default function RoomPage() {
         getItemLabel={getItemLabel}
         onHome={() => router.push("/")}
         currentParticipantId={currentParticipantId}
+        onReopenRace={loadRoomData}
       />
     );
   }
@@ -967,14 +1063,62 @@ export default function RoomPage() {
         {/* Bot??o de Encerrar (Apenas VIP) */}
         {currentParticipant?.is_vip ? (
           <div className="flex justify-center">
-            <Button
-              variant="destructive"
-              className="w-full max-w-xs rounded-xl font-bold shadow-lg shadow-destructive/20 cursor-pointer transition-all hover:scale-105"
-              onClick={handleEndRace}
-              disabled={isEnding}
-            >
-              {isEnding ? t.room.ending : t.room.end_race}
-            </Button>
+            <div className="relative flex w-full gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl font-bold shadow-lg cursor-pointer transition-all hover:scale-105"
+                onClick={() => setShowManageMenu((prev) => !prev)}
+              >
+                {t.room.manage_players ?? "Gerenciar jogadores"}
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 rounded-xl font-bold shadow-lg shadow-destructive/20 cursor-pointer transition-all hover:scale-105"
+                onClick={handleEndRace}
+                disabled={isEnding}
+              >
+                {isEnding ? t.room.ending : t.room.end_race}
+              </Button>
+              {showManageMenu && (
+                <>
+                  <button
+                    type="button"
+                    className="fixed inset-0 z-30"
+                    onClick={() => setShowManageMenu(false)}
+                    aria-label="Close"
+                  />
+                  <div className="absolute left-0 right-0 top-full z-40 mt-2 w-full rounded-2xl border border-muted/60 bg-background/95 p-3 shadow-xl">
+                    <p className="px-1 pb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                      {t.common.players ?? "Jogadores"}
+                    </p>
+                    <div className="max-h-64 overflow-auto space-y-1">
+                      {participants.map((p) => (
+                        <div
+                          key={p.id}
+                          className="flex items-center justify-between rounded-lg px-2 py-1 text-xs"
+                        >
+                          <span className="font-semibold truncate">
+                            {p.name}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-7 px-2 text-[10px] font-black uppercase"
+                            onClick={() => {
+                              setShowManageMenu(false);
+                              setRemoveTarget(p);
+                            }}
+                            disabled={p.id === currentParticipantId}
+                          >
+                            {t.room.remove_player ?? "Remover"}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex justify-center">
@@ -1007,6 +1151,7 @@ export default function RoomPage() {
             isUpdatingAvatar={isUpdatingAvatar}
             isAddCooldown={isAddCooldownActive}
             isUploadingPhoto={isUploadingPhoto}
+            photoSendStatus={photoSendStatus}
             photoModeEnabled={isPhotoModeEnabled}
             photoRequired={isPhotoRequired}
             onPhotoIncrement={handlePhotoIncrement}
@@ -1016,52 +1161,87 @@ export default function RoomPage() {
           />
         )}
 
-        {participants.length === 1 ? (
-          <div className="flex flex-col items-center justify-center py-10 px-4 space-y-4 rounded-xl border-2 border-dashed border-muted/60 bg-muted/5 text-center animate-in fade-in zoom-in duration-500">
-            <div className="flex items-center gap-2 rounded-2xl border border-muted/60 bg-background/60 px-3 py-2 shadow-sm">
-              <div className="text-right leading-none">
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  {t.common.room}
-                </p>
-                <p className="font-mono font-bold text-lg leading-none">
-                  {roomCode}
-                </p>
-              </div>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={handleCopyCode}
-                className="h-9 w-9 rounded-xl border border-muted/50 bg-background/80 hover:cursor-pointer"
-              >
-                {copied ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-semibold text-lg text-foreground">
-                {t.room.waiting_participants}
-              </h3>
-              <p className="text-xs text-muted-foreground max-w-[280px] mx-auto">
-                {t.room.share_invite_help}
-              </p>
-            </div>
+        {hasPhotoTimeline && (
+          <div className="grid grid-cols-2 gap-2 rounded-xl border border-muted/60 bg-background/70 p-1">
+            <button
+              type="button"
+              onClick={() => setRaceView("live")}
+              className={`rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-widest transition ${
+                raceView === "live"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.room.live_race}
+            </button>
+            <button
+              type="button"
+              onClick={() => setRaceView("photos")}
+              className={`rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-widest transition ${
+                raceView === "photos"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.room.photo_feed}
+            </button>
           </div>
-        ) : participants.length >= 2 ? (
-          <RaceTrack
-            participants={participants}
-            isTeamMode={race.is_team_mode}
-          />
-        ) : null}
+        )}
 
-        <RankingSection
-          race={race}
-          participants={participants}
-          currentParticipantId={currentParticipantId}
-          getItemLabel={getItemLabel}
-        />
+        {hasPhotoTimeline && raceView === "photos" ? (
+          <div className="rounded-2xl border border-muted/60 bg-background/70 p-4 shadow-sm">
+            <PhotoFeed race={race} currentParticipantId={currentParticipantId} />
+          </div>
+        ) : (
+          <>
+            {participants.length === 1 ? (
+              <div className="flex flex-col items-center justify-center py-10 px-4 space-y-4 rounded-xl border-2 border-dashed border-muted/60 bg-muted/5 text-center animate-in fade-in zoom-in duration-500">
+                <div className="flex items-center gap-2 rounded-2xl border border-muted/60 bg-background/60 px-3 py-2 shadow-sm">
+                  <div className="text-right leading-none">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                      {t.common.room}
+                    </p>
+                    <p className="font-mono font-bold text-lg leading-none">
+                      {roomCode}
+                    </p>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleCopyCode}
+                    className="h-9 w-9 rounded-xl border border-muted/50 bg-background/80 hover:cursor-pointer"
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-lg text-foreground">
+                    {t.room.waiting_participants}
+                  </h3>
+                  <p className="text-xs text-muted-foreground max-w-[280px] mx-auto">
+                    {t.room.share_invite_help}
+                  </p>
+                </div>
+              </div>
+            ) : participants.length >= 2 ? (
+              <RaceTrack
+                participants={participants}
+                isTeamMode={race.is_team_mode}
+              />
+            ) : null}
+
+            <RankingSection
+              race={race}
+              participants={participants}
+              currentParticipantId={currentParticipantId}
+              getItemLabel={getItemLabel}
+            />
+          </>
+        )}
       </div>
 
       {currentParticipant && (
@@ -1076,7 +1256,7 @@ export default function RoomPage() {
           />
           <Button
             size="icon"
-            className={`h-14 w-14 rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/90 via-primary to-primary/70 text-white shadow-[0_16px_35px_rgba(0,0,0,0.22)] backdrop-blur transition-transform duration-200 hover:scale-105 active:scale-95 ${
+            className={`h-14 w-14 rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/90 via-primary to-primary/70 text-white shadow-[0_16px_35px_rgba(0,0,0,0.22)] backdrop-blur transition-all duration-200 hover:scale-105 active:scale-95 ${
               isAddCooldownActive || isUploadingPhoto ? "opacity-50 grayscale" : ""
             }`}
             onClick={(event) =>
@@ -1095,8 +1275,8 @@ export default function RoomPage() {
               <span className="text-lg font-black leading-none">+1</span>
             )}
           </Button>
-        </div>
-      )}
+          </div>
+        )}
 
       <div className="fixed left-4 bottom-4 sm:left-6 sm:bottom-6 pb-[env(safe-area-inset-bottom)] z-40">
         <Button
@@ -1110,6 +1290,46 @@ export default function RoomPage() {
       </div>
 
       {/* OVERLAYS E MODAIS (Settings, Logout, etc) */}
+      {removeTarget && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            onClick={() => setRemoveTarget(null)}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <Card className="w-full max-w-sm space-y-4 rounded-2xl border border-muted/60 bg-background/95 p-5 shadow-xl">
+              <div className="space-y-1 text-center">
+                <h2 className="text-lg font-bold">
+                  {t.room.confirm_remove_title ?? "Remover jogador?"}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {(t.room.confirm_remove_desc ??
+                    "Tem certeza que deseja remover {name} da corrida?"
+                  ).replace("{name}", removeTarget.name)}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setRemoveTarget(null)}
+                  disabled={isRemovingPlayer}
+                >
+                  {t.room.cancel}
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={handleRemovePlayer}
+                  disabled={isRemovingPlayer}
+                >
+                  {t.room.remove_player ?? "Remover"}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </>
+      )}
       {!loggedUsername && showConnectOverlay && (
         <>
           <div

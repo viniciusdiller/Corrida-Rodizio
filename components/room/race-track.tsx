@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Participant } from "@/types/database";
 import { Card } from "@/components/ui/card";
 import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
-import { Trophy, Timer, Zap, ZapOff } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Trophy, Zap, ZapOff } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 
 const TEAM_COLORS: Record<string, string> = {
@@ -154,32 +153,23 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
       `}</style>
 
       <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-1.5 text-primary font-black uppercase text-[9px] tracking-widest">
-          <Timer className="h-3 w-3" />
-          {t.room.real_time_race}
-        </div>
+        <button
+          type="button"
+          onClick={() => setEnableAnimations(!enableAnimations)}
+          className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-muted-foreground transition hover:text-foreground"
+        >
+          {enableAnimations ? (
+            <Zap className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+          ) : (
+            <ZapOff className="h-3 w-3" />
+          )}
+          {enableAnimations
+            ? t.room.animations_enabled
+            : t.room.animations_disabled}
+        </button>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-5 w-5 rounded-full hover:bg-muted"
-            onClick={() => setEnableAnimations(!enableAnimations)}
-            title={
-              enableAnimations
-                ? "Desativar animações (Modo Econômico)"
-                : "Ativar animações"
-            }
-          >
-            {enableAnimations ? (
-              <Zap className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-            ) : (
-              <ZapOff className="h-3 w-3 text-muted-foreground" />
-            )}
-          </Button>
-          <div className="text-[9px] font-bold text-muted-foreground uppercase bg-muted/50 px-2 py-0.5 rounded-full">
-            Lider: {currentMax}
-          </div>
+        <div className="text-[9px] font-bold text-muted-foreground uppercase bg-muted/50 px-2 py-0.5 rounded-full">
+          Lider: {currentMax}
         </div>
       </div>
 

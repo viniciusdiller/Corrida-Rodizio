@@ -34,6 +34,7 @@ interface HallOfFameProps {
   getItemLabel: (count: number) => string;
   onHome: () => void;
   currentParticipantId?: string | null;
+  onReopenRace?: () => Promise<void> | void;
 }
 
 export function HallOfFame({
@@ -43,9 +44,13 @@ export function HallOfFame({
   getItemLabel,
   onHome,
   currentParticipantId,
+  onReopenRace,
 }: HallOfFameProps) {
   const { t } = useLanguage();
   const MOTIVATIONAL_PHRASES = t.hall_of_fame.phrases;
+  const currentParticipant = participants.find(
+    (participant) => participant.id === currentParticipantId,
+  );
   const [timeline, setTimeline] = useState<
     {
       id: string;
@@ -59,6 +64,8 @@ export function HallOfFame({
   const [timelineError, setTimelineError] = useState(false);
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
   const [isSharingPhoto, setIsSharingPhoto] = useState(false);
+  const [showReopenConfirm, setShowReopenConfirm] = useState(false);
+  const [isReopening, setIsReopening] = useState(false);
 
   useEffect(() => {
     const loadTimeline = async () => {
@@ -246,6 +253,16 @@ export function HallOfFame({
             maxScore={maxScore}
             getItemLabel={getItemLabel}
           />
+          {currentParticipant?.is_vip && (
+            <Button
+              variant="outline"
+              className="w-full rounded-2xl"
+              onClick={() => setShowReopenConfirm(true)}
+              disabled={isReopening}
+            >
+              {t.hall_of_fame.reopen_race ?? "Reabrir corrida"}
+            </Button>
+          )}
 
           <Button
             variant="outline"
@@ -256,6 +273,68 @@ export function HallOfFame({
           </Button>
         </div>
       </div>
+      {showReopenConfirm && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowReopenConfirm(false)}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <Card className="w-full max-w-sm space-y-4 rounded-2xl border border-muted/60 bg-background/95 p-5 shadow-xl">
+              <div className="space-y-1 text-center">
+                <h2 className="text-lg font-bold">
+                  {t.hall_of_fame.reopen_confirm_title ??
+                    "Reabrir corrida?"}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {t.hall_of_fame.reopen_confirm_desc ??
+                    "Deseja reabrir esta corrida para continuar jogando?"}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowReopenConfirm(false)}
+                  disabled={isReopening}
+                >
+                  {t.room.cancel}
+                </Button>
+                <Button
+                  variant="default"
+                  className="flex-1"
+                  onClick={async () => {
+                    if (!currentParticipantId) return;
+                    setIsReopening(true);
+                    try {
+                      const response = await fetch("/api/races/reopen", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          roomCode: race.room_code,
+                          requesterId: currentParticipantId,
+                        }),
+                      });
+                      if (!response.ok) {
+                        throw new Error("reopen_failed");
+                      }
+                      setShowReopenConfirm(false);
+                      await onReopenRace?.();
+                    } catch {
+                      return;
+                    } finally {
+                      setIsReopening(false);
+                    }
+                  }}
+                  disabled={isReopening}
+                >
+                  {t.hall_of_fame.reopen_confirm_action ?? "Reabrir"}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </>
+      )}
       {activePhoto && (
         <>
           <div
@@ -268,7 +347,7 @@ export function HallOfFame({
               alt=""
               className="w-full rounded-xl object-contain"
             />
-            <div className="mt-3 flex justify-end">
+            <div className="mt-3 flex justify-center">
               <Button
                 variant="outline"
                 className="border-border"
