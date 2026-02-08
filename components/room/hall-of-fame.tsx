@@ -92,13 +92,16 @@ export function HallOfFame({
     <div className="min-h-screen bg-background text-foreground p-6 flex flex-col items-center justify-center animate-in fade-in duration-1000">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-4">
-          <div className="inline-block p-3 bg-primary rounded-2xl rotate-3 shadow-2xl shadow-primary/20">
-            <Trophy className="h-10 w-10 text-primary-foreground" />
-          </div>
-          <div className="space-y-1">
-            <h1 className="text-4xl font-black italic tracking-tighter uppercase">
-              {t.hall_of_fame.title}
-            </h1>
+            <div className="inline-block p-3 bg-primary rounded-2xl rotate-3 shadow-2xl shadow-primary/20">
+              <Trophy className="h-10 w-10 text-primary-foreground" />
+            </div>
+            <p className="text-xs font-mono text-muted-foreground tracking-widest">
+              rodiziorace.mechama.eu
+            </p>
+            <div className="space-y-1">
+              <h1 className="text-4xl font-black italic tracking-tighter uppercase">
+                {t.hall_of_fame.title}
+              </h1>
             <p className="text-primary font-mono text-sm tracking-widest">
               {t.common.room}: {race.room_code}
             </p>
