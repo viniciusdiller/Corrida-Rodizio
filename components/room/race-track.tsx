@@ -32,14 +32,9 @@ type BurstEffect = {
 interface RaceTrackProps {
   participants: Participant[];
   isTeamMode: boolean;
-  baselineScores: Record<string, number>;
 }
 
-export function RaceTrack({
-  participants,
-  isTeamMode,
-  baselineScores,
-}: RaceTrackProps) {
+export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
   const [enableAnimations, setEnableAnimations] = useState(true);
   const { t } = useLanguage();
 
@@ -66,19 +61,14 @@ export function RaceTrack({
       return;
     }
 
-    const hasBaseline = Object.keys(baselineScores).length > 0;
-    if (hasBaseline) {
-      prevScoresRef.current = { ...baselineScores };
-    } else {
-      const fallbackScores: Record<string, number> = {};
-      participants.forEach((participant) => {
-        fallbackScores[participant.id] = participant.items_eaten;
-      });
-      prevScoresRef.current = fallbackScores;
-    }
+    const fallbackScores: Record<string, number> = {};
+    participants.forEach((participant) => {
+      fallbackScores[participant.id] = participant.items_eaten;
+    });
+    prevScoresRef.current = fallbackScores;
 
     hasInitializedRef.current = true;
-  }, [baselineScores, participants]);
+  }, [participants]);
 
   // Lógica de detecção de pontos
   useEffect(() => {
