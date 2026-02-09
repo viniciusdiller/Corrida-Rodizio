@@ -66,6 +66,9 @@ export function HallOfFame({
   const [isSharingPhoto, setIsSharingPhoto] = useState(false);
   const [showReopenConfirm, setShowReopenConfirm] = useState(false);
   const [isReopening, setIsReopening] = useState(false);
+  const [loadingPhotos, setLoadingPhotos] = useState<Record<string, boolean>>(
+    {},
+  );
 
   useEffect(() => {
     const loadTimeline = async () => {
@@ -94,6 +97,16 @@ export function HallOfFame({
 
     loadTimeline();
   }, [race.photo_mode, race.room_code, currentParticipantId]);
+
+  useEffect(() => {
+    const nextLoading: Record<string, boolean> = {};
+    timeline.forEach((photo) => {
+      if (photo.signedUrl) {
+        nextLoading[photo.id] = true;
+      }
+    });
+    setLoadingPhotos(nextLoading);
+  }, [timeline]);
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6 flex flex-col items-center justify-center animate-in fade-in duration-1000">
@@ -216,19 +229,41 @@ export function HallOfFame({
                       </div>
                       <button
                         type="button"
-                        className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-card"
+                        className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-muted/20"
                         onClick={() => {
                           if (photo.signedUrl) setActivePhoto(photo.signedUrl);
                         }}
+                        aria-busy={loadingPhotos[photo.id] ?? false}
                       >
                         {photo.signedUrl ? (
-                          <img
-                            src={photo.signedUrl}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
+                          <>
+                            {loadingPhotos[photo.id] && (
+                              <span className="absolute inset-0 animate-pulse bg-muted/50" />
+                            )}
+                            <img
+                              src={photo.signedUrl}
+                              alt=""
+                              className={`h-full w-full object-cover transition-opacity duration-300 ${
+                                loadingPhotos[photo.id]
+                                  ? "opacity-0"
+                                  : "opacity-100"
+                              }`}
+                              onLoad={() =>
+                                setLoadingPhotos((prev) => ({
+                                  ...prev,
+                                  [photo.id]: false,
+                                }))
+                              }
+                              onError={() =>
+                                setLoadingPhotos((prev) => ({
+                                  ...prev,
+                                  [photo.id]: false,
+                                }))
+                              }
+                            />
+                          </>
                         ) : (
-                          <span className="block h-full w-full" />
+                          <span className="block h-full w-full animate-pulse bg-muted/40" />
                         )}
                       </button>
                       <div className="min-w-0">
