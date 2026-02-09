@@ -44,6 +44,7 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
   >({});
 
   const prevScoresRef = useRef<Record<string, number>>({});
+  const hasInitializedRef = useRef(false);
 
   const scores = participants.map((p) => p.items_eaten);
   const currentMax = scores.length > 0 ? Math.max(...scores) : 0;
@@ -54,6 +55,20 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
     (a, b) =>
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
+
+  useEffect(() => {
+    if (hasInitializedRef.current) {
+      return;
+    }
+
+    const fallbackScores: Record<string, number> = {};
+    participants.forEach((participant) => {
+      fallbackScores[participant.id] = participant.items_eaten;
+    });
+    prevScoresRef.current = fallbackScores;
+
+    hasInitializedRef.current = true;
+  }, [participants]);
 
   // Lógica de detecção de pontos
   useEffect(() => {

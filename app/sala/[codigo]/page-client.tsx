@@ -44,7 +44,7 @@ import { getFoodTypeUnit } from "@/lib/utils/food-type";
 export default function RoomPage() {
   const { t, language } = useLanguage();
   const LOGIN_STORAGE_KEY = "rodizio-race-login";
-  const addCooldownMs = 2_000;
+  const addCooldownMs = 4_000;
 
   const params = useParams();
   const router = useRouter();
