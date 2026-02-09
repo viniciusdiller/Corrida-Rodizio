@@ -268,6 +268,7 @@ export default function RoomPage() {
 
       if (participantsData) {
         setParticipants(participantsData);
+        let resolvedParticipantId: string | null = null;
         if (!isSpectator) {
           const storageKey = getParticipantStorageKey(roomCode);
           const storedId = localStorage.getItem(storageKey);
@@ -275,12 +276,13 @@ export default function RoomPage() {
           if (storedId) {
             const isValid = participantsData.some((p) => p.id === storedId);
             if (isValid) {
-              setCurrentParticipantId(storedId);
+              resolvedParticipantId = storedId;
             } else {
               localStorage.removeItem(storageKey);
-              setCurrentParticipantId(null);
             }
-          } else {
+          }
+
+          if (!resolvedParticipantId) {
             const loginCode = localStorage.getItem(LOGIN_STORAGE_KEY);
             const normalizedLogin = loginCode?.trim().toUpperCase();
             if (normalizedLogin) {
@@ -293,11 +295,34 @@ export default function RoomPage() {
                 );
               });
               if (match) {
-                setCurrentParticipantId(match.id);
+                resolvedParticipantId = match.id;
                 localStorage.setItem(storageKey, match.id);
               }
             }
           }
+        }
+
+        setCurrentParticipantId(resolvedParticipantId);
+
+        if (raceData.photo_mode && raceData.room_code && resolvedParticipantId) {
+          try {
+            const response = await fetch(
+              `/api/race-photos/timeline?roomCode=${encodeURIComponent(
+                raceData.room_code,
+              )}&participantId=${encodeURIComponent(resolvedParticipantId)}`,
+            );
+            const data =
+              response.status === 403
+                ? { photos: [] }
+                : await response.json().catch(() => ({ photos: [] }));
+            const photos = Array.isArray(data?.photos) ? data.photos : [];
+            setHasPhotoTimeline(photos.length > 0);
+          } catch (error) {
+            console.error(error);
+            setHasPhotoTimeline(false);
+          }
+        } else {
+          setHasPhotoTimeline(false);
         }
       }
     } catch (error) {
