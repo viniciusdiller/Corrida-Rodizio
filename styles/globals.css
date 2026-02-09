@@ -34,17 +34,3 @@
   --color-primary: var(--primary);
   /* ... rest of theme ... */
 }
-
-@keyframes cooldown-fill {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-.cooldown-fill {
-  transform-origin: left;
-  animation: cooldown-fill var(--cooldown-duration, 2s) linear forwards;
-}

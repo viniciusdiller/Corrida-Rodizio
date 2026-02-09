@@ -1179,7 +1179,6 @@ export default function RoomPage() {
             photoSendStatus={photoSendStatus}
             photoModeEnabled={isPhotoModeEnabled}
             photoRequired={isPhotoRequired}
-            addCooldownMs={addCooldownMs}
             onPhotoIncrement={handlePhotoIncrement}
             isLoggedIn={!!loggedUsername}
             isPremium={isPremiumPlayer}
@@ -1282,7 +1281,7 @@ export default function RoomPage() {
           />
           <Button
             size="icon"
-            className={`relative h-14 w-14 overflow-hidden rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/90 via-primary to-primary/70 text-white shadow-[0_16px_35px_rgba(0,0,0,0.22)] backdrop-blur transition-all duration-200 hover:scale-105 active:scale-95 ${
+            className={`h-14 w-14 rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/90 via-primary to-primary/70 text-white shadow-[0_16px_35px_rgba(0,0,0,0.22)] backdrop-blur transition-all duration-200 hover:scale-105 active:scale-95 ${
               isAddCooldownActive || isUploadingPhoto ? "opacity-50 grayscale" : ""
             }`}
             onClick={(event) =>
@@ -1292,21 +1291,13 @@ export default function RoomPage() {
             }
             disabled={isUploadingPhoto}
           >
-            {isAddCooldownActive && (
-              <span
-                className="pointer-events-none absolute inset-0 bg-white/20 cooldown-fill"
-                style={{ "--cooldown-duration": `${addCooldownMs}ms` }}
-              />
-            )}
             {isPhotoRequired ? (
-              <div className="relative z-10 flex flex-col items-center leading-none">
+              <div className="flex flex-col items-center leading-none">
                 <Camera className="h-5 w-5" />
                 <span className="text-[10px] font-black">+1</span>
               </div>
             ) : (
-              <span className="relative z-10 text-lg font-black leading-none">
-                +1
-              </span>
+              <span className="text-lg font-black leading-none">+1</span>
             )}
           </Button>
           </div>
