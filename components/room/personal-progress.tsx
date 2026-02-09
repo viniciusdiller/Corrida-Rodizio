@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent, type CSSProperties } from "react";
 import { Minus, Plus, Camera, Pencil, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,6 +34,7 @@ interface PersonalProgressProps {
   photoSendStatus: "success" | "error" | null;
   photoModeEnabled: boolean;
   photoRequired: boolean;
+  addCooldownMs: number;
   onPhotoIncrement: (
     id: string,
     event?: MouseEvent<HTMLButtonElement>,
@@ -57,6 +58,7 @@ export function PersonalProgress({
   photoSendStatus,
   photoModeEnabled,
   photoRequired,
+  addCooldownMs,
   onPhotoIncrement,
   isLoggedIn,
   isPremium,
@@ -67,6 +69,9 @@ export function PersonalProgress({
   const [avatarOptions, setAvatarOptions] = useState<string[]>([]);
   const [nameDraft, setNameDraft] = useState(participant.name ?? "");
   const [showNameIndicator, setShowNameIndicator] = useState(true);
+  const cooldownStyle: CSSProperties = {
+    "--cooldown-duration": `${addCooldownMs}ms`,
+  } as CSSProperties;
   const teamBadgeStyles: Record<string, string> = {
     AZUL: "border-blue-500/40 text-blue-500",
     VERMELHA: "border-red-500/40 text-red-500",
@@ -186,11 +191,17 @@ export function PersonalProgress({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive active:scale-75 transition-all duration-200 cursor-pointer"
+                  className="relative h-7 w-7 overflow-hidden rounded-full hover:bg-destructive/10 hover:text-destructive active:scale-75 transition-all duration-200 cursor-pointer"
                   onClick={(event) => onUpdateCount(participant.id, -1, event)}
                   disabled={participant.items_eaten === 0}
                 >
-                  <Minus className="h-3.5 w-3.5" />
+                  {isAddCooldown && (
+                    <span
+                      className="pointer-events-none absolute inset-0 bg-destructive/20 cooldown-fill"
+                      style={cooldownStyle}
+                    />
+                  )}
+                  <Minus className="relative z-10 h-3.5 w-3.5" />
                 </Button>
               )}
               <div
@@ -203,12 +214,18 @@ export function PersonalProgress({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`h-7 w-7 rounded-full hover:bg-primary/10 hover:text-primary active:scale-75 transition-all duration-200 cursor-pointer ${
+                  className={`relative h-7 w-7 overflow-hidden rounded-full hover:bg-primary/10 hover:text-primary active:scale-75 transition-all duration-200 cursor-pointer ${
                     isAddCooldown ? "opacity-50 grayscale" : ""
                   }`}
                   onClick={(event) => onUpdateCount(participant.id, 1, event)}
                 >
-                  <Plus className="h-3.5 w-3.5" />
+                  {isAddCooldown && (
+                    <span
+                      className="pointer-events-none absolute inset-0 bg-primary/20 cooldown-fill"
+                      style={cooldownStyle}
+                    />
+                  )}
+                  <Plus className="relative z-10 h-3.5 w-3.5" />
                 </Button>
               )}
               </div>
