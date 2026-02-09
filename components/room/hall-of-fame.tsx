@@ -8,6 +8,7 @@ import { useLanguage } from "@/contexts/language-context";
 import { ShareStoryButton } from "./share-story-button";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
+
 const TEAM_OPTIONS = [
   { id: "AZUL", shortLabel: "Azul", pillClass: "bg-blue-500/20 text-blue-300" },
   {
@@ -69,6 +70,16 @@ export function HallOfFame({
   const [loadingPhotos, setLoadingPhotos] = useState<Record<string, boolean>>(
     {},
   );
+
+  // Função para pegar uma frase baseada no ID e Sala (Pseudo-aleatória e estável)
+  const getMotivationalPhrase = (participantId: string) => {
+    if (!MOTIVATIONAL_PHRASES || MOTIVATIONAL_PHRASES.length === 0) return "";
+    const seed = participantId + race.room_code;
+    const hash = seed
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return MOTIVATIONAL_PHRASES[hash % MOTIVATIONAL_PHRASES.length];
+  };
 
   useEffect(() => {
     const loadTimeline = async () => {
@@ -174,7 +185,7 @@ export function HallOfFame({
                     <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
                       {isWinner
                         ? t.hall_of_fame.legendary
-                        : MOTIVATIONAL_PHRASES[i % MOTIVATIONAL_PHRASES.length]}
+                        : getMotivationalPhrase(p.id)}
                     </p>
                   </div>
                 </div>
