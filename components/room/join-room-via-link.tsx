@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -31,13 +31,33 @@ export function JoinRoomViaLink({
 }: JoinRoomViaLinkProps) {
   const { t, language } = useLanguage();
   const foodTypeLabel = getFoodTypeLabel(race.food_type, language);
-  const [mode, setMode] = useState<"guest" | "login">("guest");
+  const [mode, setMode] = useState<"guest" | "login" | "spectator">("guest");
   const [loading, setLoading] = useState(false);
+  const [storedLogin, setStoredLogin] = useState<string | null>(null);
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [loginStep, setLoginStep] = useState<"credentials" | "nickname">(
+    "credentials",
+  );
+  const [pendingLogin, setPendingLogin] = useState<string | null>(null);
 
-  // Estados do formulário
   const [nickname, setNickname] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    const stored = localStorage.getItem("rodizio-race-login");
+    const normalized = stored?.trim().toUpperCase() || null;
+    setStoredLogin(normalized);
+    setShowLoginForm(!normalized);
+  }, []);
+
+  useEffect(() => {
+    if (mode !== "login") return;
+    if (!storedLogin) {
+      setLoginStep("credentials");
+      setPendingLogin(null);
+    }
+  }, [mode, storedLogin]);
 
   const handleJoinAsGuest = async () => {
     if (!nickname.trim()) return;
@@ -58,10 +78,11 @@ export function JoinRoomViaLink({
       const storageKey = getParticipantStorageKey(roomCode);
 
       if (existingByName) {
-        if (existingByName.login_code) {
+        const existingLogin = existingByName.login_code?.trim().toUpperCase();
+        if (existingLogin) {
           toast.error(
             t.room?.codename_taken ??
-              "Outro jogador já está usando esse codinome.",
+              "Outro jogador ja esta usando esse codinome.",
           );
           return;
         }
@@ -77,6 +98,7 @@ export function JoinRoomViaLink({
           race_id: race.id,
           name: normalizedNickname,
           items_eaten: 0,
+          login_code: null,
         })
         .select()
         .single();
@@ -84,11 +106,128 @@ export function JoinRoomViaLink({
       if (error) throw error;
 
       localStorage.setItem(storageKey, newParticipant.id);
-
       onJoin();
     } catch (error) {
       console.error("Erro ao entrar como convidado:", error);
       toast.error("Erro ao entrar na sala. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const joinWithLogin = async (
+    normalizedUsername: string,
+    desiredName: string,
+  ) => {
+    const supabase = createClient();
+    const { data: existingParticipant } = await supabase
+      .from("participants")
+      .select("id")
+      .eq("race_id", race.id)
+      .eq("login_code", normalizedUsername)
+      .maybeSingle();
+
+    const storageKey = getParticipantStorageKey(roomCode);
+
+    if (existingParticipant) {
+      const { data: nameConflict } = await supabase
+        .from("participants")
+        .select("id, login_code")
+        .eq("race_id", race.id)
+        .ilike("name", desiredName)
+        .neq("id", existingParticipant.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (nameConflict && nameConflict.login_code !== normalizedUsername) {
+        toast.error(
+          t.room?.codename_taken ??
+            "Outro jogador ja esta usando esse codinome.",
+        );
+        return;
+      }
+
+      await supabase
+        .from("participants")
+        .update({ name: desiredName })
+        .eq("id", existingParticipant.id);
+
+      localStorage.setItem(storageKey, existingParticipant.id);
+      onJoin();
+      return;
+    }
+
+    const { data: existingByName } = await supabase
+      .from("participants")
+      .select("id, login_code")
+      .eq("race_id", race.id)
+      .ilike("name", desiredName)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingByName) {
+      if (!existingByName.login_code) {
+        await supabase
+          .from("participants")
+          .update({ login_code: normalizedUsername, name: desiredName })
+          .eq("id", existingByName.id);
+        localStorage.setItem(storageKey, existingByName.id);
+        onJoin();
+        return;
+      }
+
+      if (existingByName.login_code !== normalizedUsername) {
+        toast.error(
+          t.room?.codename_taken ??
+            "Outro jogador ja esta usando esse codinome.",
+        );
+        return;
+      }
+
+      localStorage.setItem(storageKey, existingByName.id);
+      await supabase
+        .from("participants")
+        .update({ name: desiredName })
+        .eq("id", existingByName.id);
+      onJoin();
+      return;
+    }
+
+    const { data: newParticipant, error: insertError } = await supabase
+      .from("participants")
+      .insert({
+        race_id: race.id,
+        name: desiredName,
+        items_eaten: 0,
+        login_code: normalizedUsername,
+        is_vip: false,
+      })
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
+    localStorage.setItem(storageKey, newParticipant.id);
+    onJoin();
+  };
+
+  const handleJoinAsLogged = async () => {
+    if (!storedLogin) return;
+    setLoading(true);
+
+    try {
+      const normalizedUsername = storedLogin.trim().toUpperCase();
+      const desiredName = nickname.trim() || normalizedUsername;
+
+      localStorage.setItem("rodizio-race-login", normalizedUsername);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("rodizio-login-updated"));
+      }
+      await joinWithLogin(normalizedUsername, desiredName);
+    } catch (error) {
+      console.error("Erro ao entrar com a conta:", error);
+      toast.error("Erro ao entrar com a conta. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -102,7 +241,6 @@ export function JoinRoomViaLink({
       const supabase = createClient();
       const normalizedUsername = username.trim().toUpperCase();
 
-      // 1. Verificar credenciais
       const { data: loginSuccess, error: loginError } = await supabase.rpc(
         "verify_login",
         {
@@ -112,15 +250,17 @@ export function JoinRoomViaLink({
       );
 
       if (loginError || !loginSuccess) {
-        toast.error("Usuário ou senha inválidos.");
+        toast.error("Usuario ou senha invalidos.");
         setLoading(false);
         return;
       }
 
-      // 2. Salvar login globalmente
       localStorage.setItem("rodizio-race-login", normalizedUsername);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("rodizio-login-updated"));
+      }
+      setStoredLogin(normalizedUsername);
 
-      // 3. Verificar se já existe participante nesta sala com este login
       const { data: existingParticipant } = await supabase
         .from("participants")
         .select("id")
@@ -128,61 +268,16 @@ export function JoinRoomViaLink({
         .eq("login_code", normalizedUsername)
         .maybeSingle();
 
-      const storageKey = getParticipantStorageKey(roomCode);
-
       if (existingParticipant) {
-        // Se já existe, apenas reconecta
+        const storageKey = getParticipantStorageKey(roomCode);
         localStorage.setItem(storageKey, existingParticipant.id);
-      } else {
-        const { data: existingByName } = await supabase
-          .from("participants")
-          .select("id, login_code")
-          .eq("race_id", race.id)
-          .ilike("name", normalizedUsername)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (existingByName) {
-          if (!existingByName.login_code) {
-            toast.error(
-              t.room?.codename_taken ??
-                "Outro jogador já está usando esse codinome.",
-            );
-            return;
-          }
-
-          if (existingByName.login_code !== normalizedUsername) {
-            toast.error(
-              t.room?.codename_taken ??
-                "Outro jogador já está usando esse codinome.",
-            );
-            return;
-          }
-
-          localStorage.setItem(storageKey, existingByName.id);
-          onJoin();
-          return;
-        }
-
-        // Se não existe, cria um novo vinculado à conta
-        const { data: newParticipant, error: insertError } = await supabase
-          .from("participants")
-          .insert({
-            race_id: race.id,
-            name: normalizedUsername, // Nome padrão é o usuário
-            items_eaten: 0,
-            login_code: normalizedUsername,
-            is_vip: false, // VIP logicamente seria tratado no backend ou triggers, mas aqui vai false padrão
-          })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        localStorage.setItem(storageKey, newParticipant.id);
+        onJoin();
+        return;
       }
 
-      onJoin();
+      setPendingLogin(normalizedUsername);
+      setNickname(normalizedUsername);
+      setLoginStep("nickname");
     } catch (error) {
       console.error("Erro ao fazer login:", error);
       toast.error("Erro ao entrar com a conta. Tente novamente.");
@@ -210,8 +305,7 @@ export function JoinRoomViaLink({
         </div>
 
         <Card className="p-1 border-2 border-primary/20 shadow-xl bg-background/60 backdrop-blur overflow-hidden">
-          {/* Tabs Simplificadas */}
-          <div className="grid grid-cols-2 p-1 gap-1 bg-muted/50 rounded-lg mb-4 m-2">
+          <div className="grid grid-cols-3 p-1 gap-1 bg-muted/50 rounded-lg mb-4 m-2">
             <button
               onClick={() => setMode("guest")}
               className={`text-xs font-bold uppercase py-2 rounded-md transition-all ${
@@ -232,6 +326,16 @@ export function JoinRoomViaLink({
             >
               {t.account?.enter_btn || "Entrar com Conta"}
             </button>
+            <button
+              onClick={() => setMode("spectator")}
+              className={`text-xs font-bold uppercase py-2 rounded-md transition-all ${
+                mode === "spectator"
+                  ? "bg-background text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.home.enter_spectator}
+            </button>
           </div>
 
           <div className="p-4 pt-0 space-y-4">
@@ -247,6 +351,7 @@ export function JoinRoomViaLink({
                       placeholder={t.account.username_placeholder}
                       value={nickname}
                       onChange={(e) => setNickname(e.target.value)}
+                      maxLength={20}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") handleJoinAsGuest();
                       }}
@@ -265,43 +370,169 @@ export function JoinRoomViaLink({
                   )}
                 </Button>
               </div>
-            ) : (
+            ) : mode === "login" ? (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="space-y-2">
-                  <Label>{t.account.username_label}</Label>
-                  <Input
-                    className="h-11 text-lg"
-                    placeholder={t.account.username_placeholder}
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t.account.password_label}</Label>
-                  <Input
-                    type="password"
-                    className="h-11 text-lg"
-                    placeholder="******"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleLoginAndJoin();
-                    }}
-                  />
-                </div>
+                {storedLogin && !showLoginForm ? (
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label>{t.room.enter_nickname_to_join}</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          className="h-11 pl-9 text-lg"
+                          placeholder={t.account.username_placeholder}
+                          value={nickname}
+                          onChange={(e) => setNickname(e.target.value)}
+                          maxLength={20}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t.account.logged_as}{" "}
+                      <span className="font-semibold text-foreground">
+                        {storedLogin}
+                      </span>
+                    </p>
+                    <Button
+                      className="w-full h-11 text-lg font-bold uppercase rounded-xl"
+                      onClick={handleJoinAsLogged}
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <>
+                          <LogIn className="mr-2 h-4 w-4" />
+                          {t.account.login_btn}
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full text-xs uppercase tracking-widest"
+                      onClick={() => {
+                        setShowLoginForm(true);
+                        setLoginStep("credentials");
+                        setPendingLogin(null);
+                      }}
+                    >
+                      {t.account.use_other_account}
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    {loginStep === "credentials" ? (
+                      <>
+                        <div className="space-y-2">
+                          <Label>{t.account.username_label}</Label>
+                          <Input
+                            className="h-11 text-lg"
+                            placeholder={t.account.username_placeholder}
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            maxLength={20}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>{t.account.password_label}</Label>
+                          <Input
+                            type="password"
+                            className="h-11 text-lg"
+                            placeholder="******"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleLoginAndJoin();
+                            }}
+                          />
+                        </div>
+                        <Button
+                          className="w-full h-11 text-lg font-bold uppercase rounded-xl"
+                          onClick={handleLoginAndJoin}
+                          disabled={loading || !username.trim() || !password.trim()}
+                        >
+                          {loading ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <>
+                              <LogIn className="mr-2 h-4 w-4" />
+                              {t.account.login_btn}
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="space-y-2">
+                          <Label>{t.room.enter_nickname_to_join}</Label>
+                          <div className="relative">
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              className="h-11 pl-9 text-lg"
+                              placeholder={t.account.username_placeholder}
+                              value={nickname}
+                              onChange={(e) => setNickname(e.target.value)}
+                              maxLength={20}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && pendingLogin) {
+                                  setLoading(true);
+                                  joinWithLogin(
+                                    pendingLogin,
+                                    nickname.trim() || pendingLogin,
+                                  )
+                                    .catch((error) => {
+                                      console.error(error);
+                                      toast.error(
+                                        "Erro ao entrar com a conta. Tente novamente.",
+                                      );
+                                    })
+                                    .finally(() => setLoading(false));
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <Button
+                          className="w-full h-11 text-lg font-bold uppercase rounded-xl"
+                          onClick={() => {
+                            if (!pendingLogin) return;
+                            setLoading(true);
+                            joinWithLogin(
+                              pendingLogin,
+                              nickname.trim() || pendingLogin,
+                            )
+                              .catch((error) => {
+                                console.error(error);
+                                toast.error(
+                                  "Erro ao entrar com a conta. Tente novamente.",
+                                );
+                              })
+                              .finally(() => setLoading(false));
+                          }}
+                          disabled={loading || !pendingLogin}
+                        >
+                          {loading ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            t.room.join_action
+                          )}
+                        </Button>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300 text-center">
+                <p className="text-xs text-muted-foreground">
+                  {t.home.spectator_desc}
+                </p>
                 <Button
                   className="w-full h-11 text-lg font-bold uppercase rounded-xl"
-                  onClick={handleLoginAndJoin}
-                  disabled={loading || !username.trim() || !password.trim()}
+                  onClick={() => router.push(`/sala/${roomCode}?spectator=1`)}
                 >
-                  {loading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <>
-                      <LogIn className="mr-2 h-4 w-4" />
-                      {t.account.login_btn}
-                    </>
-                  )}
+                  {t.home.enter_spectator}
                 </Button>
               </div>
             )}

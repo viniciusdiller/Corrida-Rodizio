@@ -88,9 +88,9 @@ export function RankingSection({
           const members = participants
             .filter((p) => p.team === id)
             .sort((a, b) => b.items_eaten - a.items_eaten);
+          if (members.length === 0) return null;
           const teamTotal = members.reduce((acc, p) => acc + p.items_eaten, 0);
-          const average =
-            members.length > 0 ? (teamTotal / members.length).toFixed(1) : "0";
+          const average = (teamTotal / members.length).toFixed(1);
 
           return (
             <Card
@@ -145,11 +145,6 @@ export function RankingSection({
                       </span>
                     </div>
                   ))}
-                  {members.length === 0 && (
-                    <p className="text-[9px] text-center text-muted-foreground italic py-2">
-                      {t.room.no_players}
-                    </p>
-                  )}
                 </div>
               </CardContent>
             </Card>

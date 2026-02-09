@@ -7,6 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  getAvatarUrl,
+  isExclusiveAvatar,
+  isImageAvatar,
+} from "@/lib/utils/avatars";
 
 type AdminUser = {
   username: string;
@@ -34,6 +39,21 @@ export default function AdminPage() {
   const [exclusiveStatus, setExclusiveStatus] = useState<string | null>(null);
   const [newPromoPermission, setNewPromoPermission] = useState("");
   const [promoStatus, setPromoStatus] = useState<string | null>(null);
+  const [availableExclusiveAvatars, setAvailableExclusiveAvatars] = useState<
+    string[]
+  >([]);
+  const [showExclusiveMenu, setShowExclusiveMenu] = useState(false);
+  const [showPromoMenu, setShowPromoMenu] = useState(false);
+  const availableExclusiveOptions = user
+    ? availableExclusiveAvatars.filter(
+        (avatar) => !user.exclusiveAvatars.includes(avatar)
+      )
+    : [];
+  const availablePromoOptions = user
+    ? availableExclusiveAvatars.filter(
+        (avatar) => !user.promoPermissions.includes(avatar)
+      )
+    : [];
 
   useEffect(() => {
     const loadSession = async () => {
@@ -50,6 +70,32 @@ export default function AdminPage() {
 
     loadSession();
   }, []);
+
+  useEffect(() => {
+    const loadAvatars = async () => {
+      try {
+        const response = await fetch("/api/avatars");
+        const data = await response.json().catch(() => ({}));
+        const avatars = Array.isArray(data?.avatars) ? data.avatars : [];
+        const exclusive = avatars.filter((avatar: string) =>
+          isExclusiveAvatar(avatar)
+        );
+        setAvailableExclusiveAvatars(exclusive);
+        if (!newExclusiveAvatar && exclusive.length > 0) {
+          setNewExclusiveAvatar(exclusive[0]);
+        }
+        if (!newPromoPermission && exclusive.length > 0) {
+          setNewPromoPermission(exclusive[0]);
+        }
+      } catch {
+        setAvailableExclusiveAvatars([]);
+      }
+    };
+
+    if (isAuthenticated) {
+      loadAvatars();
+    }
+  }, [isAuthenticated, newExclusiveAvatar, newPromoPermission]);
 
   const handleLogin = async () => {
     setLoginError(null);
@@ -414,17 +460,75 @@ export default function AdminPage() {
                       Exclusive Avatars
                     </Label>
                     <div className="flex flex-col gap-2 md:flex-row">
-                      <Input
-                        value={newExclusiveAvatar}
-                        onChange={(event) =>
-                          setNewExclusiveAvatar(event.target.value)
-                        }
-                        placeholder="avatar-exclusive666.png"
-                      />
+                      <div className="relative w-full">
+                        <button
+                          type="button"
+                          className={`flex h-10 w-full items-center justify-between rounded-md border px-3 text-sm ${
+                            availableExclusiveOptions.length === 0
+                              ? "border-muted bg-muted/40 text-muted-foreground cursor-not-allowed"
+                              : "border-input bg-background"
+                          }`}
+                          onClick={() =>
+                            setShowExclusiveMenu((prev) => !prev)
+                          }
+                          disabled={availableExclusiveOptions.length === 0}
+                        >
+                          {newExclusiveAvatar && isImageAvatar(newExclusiveAvatar) ? (
+                            <img
+                              src={getAvatarUrl(newExclusiveAvatar)}
+                              alt=""
+                              className="h-6 w-6 rounded-full object-contain"
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              No other avatar available
+                            </span>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {showExclusiveMenu ? "▲" : "▼"}
+                          </span>
+                        </button>
+                        {showExclusiveMenu && (
+                          <div className="absolute z-20 mt-2 w-full rounded-md border border-muted bg-background p-2 shadow-lg">
+                            {availableExclusiveOptions.length === 0 ? (
+                              <p className="text-xs text-muted-foreground">
+                                No other avatar available
+                              </p>
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {availableExclusiveOptions.map((avatar) => (
+                                  <button
+                                    key={avatar}
+                                    type="button"
+                                    className={`h-10 w-10 rounded-md border ${
+                                      newExclusiveAvatar === avatar
+                                        ? "border-primary"
+                                        : "border-muted"
+                                    }`}
+                                    onClick={() => {
+                                      setNewExclusiveAvatar(avatar);
+                                      setShowExclusiveMenu(false);
+                                    }}
+                                  >
+                                    {isImageAvatar(avatar) && (
+                                      <img
+                                        src={getAvatarUrl(avatar)}
+                                        alt=""
+                                        className="h-8 w-8 rounded-full object-contain"
+                                      />
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       <Button
                         variant="outline"
                         onClick={addExclusiveAvatar}
                         className="md:w-32"
+                        disabled={availableExclusiveOptions.length === 0}
                       >
                         Add
                       </Button>
@@ -445,7 +549,13 @@ export default function AdminPage() {
                           key={avatar}
                           className="flex items-center gap-2 rounded-full border border-muted px-3 py-1 text-xs"
                         >
-                          <span>{avatar}</span>
+                          {isImageAvatar(avatar) && (
+                            <img
+                              src={getAvatarUrl(avatar)}
+                              alt=""
+                              className="h-6 w-6 rounded-full object-contain"
+                            />
+                          )}
                           <button
                             className="text-xs text-destructive"
                             onClick={() => removeExclusiveAvatar(avatar)}
@@ -462,17 +572,73 @@ export default function AdminPage() {
                       Permissao de Codigos
                     </Label>
                     <div className="flex flex-col gap-2 md:flex-row">
-                      <Input
-                        value={newPromoPermission}
-                        onChange={(event) =>
-                          setNewPromoPermission(event.target.value)
-                        }
-                        placeholder="avatar-exclusive-betatester.png"
-                      />
+                      <div className="relative w-full">
+                        <button
+                          type="button"
+                          className={`flex h-10 w-full items-center justify-between rounded-md border px-3 text-sm ${
+                            availablePromoOptions.length === 0
+                              ? "border-muted bg-muted/40 text-muted-foreground cursor-not-allowed"
+                              : "border-input bg-background"
+                          }`}
+                          onClick={() => setShowPromoMenu((prev) => !prev)}
+                          disabled={availablePromoOptions.length === 0}
+                        >
+                          {newPromoPermission && isImageAvatar(newPromoPermission) ? (
+                            <img
+                              src={getAvatarUrl(newPromoPermission)}
+                              alt=""
+                              className="h-6 w-6 rounded-full object-contain"
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              No other avatar available
+                            </span>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {showPromoMenu ? "▲" : "▼"}
+                          </span>
+                        </button>
+                        {showPromoMenu && (
+                          <div className="absolute z-20 mt-2 w-full rounded-md border border-muted bg-background p-2 shadow-lg">
+                            {availablePromoOptions.length === 0 ? (
+                              <p className="text-xs text-muted-foreground">
+                                No other avatar available
+                              </p>
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {availablePromoOptions.map((avatar) => (
+                                  <button
+                                    key={avatar}
+                                    type="button"
+                                    className={`h-10 w-10 rounded-md border ${
+                                      newPromoPermission === avatar
+                                        ? "border-primary"
+                                        : "border-muted"
+                                    }`}
+                                    onClick={() => {
+                                      setNewPromoPermission(avatar);
+                                      setShowPromoMenu(false);
+                                    }}
+                                  >
+                                    {isImageAvatar(avatar) && (
+                                      <img
+                                        src={getAvatarUrl(avatar)}
+                                        alt=""
+                                        className="h-8 w-8 rounded-full object-contain"
+                                      />
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       <Button
                         variant="outline"
                         onClick={addPromoPermission}
                         className="md:w-32"
+                        disabled={availablePromoOptions.length === 0}
                       >
                         Add
                       </Button>
@@ -493,7 +659,13 @@ export default function AdminPage() {
                           key={avatar}
                           className="flex items-center gap-2 rounded-full border border-muted px-3 py-1 text-xs"
                         >
-                          <span>{avatar}</span>
+                          {isImageAvatar(avatar) && (
+                            <img
+                              src={getAvatarUrl(avatar)}
+                              alt=""
+                              className="h-6 w-6 rounded-full object-contain"
+                            />
+                          )}
                           <button
                             className="text-xs text-destructive"
                             onClick={() => removePromoPermission(avatar)}

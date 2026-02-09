@@ -35,6 +35,9 @@ export default function Home() {
   const [roomCode, setRoomCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [isTeamMode, setIsTeamMode] = useState(false);
+  const [photoMode, setPhotoMode] = useState<"optional" | "mandatory">(
+    "optional",
+  );
   const [hasEditedName, setHasEditedName] = useState(false);
   const [isSpectator, setIsSpectator] = useState(false);
   const [defaultAvatar, setDefaultAvatar] = useState<string | null>(
@@ -48,12 +51,15 @@ export default function Home() {
   const [accountCodeInput, setAccountCodeInput] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
-
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [loginCode, setLoginCode] = useState<string | null>(null);
   const [accountLoading, setAccountLoading] = useState(false);
   const [myGroups, setMyGroups] = useState<Race[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [groupsError, setGroupsError] = useState<string | null>(null);
+  const [roomsWithPhotos, setRoomsWithPhotos] = useState<string[]>([]);
+  const photoModeEnabled = !!loginCode;
+  const photoRequired = photoMode === "mandatory";
 
   const [showHistory, setShowHistory] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -132,6 +138,30 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const loadTermsAcceptance = async () => {
+      if (!loginCode) {
+        setHasAcceptedTerms(false);
+        return;
+      }
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("player_profiles")
+          .select("terms_accepted_at, terms_version")
+          .eq("login_code", loginCode.trim().toUpperCase())
+          .maybeSingle();
+        const accepted =
+          !!data?.terms_accepted_at && data?.terms_version === "v1";
+        setHasAcceptedTerms(accepted);
+      } catch {
+        setHasAcceptedTerms(false);
+      }
+    };
+
+    loadTermsAcceptance();
+  }, [loginCode]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const ua = window.navigator.userAgent.toLowerCase();
     const isIos = /iphone|ipad|ipod/.test(ua);
@@ -207,6 +237,7 @@ export default function Home() {
     if (flow === null) {
       setHasEditedName(false);
       setIsSpectator(false);
+      setPhotoMode("optional");
     }
   }, [flow]);
 
@@ -321,6 +352,7 @@ export default function Home() {
         terms_accepted_at: new Date().toISOString(),
         terms_version: "v1",
       });
+      setHasAcceptedTerms(true);
 
       setLoginCode(data);
       localStorage.setItem(LOGIN_STORAGE_KEY, data);
@@ -336,6 +368,22 @@ export default function Home() {
       );
     } finally {
       setAccountLoading(false);
+    }
+  };
+
+  const handleRaceTermsAccepted = async (accepted: boolean) => {
+    if (!accepted) return;
+    if (!loginCode) return;
+    try {
+      const supabase = createClient();
+      await supabase.from("player_profiles").upsert({
+        login_code: loginCode.trim().toUpperCase(),
+        terms_accepted_at: new Date().toISOString(),
+        terms_version: "v1",
+      });
+      setHasAcceptedTerms(true);
+    } catch {
+      return;
     }
   };
 
@@ -393,7 +441,8 @@ export default function Home() {
           room_code,
           food_type,
           is_active,
-          created_at
+          created_at,
+          photo_mode
         )
       `,
         )
@@ -431,6 +480,27 @@ export default function Home() {
       );
 
       setMyGroups(history);
+
+      const photoModeRooms = history
+        .filter((group: any) => group.photo_mode)
+        .map((group: any) => group.room_code)
+        .filter(Boolean);
+      if (photoModeRooms.length === 0) {
+        setRoomsWithPhotos([]);
+      } else {
+        const query = encodeURIComponent(photoModeRooms.join(","));
+        const availability = await fetch(
+          `/api/race-photos/availability?roomCodes=${query}&loginCode=${encodeURIComponent(
+            codeToUse,
+          )}`,
+        )
+          .then((res) => res.json())
+          .catch(() => ({ rooms: [] }));
+        const rooms = Array.isArray(availability?.rooms)
+          ? availability.rooms
+          : [];
+        setRoomsWithPhotos(rooms);
+      }
     } catch (error) {
       console.error("Erro ao carregar histórico:", error);
       setGroupsError("Não foi possível carregar seu histórico.");
@@ -447,6 +517,7 @@ export default function Home() {
     setShowPasswordForm(false);
     setPasswordStatus(null);
     setShowPasswordSuccess(false);
+    setHasAcceptedTerms(false);
     setCurrentPassword("");
     setNewPassword("");
     setConfirmNewPassword("");
@@ -558,6 +629,10 @@ export default function Home() {
     const normalizedName = playerName.trim();
     const roomOwnerName = loginCode?.trim() || normalizedName;
     if (!normalizedName || !roomOwnerName || !selectedFood) return;
+    if (photoModeEnabled && !loginCode) {
+      toast.error("Você precisa estar logado para o modo foto.");
+      return;
+    }
     setLoading(true);
     try {
       const supabase = createClient();
@@ -571,11 +646,18 @@ export default function Home() {
           room_code: code,
           is_active: true,
           is_team_mode: isTeamMode,
+          photo_mode: !!photoModeEnabled && !!loginCode,
+          photo_required: !!photoRequired && !!loginCode,
         })
         .select()
         .single();
 
-      if (raceError && isMissingColumn(raceError, "is_team_mode")) {
+      if (
+        raceError &&
+        (isMissingColumn(raceError, "is_team_mode") ||
+          isMissingColumn(raceError, "photo_mode") ||
+          isMissingColumn(raceError, "photo_required"))
+      ) {
         const fallback = await supabase
           .from("races")
           .insert({
@@ -905,6 +987,7 @@ export default function Home() {
                   setAccountPassword={setAccountPassword}
                   onMenuStateChange={setIsAccountMenuOpen}
                   router={router}
+                  roomsWithPhotos={roomsWithPhotos}
                 />
               )}
               {showPasswordSuccess && (
@@ -952,6 +1035,13 @@ export default function Home() {
                     setPlayerName={handlePlayerNameChange}
                     isTeamMode={isTeamMode}
                     setIsTeamMode={setIsTeamMode}
+                    photoMode={photoMode}
+                    setPhotoMode={setPhotoMode}
+                    canEnablePhotoMode={!!loginCode}
+                    requireTerms={
+                      !loginCode || !hasAcceptedTerms || photoModeEnabled
+                    }
+                    onTermsAccepted={handleRaceTermsAccepted}
                     selectedFood={selectedFood}
                     setSelectedFood={setSelectedFood}
                     foodTypes={foodTypes}

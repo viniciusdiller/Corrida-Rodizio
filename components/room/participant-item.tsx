@@ -8,17 +8,26 @@ import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
 
 // Opções de equipa para classes CSS
 const TEAM_OPTIONS = {
-  AZUL: { badgeClass: "border-blue-500/40 text-blue-500", shortLabel: "Azul" },
+  AZUL: {
+    badgeClass: "border-blue-500/40 text-blue-500",
+    highlightClass: "ring-blue-500/60 ring-2 shadow-[0_12px_30px_rgba(59,130,246,0.18)]",
+    shortLabel: "Azul",
+  },
   VERMELHA: {
     badgeClass: "border-red-500/40 text-red-500",
+    highlightClass: "ring-red-500/60 ring-2 shadow-[0_12px_30px_rgba(239,68,68,0.18)]",
     shortLabel: "Vermelho",
   },
   VERDE: {
     badgeClass: "border-emerald-500/40 text-emerald-400",
+    highlightClass:
+      "ring-emerald-500/60 ring-2 shadow-[0_12px_30px_rgba(16,185,129,0.18)]",
     shortLabel: "Verde",
   },
   AMARELA: {
     badgeClass: "border-yellow-500/40 text-yellow-400",
+    highlightClass:
+      "ring-yellow-500/60 ring-2 shadow-[0_12px_30px_rgba(234,179,8,0.2)]",
     shortLabel: "Amarelo",
   },
 };
@@ -42,12 +51,13 @@ export function ParticipantItem({
   const team = participant.team
     ? TEAM_OPTIONS[participant.team as keyof typeof TEAM_OPTIONS]
     : null;
+  const teamHighlight = is_team_mode && team ? team.highlightClass : null;
 
   return (
     <Card
       className={`overflow-hidden border-none transition-all duration-300 ${
         isPersonal
-          ? "ring-2 ring-primary shadow-xl scale-[1.02]"
+          ? `ring-2 ${teamHighlight ?? "ring-primary"} shadow-xl scale-[1.02]`
           : "shadow-md bg-card/60"
       } ${
         isLeader ? "bg-gradient-to-r from-yellow-500/5 to-orange-500/5" : ""
@@ -78,6 +88,11 @@ export function ParticipantItem({
             </div>
             <div>
               <div className="flex items-center gap-2">
+                {participant.is_vip && (
+                  <span className="text-base" aria-hidden="true">
+                    🔷
+                  </span>
+                )}
                 <span className="font-bold text-base">{participant.name}</span>
                 {participant.is_vip && (
                   <Badge className="bg-yellow-500/20 text-yellow-600 border-none text-[9px] h-4">

@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
+  Camera,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 
@@ -20,6 +21,7 @@ interface AccountSectionProps {
   accountPassword: string;
   acceptTerms: boolean;
   setAcceptTerms: (val: boolean) => void;
+  roomsWithPhotos: string[];
   myGroups: any[];
   isLoadingGroups: boolean;
   groupsError: string | null;
@@ -46,6 +48,7 @@ export function AccountSection({
   accountPassword,
   acceptTerms,
   setAcceptTerms,
+  roomsWithPhotos,
   myGroups,
   isLoadingGroups,
   groupsError,
@@ -116,7 +119,15 @@ export function AccountSection({
                       key={group.id}
                       type="button"
                       className="w-full text-left flex flex-wrap items-center justify-between gap-2 rounded-xl border border-muted/60 bg-background/70 px-4 py-3 hover:border-primary/40 transition-colors"
-                      onClick={() => router.push(`/sala/${group.room_code}`)}
+                      onClick={() => {
+                        if (typeof window !== "undefined") {
+                          sessionStorage.setItem(
+                            `rodizio-join-prompt-${group.room_code}`,
+                            "1",
+                          );
+                        }
+                        router.push(`/sala/${group.room_code}`);
+                      }}
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
@@ -150,6 +161,10 @@ export function AccountSection({
                             {new Date(group.created_at).toLocaleDateString(
                               "pt-BR",
                             )}
+                            {group.photo_mode &&
+                              roomsWithPhotos.includes(group.room_code) && (
+                                <Camera className="h-3 w-3 text-orange-500" />
+                              )}
                           </span>
                         </div>
                       </div>
@@ -168,9 +183,13 @@ export function AccountSection({
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                        Página {currentPage} de {totalPages}
-                      </span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                          {t.account?.page_of
+                            ? t.account.page_of
+                                .replace("{current}", String(currentPage))
+                                .replace("{total}", String(totalPages))
+                            : `Página ${currentPage} de ${totalPages}`}
+                        </span>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -209,6 +228,7 @@ export function AccountSection({
                   placeholder={t.account.username_placeholder}
                   value={accountCodeInput}
                   onChange={(e) => setAccountCodeInput(e.target.value)}
+                  maxLength={20}
                   className="h-12 text-lg font-bold"
                 />
               </div>
@@ -265,6 +285,7 @@ export function AccountSection({
                   placeholder={t.account.create_username_placeholder}
                   value={accountCodeInput}
                   onChange={(e) => setAccountCodeInput(e.target.value)}
+                  maxLength={20}
                   className="h-12 text-lg font-bold"
                 />
               </div>

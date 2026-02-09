@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
 
 type PromoCode = {
   id: string;
@@ -245,8 +246,16 @@ export default function PromoCodesPage() {
                     variant="outline"
                     onClick={() => createCode(avatar)}
                     disabled={isCreating}
+                    className="flex items-center gap-2"
                   >
-                    Criar para {avatar}
+                    {isImageAvatar(avatar) && (
+                      <img
+                        src={getAvatarUrl(avatar)}
+                        alt=""
+                        className="h-10 w-10 rounded-full object-contain"
+                      />
+                    )}
+                    Criar
                   </Button>
                 ))}
               </div>
@@ -283,10 +292,23 @@ export default function PromoCodesPage() {
                 {pagedCodes.map((code) => (
                   <div
                     key={code.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-muted/60 bg-background/70 px-4 py-3"
+                    className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border border-muted/60 bg-background/70 px-4 py-3 ${
+                      code.status === "expirado"
+                        ? "opacity-50 grayscale"
+                        : ""
+                    }`}
                   >
                     <div className="space-y-1">
-                      <p className="text-sm font-bold">{code.avatar}</p>
+                      <div className="flex items-center gap-2">
+                        {isImageAvatar(code.avatar) && (
+                          <img
+                            src={getAvatarUrl(code.avatar)}
+                            alt=""
+                            className="h-6 w-6 rounded-full object-contain"
+                          />
+                        )}
+                        <p className="text-sm font-bold">{code.avatar}</p>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Status: {code.status} | Usos: {code.uses}/
                         {code.max_uses}
@@ -315,13 +337,19 @@ export default function PromoCodesPage() {
                           Desativar
                         </Button>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => revealCode(code.id)}
-                      >
-                        Mostrar codigo
-                      </Button>
+                      {code.status === "expirado" ? (
+                        <span className="rounded-full bg-red-500/20 px-3 py-1 text-[10px] font-black uppercase text-red-600">
+                          Expired
+                        </span>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => revealCode(code.id)}
+                        >
+                          Mostrar codigo
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
