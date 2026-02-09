@@ -110,13 +110,19 @@ export function PersonalProgress({
         const data = await response.json();
         const list = Array.isArray(data?.avatars) ? data.avatars : [];
         if (list.length === 0) return;
-        const filtered = list.filter((opt) => {
+        const unlocked = list.filter((opt) => {
           if (opt === participant.avatar) return true;
           if (isExclusiveAvatar(opt)) return exclusiveAvatars.includes(opt);
           if (isPremiumAvatar(opt)) return isPremium;
           return true;
         });
-        if (isMounted) setAvatarOptions(filtered);
+        const locked = list.filter((opt) => {
+          if (opt === participant.avatar) return false;
+          if (isExclusiveAvatar(opt)) return !exclusiveAvatars.includes(opt);
+          if (isPremiumAvatar(opt)) return !isPremium;
+          return false;
+        });
+        if (isMounted) setAvatarOptions([...unlocked, ...locked]);
       } catch {
         return;
       }
@@ -332,6 +338,16 @@ export function PersonalProgress({
                   const isSelected = participant.avatar === opt;
                   const isPremiumOption = isPremiumAvatar(opt);
                   const isExclusiveOption = isExclusiveAvatar(opt);
+                  const isLocked =
+                    (isPremiumOption && !isPremium) ||
+                    (isExclusiveOption && !exclusiveAvatars.includes(opt));
+                  const lockedMessage = isExclusiveOption
+                    ? t.room.exclusive_avatar_locked ??
+                      "This is an exclusive avatar."
+                    : isPremiumOption
+                      ? t.room.premium_avatar_locked ??
+                        "This is a premium avatar."
+                      : "";
                   const premiumBorderClass = isPremiumOption
                     ? "border-foreground/70 border-2"
                     : "";
@@ -344,15 +360,22 @@ export function PersonalProgress({
                       key={opt}
                       disabled={isUpdatingAvatar}
                       onClick={() => {
+                        if (isLocked) {
+                          if (lockedMessage) toast.info(lockedMessage);
+                          return;
+                        }
                         onUpdateAvatar(opt);
                         setShowAvatarPicker(false);
                       }}
+                      aria-disabled={isLocked}
                       className={`w-11 h-11 rounded-lg border transition-all text-xl flex items-center justify-center cursor-pointer ${
                         isSelected
                           ? "ring-2 ring-primary bg-primary/20 scale-110 shadow-lg"
                           : "hover:border-primary/40 bg-background/40 hover:bg-background/60"
                       } ${premiumBorderClass} ${exclusiveBorderClass} ${
-                        isUpdatingAvatar ? "opacity-50 cursor-not-allowed" : ""
+                        isUpdatingAvatar || isLocked
+                          ? "opacity-50 cursor-not-allowed grayscale"
+                          : ""
                       }`}
                     >
                       {isImageAvatar(opt) && (
