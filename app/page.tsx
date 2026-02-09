@@ -48,7 +48,7 @@ export default function Home() {
   const [accountCodeInput, setAccountCodeInput] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [acceptTerms, setAcceptTerms] = useState(false);
+
   const [loginCode, setLoginCode] = useState<string | null>(null);
   const [accountLoading, setAccountLoading] = useState(false);
   const [myGroups, setMyGroups] = useState<Race[]>([]);
@@ -94,33 +94,35 @@ export default function Home() {
     setCurrentPage(1);
   };
 
-  const foodTypeOptions: Record<string, { type: FoodType; label: string; icon: typeof Pizza }[]> =
-    {
-      pt: [
-        { type: "pizza", label: "Pizza", icon: Pizza },
-        { type: "sushi", label: "Japa", icon: Fish },
-        { type: "burger", label: "Burger", icon: Beef },
-        { type: "drinks", label: "Bebida", icon: Beer },
-      ],
-      en: [
-        { type: "pizza", label: "Pizza", icon: Pizza },
-        { type: "sushi", label: "Sushi", icon: Fish },
-        { type: "burger", label: "Burger", icon: Beef },
-        { type: "drinks", label: "Drinks", icon: Beer },
-      ],
-      es: [
-        { type: "pizza", label: "Pizza", icon: Pizza },
-        { type: "sushi", label: "Sushi", icon: Fish },
-        { type: "burger", label: "Burger", icon: Beef },
-        { type: "drinks", label: "Bebidas", icon: Beer },
-      ],
-      fr: [
-        { type: "pizza", label: "Pizza", icon: Pizza },
-        { type: "sushi", label: "Sushi", icon: Fish },
-        { type: "burger", label: "Burger", icon: Beef },
-        { type: "drinks", label: "Boissons", icon: Beer },
-      ],
-    };
+  const foodTypeOptions: Record<
+    string,
+    { type: FoodType; label: string; icon: typeof Pizza }[]
+  > = {
+    pt: [
+      { type: "pizza", label: "Pizza", icon: Pizza },
+      { type: "sushi", label: "Japa", icon: Fish },
+      { type: "burger", label: "Burger", icon: Beef },
+      { type: "drinks", label: "Bebida", icon: Beer },
+    ],
+    en: [
+      { type: "pizza", label: "Pizza", icon: Pizza },
+      { type: "sushi", label: "Sushi", icon: Fish },
+      { type: "burger", label: "Burger", icon: Beef },
+      { type: "drinks", label: "Drinks", icon: Beer },
+    ],
+    es: [
+      { type: "pizza", label: "Pizza", icon: Pizza },
+      { type: "sushi", label: "Sushi", icon: Fish },
+      { type: "burger", label: "Burger", icon: Beef },
+      { type: "drinks", label: "Bebidas", icon: Beer },
+    ],
+    fr: [
+      { type: "pizza", label: "Pizza", icon: Pizza },
+      { type: "sushi", label: "Sushi", icon: Fish },
+      { type: "burger", label: "Burger", icon: Beef },
+      { type: "drinks", label: "Boissons", icon: Beer },
+    ],
+  };
 
   const foodTypes = foodTypeOptions[language] ?? foodTypeOptions.pt;
 
@@ -329,7 +331,9 @@ export default function Home() {
       setAcceptTerms(false);
       toast.success("Conta criada com sucesso!");
     } catch (error: any) {
-      toast.error(`Erro ao criar conta: ${error.message || "Tente outro nome"}`);
+      toast.error(
+        `Erro ao criar conta: ${error.message || "Tente outro nome"}`,
+      );
     } finally {
       setAccountLoading(false);
     }

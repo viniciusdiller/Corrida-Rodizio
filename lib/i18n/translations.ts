@@ -205,6 +205,8 @@ export const translations = {
         "Vai com calma, herói do garfo.",
       ],
       real_time_race: "Seguimiento de Carrera en Tiempo Real",
+      animations_enabled: "Animações ativadas",
+      animations_disabled: "Animações desativadas",
     },
     hall_of_fame: {
       title: "Hall of Fame",
@@ -391,7 +393,7 @@ export const translations = {
       copied: "Copied!",
       theme_toggle: "Toggle theme",
       connected_as: "Connected as",
-      guest: "Guest", // Adicionado
+      guest: "Guest",
       add_to_home: "Add to Home Screen",
       add_to_home_title: "Add to Home Screen",
       add_to_home_steps: "Tap Share, then “Add to Home Screen”.",
@@ -580,6 +582,8 @@ export const translations = {
         "Easy there, fork hero.",
       ],
       real_time_race: "Live Race Updates",
+      animations_enabled: "Animations enabled",
+      animations_disabled: "Animations disabled",
     },
     hall_of_fame: {
       title: "Hall of Fame",
@@ -952,6 +956,8 @@ export const translations = {
         "Doucement, héros de la fourchette.",
       ],
       real_time_race: "Mises à jour de course en direct",
+      animations_enabled: "Animations activées",
+      animations_disabled: "Animations désactivées",
     },
     hall_of_fame: {
       title: "Panthéon",
@@ -1138,7 +1144,7 @@ export const translations = {
       copied: "¡Copiado!",
       theme_toggle: "Alternar tema",
       connected_as: "Conectado como",
-      guest: "Invitado", // Adicionado
+      guest: "Invitado",
       add_to_home: "Añadir a inicio",
       add_to_home_title: "Instalar App",
       add_to_home_steps:
@@ -1326,6 +1332,8 @@ export const translations = {
         "Ve con calma, héroe del tenedor.",
       ],
       real_time_race: "Corrida em Tempo Real",
+      animations_enabled: "Animaciones activadas",
+      animations_disabled: "Animaciones desactivadas",
     },
     hall_of_fame: {
       title: "Salón de la Fama",
