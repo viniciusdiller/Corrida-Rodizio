@@ -7,7 +7,7 @@ import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
 import { useLanguage } from "@/contexts/language-context";
 import { ShareStoryButton } from "./share-story-button";
 import { useEffect, useState } from "react";
-
+import { Card } from "@/components/ui/card";
 const TEAM_OPTIONS = [
   { id: "AZUL", shortLabel: "Azul", pillClass: "bg-blue-500/20 text-blue-300" },
   {
@@ -78,8 +78,8 @@ export function HallOfFame({
       try {
         const response = await fetch(
           `/api/race-photos/timeline?roomCode=${encodeURIComponent(
-            race.room_code
-          )}&participantId=${encodeURIComponent(currentParticipantId)}`
+            race.room_code,
+          )}&participantId=${encodeURIComponent(currentParticipantId)}`,
         );
         if (response.status === 403) {
           setTimeline([]);
@@ -112,16 +112,16 @@ export function HallOfFame({
     <div className="min-h-screen bg-background text-foreground p-6 flex flex-col items-center justify-center animate-in fade-in duration-1000">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-4">
-            <div className="inline-block p-3 bg-primary rounded-2xl rotate-3 shadow-2xl shadow-primary/20">
-              <Trophy className="h-10 w-10 text-primary-foreground" />
-            </div>
-            <p className="text-xs font-mono text-muted-foreground tracking-widest">
-              rodiziorace.mechama.eu
-            </p>
-            <div className="space-y-1">
-              <h1 className="text-4xl font-black italic tracking-tighter uppercase">
-                {t.hall_of_fame.title}
-              </h1>
+          <div className="inline-block p-3 bg-primary rounded-2xl rotate-3 shadow-2xl shadow-primary/20">
+            <Trophy className="h-10 w-10 text-primary-foreground" />
+          </div>
+          <p className="text-xs font-mono text-muted-foreground tracking-widest">
+            rodiziorace.mechama.eu
+          </p>
+          <div className="space-y-1">
+            <h1 className="text-4xl font-black italic tracking-tighter uppercase">
+              {t.hall_of_fame.title}
+            </h1>
             <p className="text-primary font-mono text-sm tracking-widest">
               {t.common.room}: {race.room_code}
             </p>
@@ -206,11 +206,13 @@ export function HallOfFame({
                   {t.hall_of_fame.timeline_error}
                 </p>
               )}
-              {!isLoadingTimeline && !timelineError && timeline.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {t.hall_of_fame.timeline_empty}
-                </p>
-              )}
+              {!isLoadingTimeline &&
+                !timelineError &&
+                timeline.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {t.hall_of_fame.timeline_empty}
+                  </p>
+                )}
               {timeline.length > 0 && (
                 <div className="space-y-2">
                   {timeline.map((photo) => (
@@ -219,7 +221,7 @@ export function HallOfFame({
                         <span className="w-10 text-right">
                           {new Date(photo.createdAt).toLocaleTimeString(
                             "pt-BR",
-                            { hour: "2-digit", minute: "2-digit" }
+                            { hour: "2-digit", minute: "2-digit" },
                           )}
                         </span>
                         <div className="relative flex items-center">
@@ -272,7 +274,7 @@ export function HallOfFame({
                         </p>
                         <p className="text-[10px] text-muted-foreground">
                           {new Date(photo.createdAt).toLocaleDateString(
-                            "pt-BR"
+                            "pt-BR",
                           )}
                         </p>
                       </div>
@@ -318,8 +320,7 @@ export function HallOfFame({
             <Card className="w-full max-w-sm space-y-4 rounded-2xl border border-muted/60 bg-background/95 p-5 shadow-xl">
               <div className="space-y-1 text-center">
                 <h2 className="text-lg font-bold">
-                  {t.hall_of_fame.reopen_confirm_title ??
-                    "Reabrir corrida?"}
+                  {t.hall_of_fame.reopen_confirm_title ?? "Reabrir corrida?"}
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   {t.hall_of_fame.reopen_confirm_desc ??

@@ -29,6 +29,7 @@ export function JoinRoomViaLink({
   onJoin,
   onBack,
 }: JoinRoomViaLinkProps) {
+  const router = useRouter();
   const { t, language } = useLanguage();
   const foodTypeLabel = getFoodTypeLabel(race.food_type, language);
   const [mode, setMode] = useState<"guest" | "login" | "spectator">("guest");
@@ -450,7 +451,9 @@ export function JoinRoomViaLink({
                         <Button
                           className="w-full h-11 text-lg font-bold uppercase rounded-xl"
                           onClick={handleLoginAndJoin}
-                          disabled={loading || !username.trim() || !password.trim()}
+                          disabled={
+                            loading || !username.trim() || !password.trim()
+                          }
                         >
                           {loading ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
