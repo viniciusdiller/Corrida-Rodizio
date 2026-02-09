@@ -32,9 +32,14 @@ type BurstEffect = {
 interface RaceTrackProps {
   participants: Participant[];
   isTeamMode: boolean;
+  baselineScores: Record<string, number>;
 }
 
-export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
+export function RaceTrack({
+  participants,
+  isTeamMode,
+  baselineScores,
+}: RaceTrackProps) {
   const [enableAnimations, setEnableAnimations] = useState(true);
   const { t } = useLanguage();
 
@@ -44,6 +49,7 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
   >({});
 
   const prevScoresRef = useRef<Record<string, number>>({});
+  const hasInitializedRef = useRef(false);
 
   const scores = participants.map((p) => p.items_eaten);
   const currentMax = scores.length > 0 ? Math.max(...scores) : 0;
@@ -54,6 +60,25 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
     (a, b) =>
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
+
+  useEffect(() => {
+    if (hasInitializedRef.current) {
+      return;
+    }
+
+    const hasBaseline = Object.keys(baselineScores).length > 0;
+    if (hasBaseline) {
+      prevScoresRef.current = { ...baselineScores };
+    } else {
+      const fallbackScores: Record<string, number> = {};
+      participants.forEach((participant) => {
+        fallbackScores[participant.id] = participant.items_eaten;
+      });
+      prevScoresRef.current = fallbackScores;
+    }
+
+    hasInitializedRef.current = true;
+  }, [baselineScores, participants]);
 
   // Lógica de detecção de pontos
   useEffect(() => {

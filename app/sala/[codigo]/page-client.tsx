@@ -44,7 +44,7 @@ import { getFoodTypeUnit } from "@/lib/utils/food-type";
 export default function RoomPage() {
   const { t, language } = useLanguage();
   const LOGIN_STORAGE_KEY = "rodizio-race-login";
-  const addCooldownMs = 2_000;
+  const addCooldownMs = 4_000;
 
   const params = useParams();
   const router = useRouter();
@@ -91,6 +91,9 @@ export default function RoomPage() {
   const [needsJoinPrompt, setNeedsJoinPrompt] = useState(true);
   const [raceView, setRaceView] = useState<"live" | "photos">("live");
   const [hasPhotoTimeline, setHasPhotoTimeline] = useState(false);
+  const [lastLiveScores, setLastLiveScores] = useState<
+    Record<string, number>
+  >({});
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
   const [currentParticipantId, setCurrentParticipantId] = useState<
     string | null
@@ -153,6 +156,21 @@ export default function RoomPage() {
       setRaceView("live");
     }
   }, [hasPhotoTimeline, raceView]);
+
+  useEffect(() => {
+    if (raceView !== "live") {
+      return;
+    }
+
+    const snapshot = Object.fromEntries(
+      participants.map((participant) => [
+        participant.id,
+        participant.items_eaten,
+      ]),
+    );
+
+    setLastLiveScores(snapshot);
+  }, [participants, raceView]);
 
   const handleCopyCode = () => {
     const lang =
@@ -1257,6 +1275,16 @@ export default function RoomPage() {
               <RaceTrack
                 participants={participants}
                 isTeamMode={race.is_team_mode}
+                baselineScores={
+                  Object.keys(lastLiveScores).length > 0
+                    ? lastLiveScores
+                    : Object.fromEntries(
+                        participants.map((participant) => [
+                          participant.id,
+                          participant.items_eaten,
+                        ]),
+                      )
+                }
               />
             ) : null}
 
