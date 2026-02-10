@@ -360,144 +360,143 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
             const diffValue = burstData?.diff || 0;
 
             return (
-              <div
-                key={participant.id}
-                className="relative h-12 flex items-center"
-              >
+              <div key={participant.id} className="relative h-12 flex items-center">
                 <div
-                  className={`absolute flex items-center gap-1 ${
+                  className={`absolute ${
                     enableAnimations
                       ? "transition-all duration-1000 ease-in-out"
                       : ""
                   }`}
                   style={{
                     left: `${progress}%`,
-                    transform: `translateX(-${progress}%)`,
                     zIndex: isLeader ? 20 : 10,
                   }}
                 >
-                  <div className="flex flex-col min-w-[64px] p-1 text-right text-white">
-                    <span
-                      className="font-black uppercase leading-tight max-w-[88px] md:max-w-[140px] whitespace-normal break-words"
-                      style={{ fontSize: `${nameFontSize}px` }}
+                  <div
+                    className="relative"
+                  >
+                    <div
+                      className={`relative shrink-0 h-14 md:h-16 flex items-center justify-end -translate-x-full ${
+                        enableAnimations ? "animate-avatar" : ""
+                      }`}
+                      style={{
+                        animationDelay: `${index * 0.15}s`,
+                      }}
                     >
-                      <span className="inline-flex items-center justify-end gap-1">
-                        {isLeader && (
-                          <Trophy className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                        )}
-                        {participant.is_vip && (
-                          <span className="text-[11px]" aria-hidden="true">
-                            💎
-                          </span>
-                        )}
+                      {/* ANIMAÇÃO 1: Poeira */}
+                      {enableAnimations && (
+                        <div className="absolute bottom-1 left-1 w-4 h-4 rounded-full bg-white/20 blur-[2px] animate-dust" />
+                      )}
+
+                      {/* ANIMAÇÃO 2: Floating Numbers (+1) */}
+                      {enableAnimations && burstTimestamp && (
                         <span
-                          className={
-                            isTeamMode && participant.team
-                              ? (TEAM_COLORS[participant.team] ?? "")
-                              : ""
-                          }
+                          key={`float-${burstTimestamp}`}
+                          className="absolute -top-6 left-1/2 -translate-x-1/2 text-xl font-black text-yellow-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] animate-float z-50 pointer-events-none"
                         >
-                          {namePart}
+                          +{diffValue}
+                        </span>
+                      )}
+
+                      {/* ANIMAÇÃO 3: Partículas Fixas */}
+                      {enableAnimations && burstData && burstData.particles && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                          {burstData.particles.map((p, i) => (
+                            <span
+                              key={`part-${burstTimestamp}-${i}`}
+                              className="absolute text-sm animate-particle"
+                              style={{
+                                ["--y-dir" as any]: `${p.yDir}px`,
+                                ["--rot-dir" as any]: `${p.rotDir}deg`,
+                                animationDelay: `${p.delay}s`,
+                                left: "20%",
+                              }}
+                            >
+                              {p.emoji}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Cauda de Velocidade */}
+                      {enableAnimations && showTails && (
+                        <>
+                          <span
+                            className={`pointer-events-none absolute right-full top-[35%] h-2 translate-x-4 rounded-full bg-gradient-to-l ${
+                              isLeader
+                                ? "from-orange-400/70 via-orange-200/30"
+                                : "from-white/40 via-white/10"
+                            } to-transparent md:h-2.5 animate-streak -z-10`}
+                            style={{ width: `${40 + tailProgress * 60}px` }}
+                          />
+                          <span
+                            className={`pointer-events-none absolute right-full top-1/2 h-1.5 -translate-y-1/2 translate-x-5 rounded-full bg-gradient-to-l ${
+                              isLeader
+                                ? "from-orange-300/60 via-orange-200/25"
+                                : "from-white/30 via-white/10"
+                            } to-transparent md:h-2 animate-streak delay-150 -z-10`}
+                            style={{ width: `${30 + tailProgress * 50}px` }}
+                          />
+                          <span
+                            className={`pointer-events-none absolute right-full top-[65%] h-1 translate-x-6 rounded-full bg-gradient-to-l ${
+                              isLeader
+                                ? "from-orange-300/50 via-orange-200/20"
+                                : "from-white/20 via-white/10"
+                            } to-transparent md:h-1.5 animate-streak delay-300 -z-10`}
+                            style={{ width: `${22 + tailProgress * 40}px` }}
+                          />
+                        </>
+                      )}
+
+                      {/* AVATAR COM animate-pop, MAS SEM O GLOW (BOLHA) */}
+                      <div
+                        key={`${participant.id}-${participant.items_eaten}`}
+                        className={`z-10 ${enableAnimations && burstTimestamp ? "animate-pop" : ""}`}
+                      >
+                        {isImageAvatar(participant.avatar) ? (
+                          <img
+                            src={getAvatarUrl(participant.avatar)}
+                            alt=""
+                            className="h-11 w-auto max-w-none md:h-14 object-contain"
+                          />
+                        ) : (
+                          <span className="inline-block h-11 w-11 rounded-full bg-white/10 md:h-14 md:w-14" />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="absolute left-2 top-1/2 flex min-w-[64px] -translate-y-1/2 flex-col p-1 text-left text-white">
+                      <span
+                        className="font-black uppercase leading-tight max-w-[88px] md:max-w-[140px] whitespace-normal break-words"
+                        style={{ fontSize: `${nameFontSize}px` }}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          {isLeader && (
+                            <Trophy className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                          )}
+                          {participant.is_vip && (
+                            <span className="text-[11px]" aria-hidden="true">
+                              💎
+                            </span>
+                          )}
+                          <span
+                            className={
+                              isTeamMode && participant.team
+                                ? (TEAM_COLORS[participant.team] ?? "")
+                                : ""
+                            }
+                          >
+                            {namePart}
+                          </span>
                         </span>
                       </span>
-                    </span>
-                    <span
-                      className={`text-[12px] font-black italic leading-tight ${
-                        isTeamMode ? "" : "text-primary"
-                      }`}
-                    >
-                      {participant.items_eaten}pts
-                    </span>
-                  </div>
-
-                  <div
-                    className={`relative shrink-0 w-14 h-14 md:w-16 md:h-16 flex items-center justify-center ${
-                      enableAnimations ? "animate-avatar" : ""
-                    }`}
-                    style={{
-                      animationDelay: `${index * 0.15}s`,
-                    }}
-                  >
-                    {/* ANIMAÇÃO 1: Poeira */}
-                    {enableAnimations && (
-                      <div className="absolute bottom-1 left-1 w-4 h-4 rounded-full bg-white/20 blur-[2px] animate-dust" />
-                    )}
-
-                    {/* ANIMAÇÃO 2: Floating Numbers (+1) */}
-                    {enableAnimations && burstTimestamp && (
                       <span
-                        key={`float-${burstTimestamp}`}
-                        className="absolute -top-6 left-1/2 -translate-x-1/2 text-xl font-black text-yellow-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] animate-float z-50 pointer-events-none"
+                        className={`text-[12px] font-black italic leading-tight ${
+                          isTeamMode ? "" : "text-primary"
+                        }`}
                       >
-                        +{diffValue}
+                        {participant.items_eaten}pts
                       </span>
-                    )}
-
-                    {/* ANIMAÇÃO 3: Partículas Fixas */}
-                    {enableAnimations && burstData && burstData.particles && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-                        {burstData.particles.map((p, i) => (
-                          <span
-                            key={`part-${burstTimestamp}-${i}`}
-                            className="absolute text-sm animate-particle"
-                            style={{
-                              ["--y-dir" as any]: `${p.yDir}px`,
-                              ["--rot-dir" as any]: `${p.rotDir}deg`,
-                              animationDelay: `${p.delay}s`,
-                              left: "20%",
-                            }}
-                          >
-                            {p.emoji}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Cauda de Velocidade */}
-                    {enableAnimations && showTails && (
-                      <>
-                        <span
-                          className={`pointer-events-none absolute right-full top-[35%] h-2 translate-x-4 rounded-full bg-gradient-to-l ${
-                            isLeader
-                              ? "from-orange-400/70 via-orange-200/30"
-                              : "from-white/40 via-white/10"
-                          } to-transparent md:h-2.5 animate-streak -z-10`}
-                          style={{ width: `${40 + tailProgress * 60}px` }}
-                        />
-                        <span
-                          className={`pointer-events-none absolute right-full top-1/2 h-1.5 -translate-y-1/2 translate-x-5 rounded-full bg-gradient-to-l ${
-                            isLeader
-                              ? "from-orange-300/60 via-orange-200/25"
-                              : "from-white/30 via-white/10"
-                          } to-transparent md:h-2 animate-streak delay-150 -z-10`}
-                          style={{ width: `${30 + tailProgress * 50}px` }}
-                        />
-                        <span
-                          className={`pointer-events-none absolute right-full top-[65%] h-1 translate-x-6 rounded-full bg-gradient-to-l ${
-                            isLeader
-                              ? "from-orange-300/50 via-orange-200/20"
-                              : "from-white/20 via-white/10"
-                          } to-transparent md:h-1.5 animate-streak delay-300 -z-10`}
-                          style={{ width: `${22 + tailProgress * 40}px` }}
-                        />
-                      </>
-                    )}
-
-                    {/* AVATAR COM animate-pop, MAS SEM O GLOW (BOLHA) */}
-                    <div
-                      key={`${participant.id}-${participant.items_eaten}`}
-                      // AQUI: Só usa animate-pop se estiver no momento do burst. Se não, nenhuma animação de classe.
-                      className={`rounded-full z-10 ${enableAnimations && burstTimestamp ? "animate-pop" : ""}`}
-                    >
-                      {isImageAvatar(participant.avatar) ? (
-                        <img
-                          src={getAvatarUrl(participant.avatar)}
-                          alt=""
-                          className="h-11 w-11 md:h-14 md:w-14 object-contain"
-                        />
-                      ) : (
-                        <span className="inline-block h-11 w-11 rounded-full bg-white/10 md:h-14 md:w-14" />
-                      )}
                     </div>
                   </div>
                 </div>
