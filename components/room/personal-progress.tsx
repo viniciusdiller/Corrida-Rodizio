@@ -333,7 +333,7 @@ export function PersonalProgress({
                   {nameStatus}
                 </p>
               )}
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex w-full flex-wrap justify-center gap-1.5">
                 {avatarOptions.map((opt) => {
                   const isSelected = participant.avatar === opt;
                   const isPremiumOption = isPremiumAvatar(opt);
