@@ -15,6 +15,7 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { LogIn, User, Loader2 } from "lucide-react";
 import type { Race } from "@/types/database";
 import { toast } from "sonner";
+import { isAlphanumericOnly, sanitizeAlphanumeric } from "@/lib/utils/username-validation";
 
 interface JoinRoomViaLinkProps {
   race: Race;
@@ -62,11 +63,15 @@ export function JoinRoomViaLink({
 
   const handleJoinAsGuest = async () => {
     if (!nickname.trim()) return;
+    const normalizedNickname = nickname.trim();
+    if (!isAlphanumericOnly(normalizedNickname)) {
+      toast.error(t.account.username_format_invalid);
+      return;
+    }
     setLoading(true);
 
     try {
       const supabase = createClient();
-      const normalizedNickname = nickname.trim();
       const { data: existingByName } = await supabase
         .from("participants")
         .select("id, login_code")
@@ -220,6 +225,10 @@ export function JoinRoomViaLink({
     try {
       const normalizedUsername = storedLogin.trim().toUpperCase();
       const desiredName = nickname.trim() || normalizedUsername;
+      if (!isAlphanumericOnly(desiredName)) {
+        toast.error(t.account.username_format_invalid);
+        return;
+      }
 
       localStorage.setItem("rodizio-race-login", normalizedUsername);
       if (typeof window !== "undefined") {
@@ -241,6 +250,10 @@ export function JoinRoomViaLink({
     try {
       const supabase = createClient();
       const normalizedUsername = username.trim().toUpperCase();
+      if (!isAlphanumericOnly(normalizedUsername)) {
+        toast.error(t.account.username_format_invalid);
+        return;
+      }
 
       const { data: loginSuccess, error: loginError } = await supabase.rpc(
         "verify_login",
@@ -351,7 +364,7 @@ export function JoinRoomViaLink({
                       autoFocus
                       placeholder={t.account.username_placeholder}
                       value={nickname}
-                      onChange={(e) => setNickname(e.target.value)}
+                      onChange={(e) => setNickname(sanitizeAlphanumeric(e.target.value))}
                       maxLength={20}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") handleJoinAsGuest();
@@ -383,7 +396,7 @@ export function JoinRoomViaLink({
                           className="h-11 pl-9 text-lg"
                           placeholder={t.account.username_placeholder}
                           value={nickname}
-                          onChange={(e) => setNickname(e.target.value)}
+                          onChange={(e) => setNickname(sanitizeAlphanumeric(e.target.value))}
                           maxLength={20}
                         />
                       </div>
@@ -431,7 +444,7 @@ export function JoinRoomViaLink({
                             className="h-11 text-lg"
                             placeholder={t.account.username_placeholder}
                             value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            onChange={(e) => setUsername(sanitizeAlphanumeric(e.target.value))}
                             maxLength={20}
                           />
                         </div>
@@ -475,14 +488,19 @@ export function JoinRoomViaLink({
                               className="h-11 pl-9 text-lg"
                               placeholder={t.account.username_placeholder}
                               value={nickname}
-                              onChange={(e) => setNickname(e.target.value)}
+                              onChange={(e) => setNickname(sanitizeAlphanumeric(e.target.value))}
                               maxLength={20}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter" && pendingLogin) {
+                                  const desiredName = nickname.trim() || pendingLogin;
+                                  if (!isAlphanumericOnly(desiredName)) {
+                                    toast.error(t.account.username_format_invalid);
+                                    return;
+                                  }
                                   setLoading(true);
                                   joinWithLogin(
                                     pendingLogin,
-                                    nickname.trim() || pendingLogin,
+                                    desiredName,
                                   )
                                     .catch((error) => {
                                       console.error(error);
@@ -500,10 +518,15 @@ export function JoinRoomViaLink({
                           className="w-full h-11 text-lg font-bold uppercase rounded-xl"
                           onClick={() => {
                             if (!pendingLogin) return;
+                            const desiredName = nickname.trim() || pendingLogin;
+                            if (!isAlphanumericOnly(desiredName)) {
+                              toast.error(t.account.username_format_invalid);
+                              return;
+                            }
                             setLoading(true);
                             joinWithLogin(
                               pendingLogin,
-                              nickname.trim() || pendingLogin,
+                              desiredName,
                             )
                               .catch((error) => {
                                 console.error(error);

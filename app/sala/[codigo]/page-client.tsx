@@ -40,6 +40,7 @@ import type { Race, Participant } from "@/types/database";
 import { TeamSelection } from "@/components/room/team-selection";
 import { useLanguage } from "@/contexts/language-context";
 import { getFoodTypeUnit } from "@/lib/utils/food-type";
+import { isAlphanumericOnly, sanitizeAlphanumeric } from "@/lib/utils/username-validation";
 
 export default function RoomPage() {
   const { t, language } = useLanguage();
@@ -829,6 +830,10 @@ export default function RoomPage() {
     try {
       const supabase = createClient();
       const normalizedUsername = accountUsername.trim().toUpperCase();
+      if (!isAlphanumericOnly(normalizedUsername)) {
+        setAccountStatus(t.account.username_format_invalid);
+        return;
+      }
       const { data, error } = await supabase.rpc("verify_login", {
         p_username: normalizedUsername,
         p_password: accountPassword,
@@ -868,6 +873,10 @@ export default function RoomPage() {
     try {
       const supabase = createClient();
       const normalizedUsername = accountUsername.trim().toUpperCase();
+      if (!isAlphanumericOnly(normalizedUsername)) {
+        setAccountStatus(t.account.username_format_invalid);
+        return;
+      }
       const { data, error } = await supabase.rpc("create_login", {
         p_username: normalizedUsername,
         p_password: accountPassword,
@@ -902,6 +911,11 @@ export default function RoomPage() {
     const normalizedUsername = accountUsername.trim().toUpperCase();
     if (normalizedUsername.length < 3) {
       setAccountUsernameAvailability(null);
+      return;
+    }
+
+    if (!isAlphanumericOnly(normalizedUsername)) {
+      setAccountUsernameAvailability("unavailable");
       return;
     }
 
@@ -1477,7 +1491,7 @@ export default function RoomPage() {
                 <Input
                   value={accountUsername}
                   onChange={(event) => {
-                    setAccountUsername(event.target.value);
+                    setAccountUsername(sanitizeAlphanumeric(event.target.value));
                     setAccountStatus(null);
                   }}
                   placeholder={t.account.username_placeholder}
