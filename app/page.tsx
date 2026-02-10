@@ -50,7 +50,6 @@ export default function Home() {
   );
   const [accountCodeInput, setAccountCodeInput] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
-  const [accountConfirmPassword, setAccountConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [loginCode, setLoginCode] = useState<string | null>(null);
@@ -331,10 +330,6 @@ export default function Home() {
 
   const handleCreateLogin = async () => {
     if (!accountPassword.trim() || !accountCodeInput.trim()) return;
-    if (accountPassword !== accountConfirmPassword) {
-      toast.error(t.account.passwords_do_not_match);
-      return;
-    }
     if (!acceptTerms) {
       toast.error(t.account.accept_terms_required);
       return;
@@ -364,7 +359,6 @@ export default function Home() {
       notifyLoginUpdated();
       setAccountFlow(null);
       setAccountPassword("");
-      setAccountConfirmPassword("");
       setAccountCodeInput("");
       setAcceptTerms(false);
       toast.success("Conta criada com sucesso!");
@@ -415,7 +409,6 @@ export default function Home() {
       notifyLoginUpdated();
       setAccountFlow(null);
       setAccountPassword("");
-      setAccountConfirmPassword("");
       setAccountCodeInput("");
 
       handleLoadGroups(normalizedName);
@@ -976,7 +969,6 @@ export default function Home() {
                   accountLoading={accountLoading}
                   accountCodeInput={accountCodeInput}
                   accountPassword={accountPassword}
-                  accountConfirmPassword={accountConfirmPassword}
                   acceptTerms={acceptTerms}
                   setAcceptTerms={setAcceptTerms}
                   myGroups={myGroups}
@@ -993,7 +985,6 @@ export default function Home() {
                   setAccountFlow={setAccountFlow}
                   setAccountCodeInput={setAccountCodeInput}
                   setAccountPassword={setAccountPassword}
-                  setAccountConfirmPassword={setAccountConfirmPassword}
                   onMenuStateChange={setIsAccountMenuOpen}
                   router={router}
                   roomsWithPhotos={roomsWithPhotos}
