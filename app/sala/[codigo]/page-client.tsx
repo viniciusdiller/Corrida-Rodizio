@@ -77,6 +77,9 @@ export default function RoomPage() {
   const [accountUsername, setAccountUsername] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
   const [accountStatus, setAccountStatus] = useState<string | null>(null);
+  const [accountUsernameAvailability, setAccountUsernameAvailability] = useState<
+    "checking" | "available" | "unavailable" | null
+  >(null);
   const [accountLoading, setAccountLoading] = useState(false);
   const [nameStatus, setNameStatus] = useState<string | null>(null);
   const [isUpdatingName, setIsUpdatingName] = useState(false);
@@ -872,6 +875,42 @@ export default function RoomPage() {
   };
 
   useEffect(() => {
+    if (!showConnectOverlay || accountFlow !== "create") {
+      setAccountUsernameAvailability(null);
+      return;
+    }
+
+    const normalizedUsername = accountUsername.trim().toUpperCase();
+    if (normalizedUsername.length < 3) {
+      setAccountUsernameAvailability(null);
+      return;
+    }
+
+    setAccountUsernameAvailability("checking");
+    const timeout = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/account/availability?username=${encodeURIComponent(
+            normalizedUsername,
+          )}`,
+        );
+        if (!response.ok) {
+          setAccountUsernameAvailability(null);
+          return;
+        }
+        const data = await response.json().catch(() => ({}));
+        setAccountUsernameAvailability(
+          data?.available ? "available" : "unavailable",
+        );
+      } catch {
+        setAccountUsernameAvailability(null);
+      }
+    }, 450);
+
+    return () => clearTimeout(timeout);
+  }, [accountFlow, accountUsername, showConnectOverlay]);
+
+  useEffect(() => {
     loadRoomData();
     const storedLogin = localStorage.getItem(LOGIN_STORAGE_KEY);
     setLoggedUsername(storedLogin || null);
@@ -1389,6 +1428,7 @@ export default function RoomPage() {
                   onClick={() => {
                     setAccountFlow("login");
                     setAccountStatus(null);
+                    setAccountUsernameAvailability(null);
                   }}
                 >
                   {t.account.login_tab}
@@ -1413,10 +1453,30 @@ export default function RoomPage() {
                   <Label>{t.account.username_label}</Label>
                 <Input
                   value={accountUsername}
-                  onChange={(event) => setAccountUsername(event.target.value)}
+                  onChange={(event) => {
+                    setAccountUsername(event.target.value);
+                    setAccountStatus(null);
+                  }}
                   placeholder={t.account.username_placeholder}
                   maxLength={20}
                 />
+                {accountUsernameAvailability && (
+                  <p
+                    className={`text-xs font-semibold ${
+                      accountUsernameAvailability === "available"
+                        ? "text-emerald-600"
+                        : accountUsernameAvailability === "unavailable"
+                          ? "text-destructive"
+                          : "text-muted-foreground"
+                    }`}
+                  >
+                    {accountUsernameAvailability === "checking"
+                      ? t.account.username_checking
+                      : accountUsernameAvailability === "available"
+                        ? t.account.username_available
+                        : t.account.username_not_available}
+                  </p>
+                )}
                 </div>
                 <div className="space-y-2">
                   <Label>{t.account.password_label}</Label>
@@ -1443,7 +1503,9 @@ export default function RoomPage() {
                   disabled={
                     accountLoading ||
                     !accountUsername.trim() ||
-                    !accountPassword.trim()
+                    !accountPassword.trim() ||
+                    (accountFlow === "create" &&
+                      accountUsernameAvailability === "unavailable")
                   }
                   onClick={
                     accountFlow === "login"

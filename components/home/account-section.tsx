@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,6 +68,43 @@ export function AccountSection({
 }: AccountSectionProps) {
   const { t } = useLanguage();
   const isHistoryView = showHistory;
+  const [usernameAvailability, setUsernameAvailability] = useState<
+    "checking" | "available" | "unavailable" | null
+  >(null);
+
+  useEffect(() => {
+    if (accountFlow !== "create") {
+      setUsernameAvailability(null);
+      return;
+    }
+
+    const normalizedUsername = accountCodeInput.trim().toUpperCase();
+    if (normalizedUsername.length < 3) {
+      setUsernameAvailability(null);
+      return;
+    }
+
+    setUsernameAvailability("checking");
+    const timeout = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/account/availability?username=${encodeURIComponent(
+            normalizedUsername,
+          )}`,
+        );
+        if (!response.ok) {
+          setUsernameAvailability(null);
+          return;
+        }
+        const data = await response.json().catch(() => ({}));
+        setUsernameAvailability(data?.available ? "available" : "unavailable");
+      } catch {
+        setUsernameAvailability(null);
+      }
+    }, 450);
+
+    return () => clearTimeout(timeout);
+  }, [accountCodeInput, accountFlow]);
 
   useEffect(() => {
     onMenuStateChange?.(isHistoryView || accountFlow !== null);
@@ -288,6 +325,23 @@ export function AccountSection({
                   maxLength={20}
                   className="h-12 text-lg font-bold"
                 />
+                {usernameAvailability && (
+                  <p
+                    className={`text-xs font-semibold ${
+                      usernameAvailability === "available"
+                        ? "text-emerald-600"
+                        : usernameAvailability === "unavailable"
+                          ? "text-destructive"
+                          : "text-muted-foreground"
+                    }`}
+                  >
+                    {usernameAvailability === "checking"
+                      ? t.account.username_checking
+                      : usernameAvailability === "available"
+                        ? t.account.username_available
+                        : t.account.username_not_available}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label
@@ -317,7 +371,9 @@ export function AccountSection({
               <Button
                 className="w-full h-12 rounded-xl font-bold"
                 onClick={onCreateLogin}
-                disabled={accountLoading}
+                disabled={
+                  accountLoading || usernameAvailability === "unavailable"
+                }
               >
                 {accountLoading ? t.common.loading : t.account.create_btn}
               </Button>
