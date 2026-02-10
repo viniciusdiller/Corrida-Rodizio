@@ -179,13 +179,11 @@ export function PersonalProgress({
               aria-label={t.room.change_avatar}
             >
               {isImageAvatar(participant.avatar) ? (
-                <span className="block h-full w-full overflow-hidden rounded-2xl">
-                  <img
-                    src={getAvatarUrl(participant.avatar)}
-                    alt=""
-                    className="h-full w-full object-cover object-right"
-                  />
-                </span>
+                <img
+                  src={getAvatarUrl(participant.avatar)}
+                  alt=""
+                  className="h-full w-full rounded-2xl object-contain"
+                />
               ) : (
                 <span className="inline-block h-full w-full rounded-2xl bg-muted/40" />
               )}
@@ -381,13 +379,11 @@ export function PersonalProgress({
                       }`}
                     >
                       {isImageAvatar(opt) && (
-                        <span className="block h-9 w-9 overflow-hidden rounded-md">
-                          <img
-                            src={getAvatarUrl(opt)}
-                            alt=""
-                            className="h-full w-full object-cover object-right"
-                          />
-                        </span>
+                        <img
+                          src={getAvatarUrl(opt)}
+                          alt=""
+                          className="h-9 w-9 object-contain"
+                        />
                       )}
                     </button>
                   );
