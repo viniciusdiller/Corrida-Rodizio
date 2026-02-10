@@ -13,6 +13,7 @@ import {
   isImageAvatar,
   isPremiumAvatar,
 } from "@/lib/utils/avatars";
+import { sanitizeAlphanumeric } from "@/lib/utils/username-validation";
 import { Participant } from "@/types/database";
 import { useLanguage } from "@/contexts/language-context";
 
@@ -293,7 +294,7 @@ export function PersonalProgress({
                 <Input
                   value={nameDraft}
                   onChange={(event) => {
-                    setNameDraft(event.target.value);
+                    setNameDraft(sanitizeAlphanumeric(event.target.value));
                     setShowNameIndicator(false);
                   }}
                   placeholder={t.room.change_name_placeholder}
