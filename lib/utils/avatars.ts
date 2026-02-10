@@ -11,6 +11,9 @@ export const isVehicleAvatar = (_avatar?: string | null) => false;
 export const isImageAvatar = (avatar?: string | null) =>
   !!avatar && IMAGE_AVATAR_PATTERN.test(avatar);
 
+export const isGifAvatar = (avatar?: string | null) =>
+  !!avatar && /\.gif$/i.test(avatar);
+
 export const isPremiumAvatar = (avatar?: string | null) =>
   !!avatar && PREMIUM_AVATAR_PATTERN.test(avatar);
 

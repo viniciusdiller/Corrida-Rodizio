@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Participant } from "@/types/database";
 import { Card } from "@/components/ui/card";
-import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
+import { getAvatarUrl, isGifAvatar, isImageAvatar } from "@/lib/utils/avatars";
 import { Trophy, Zap, ZapOff } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 
@@ -32,6 +32,48 @@ type BurstEffect = {
 interface RaceTrackProps {
   participants: Participant[];
   isTeamMode: boolean;
+}
+
+function AvatarImage({
+  avatar,
+  enableAnimations,
+}: {
+  avatar: string;
+  enableAnimations: boolean;
+}) {
+  const isGif = isGifAvatar(avatar);
+  const [staticGifFrame, setStaticGifFrame] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isGif || staticGifFrame) {
+      return;
+    }
+
+    const image = new Image();
+    image.src = getAvatarUrl(avatar);
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(image, 0, 0);
+      setStaticGifFrame(canvas.toDataURL("image/png"));
+    };
+  }, [avatar, isGif, staticGifFrame]);
+
+  const avatarSrc =
+    !enableAnimations && isGif && staticGifFrame
+      ? staticGifFrame
+      : getAvatarUrl(avatar);
+
+  return (
+    <img
+      src={avatarSrc}
+      alt=""
+      className="block h-12 md:h-14 w-auto max-w-none object-contain"
+    />
+  );
 }
 
 export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
@@ -542,10 +584,9 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
                       className={`z-10 ${enableAnimations && burstTimestamp ? "animate-pop" : ""}`}
                     >
                       {isImageAvatar(participant.avatar) ? (
-                        <img
-                          src={getAvatarUrl(participant.avatar)}
-                          alt=""
-                          className="block h-12 md:h-14 w-auto max-w-none object-contain"
+                        <AvatarImage
+                          avatar={participant.avatar}
+                          enableAnimations={enableAnimations}
                         />
                       ) : (
                         <span className="inline-flex h-12 min-w-12 items-center justify-center rounded-full bg-white/10 px-2 text-lg md:h-14 md:min-w-14" />
