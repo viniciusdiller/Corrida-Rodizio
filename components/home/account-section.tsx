@@ -19,6 +19,7 @@ interface AccountSectionProps {
   accountLoading: boolean;
   accountCodeInput: string;
   accountPassword: string;
+  accountConfirmPassword: string;
   acceptTerms: boolean;
   setAcceptTerms: (val: boolean) => void;
   roomsWithPhotos: string[];
@@ -36,6 +37,7 @@ interface AccountSectionProps {
   setAccountFlow: (flow: "login" | "create" | null) => void;
   setAccountCodeInput: (val: string) => void;
   setAccountPassword: (val: string) => void;
+  setAccountConfirmPassword: (val: string) => void;
   onMenuStateChange?: (isOpen: boolean) => void;
   router: any;
 }
@@ -46,6 +48,7 @@ export function AccountSection({
   accountLoading,
   accountCodeInput,
   accountPassword,
+  accountConfirmPassword,
   acceptTerms,
   setAcceptTerms,
   roomsWithPhotos,
@@ -61,6 +64,7 @@ export function AccountSection({
   setAccountFlow,
   setAccountCodeInput,
   setAccountPassword,
+  setAccountConfirmPassword,
   onToggleHistory,
   setCurrentPage,
   onMenuStateChange,
@@ -302,6 +306,7 @@ export function AccountSection({
                 className="w-full h-12 rounded-xl font-semibold"
                 onClick={() => {
                   setAcceptTerms(false);
+                  setAccountConfirmPassword("");
                   setAccountFlow("create");
                 }}
               >
@@ -359,20 +364,59 @@ export function AccountSection({
                   className="h-12"
                 />
               </div>
-              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="confirmNewPassword"
+                  className="text-xs uppercase font-bold text-muted-foreground"
+                >
+                  {t.account.create_confirm_password_label}
+                </Label>
+                <Input
+                  id="confirmNewPassword"
+                  type="password"
+                  placeholder={t.account.create_confirm_password_placeholder}
+                  value={accountConfirmPassword}
+                  onChange={(e) => setAccountConfirmPassword(e.target.value)}
+                  className="h-12"
+                />
+              </div>
+              <div className="flex items-start gap-2 text-xs text-muted-foreground">
                 <input
+                  id="account-terms"
                   type="checkbox"
-                  className="h-4 w-4"
+                  className="mt-0.5 h-4 w-4"
                   checked={acceptTerms}
                   onChange={(e) => setAcceptTerms(e.target.checked)}
                 />
-                {t.account.accept_terms}
-              </label>
+                <label htmlFor="account-terms" className="leading-tight">
+                  {t.common.terms_pre_link}
+                  <a
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-primary"
+                  >
+                    {t.common.terms_link}
+                  </a>
+                  {t.common.privacy_connector}
+                  <a
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-primary"
+                  >
+                    {t.common.privacy_link}
+                  </a>
+                  {t.common.terms_post_link}
+                </label>
+              </div>
               <Button
                 className="w-full h-12 rounded-xl font-bold"
                 onClick={onCreateLogin}
                 disabled={
-                  accountLoading || usernameAvailability === "unavailable"
+                  accountLoading ||
+                  usernameAvailability === "unavailable" ||
+                  !accountConfirmPassword.trim()
                 }
               >
                 {accountLoading ? t.common.loading : t.account.create_btn}
@@ -382,6 +426,7 @@ export function AccountSection({
                 className="w-full h-12 rounded-xl font-semibold"
                 onClick={() => {
                   setAcceptTerms(false);
+                  setAccountConfirmPassword("");
                   setAccountFlow("login");
                 }}
               >
@@ -394,6 +439,7 @@ export function AccountSection({
             className="w-full h-12 rounded-xl font-semibold cursor-pointer"
             onClick={() => {
               setAcceptTerms(false);
+              setAccountConfirmPassword("");
               setAccountFlow(null);
             }}
           >
