@@ -76,6 +76,8 @@ export default function RoomPage() {
   const [accountFlow, setAccountFlow] = useState<"login" | "create">("login");
   const [accountUsername, setAccountUsername] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
+  const [accountConfirmPassword, setAccountConfirmPassword] = useState("");
+  const [accountAcceptTerms, setAccountAcceptTerms] = useState(false);
   const [accountStatus, setAccountStatus] = useState<string | null>(null);
   const [accountUsernameAvailability, setAccountUsernameAvailability] = useState<
     "checking" | "available" | "unavailable" | null
@@ -761,7 +763,10 @@ export default function RoomPage() {
   const resetConnectForm = () => {
     setAccountUsername("");
     setAccountPassword("");
+    setAccountConfirmPassword("");
+    setAccountAcceptTerms(false);
     setAccountStatus(null);
+    setAccountUsernameAvailability(null);
   };
 
   const closeConnectOverlay = () => {
@@ -850,6 +855,14 @@ export default function RoomPage() {
       setAccountStatus(t.account.password_too_short);
       return;
     }
+    if (accountPassword !== accountConfirmPassword) {
+      setAccountStatus(t.account.passwords_do_not_match);
+      return;
+    }
+    if (!accountAcceptTerms) {
+      setAccountStatus(t.account.accept_terms_required);
+      return;
+    }
     setAccountLoading(true);
     setAccountStatus(null);
     try {
@@ -863,6 +876,12 @@ export default function RoomPage() {
         setAccountStatus(t.account.create_error);
         return;
       }
+
+      await supabase.from("player_profiles").upsert({
+        login_code: normalizedUsername,
+        terms_accepted_at: new Date().toISOString(),
+        terms_version: "v1",
+      });
 
       await attachLoginToParticipant(normalizedUsername);
       closeConnectOverlay();
@@ -1428,6 +1447,8 @@ export default function RoomPage() {
                   onClick={() => {
                     setAccountFlow("login");
                     setAccountStatus(null);
+                    setAccountConfirmPassword("");
+                    setAccountAcceptTerms(false);
                     setAccountUsernameAvailability(null);
                   }}
                 >
@@ -1443,6 +1464,8 @@ export default function RoomPage() {
                   onClick={() => {
                     setAccountFlow("create");
                     setAccountStatus(null);
+                    setAccountConfirmPassword("");
+                    setAccountAcceptTerms(false);
                   }}
                 >
                   {t.account.create_tab}
@@ -1495,6 +1518,56 @@ export default function RoomPage() {
                     }}
                   />
                 </div>
+                {accountFlow === "create" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>{t.account.create_confirm_password_label}</Label>
+                      <Input
+                        type="password"
+                        value={accountConfirmPassword}
+                        onChange={(event) =>
+                          setAccountConfirmPassword(event.target.value)
+                        }
+                        placeholder={t.account.create_confirm_password_placeholder}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") handleConnectCreate();
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                      <input
+                        id="room-account-terms"
+                        type="checkbox"
+                        className="mt-0.5 h-4 w-4"
+                        checked={accountAcceptTerms}
+                        onChange={(event) =>
+                          setAccountAcceptTerms(event.target.checked)
+                        }
+                      />
+                      <label htmlFor="room-account-terms" className="leading-tight">
+                        {t.common.terms_pre_link}
+                        <a
+                          href="/terms"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-primary"
+                        >
+                          {t.common.terms_link}
+                        </a>
+                        {t.common.privacy_connector}
+                        <a
+                          href="/privacy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-primary"
+                        >
+                          {t.common.privacy_link}
+                        </a>
+                        {t.common.terms_post_link}
+                      </label>
+                    </div>
+                  </>
+                )}
                 {accountStatus && (
                   <p className="text-xs text-destructive">{accountStatus}</p>
                 )}
@@ -1505,7 +1578,9 @@ export default function RoomPage() {
                     !accountUsername.trim() ||
                     !accountPassword.trim() ||
                     (accountFlow === "create" &&
-                      accountUsernameAvailability === "unavailable")
+                      (accountUsernameAvailability === "unavailable" ||
+                        !accountConfirmPassword.trim() ||
+                        !accountAcceptTerms))
                   }
                   onClick={
                     accountFlow === "login"
