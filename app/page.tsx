@@ -13,6 +13,7 @@ import { generateRoomCode } from "@/lib/utils/room-code";
 import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
 import { DEFAULT_AVATAR } from "@/lib/utils/avatars";
 import { useLanguage } from "@/contexts/language-context";
+import { isAlphanumericOnly } from "@/lib/utils/username-validation";
 
 // Componentes refatorados
 import { HomeHeader } from "@/components/home/home-header";
@@ -348,6 +349,10 @@ export default function Home() {
     try {
       const supabase = createClient();
       const normalizedName = accountCodeInput.trim().toUpperCase();
+      if (!isAlphanumericOnly(normalizedName)) {
+        toast.error(t.account.username_format_invalid);
+        return;
+      }
 
       const { data, error } = await supabase.rpc("create_login", {
         p_username: normalizedName,
@@ -403,6 +408,10 @@ export default function Home() {
     try {
       const supabase = createClient();
       const normalizedName = accountCodeInput.trim().toUpperCase();
+      if (!isAlphanumericOnly(normalizedName)) {
+        toast.error(t.account.username_format_invalid);
+        return;
+      }
 
       const { data, error } = await supabase.rpc("verify_login", {
         p_username: normalizedName, // Nome do parâmetro corrigido para o banco

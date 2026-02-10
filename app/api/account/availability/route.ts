@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAlphanumericOnly } from "@/lib/utils/username-validation";
 
 export async function GET(request: Request) {
   try {
@@ -9,6 +10,10 @@ export async function GET(request: Request) {
 
     if (!username) {
       return NextResponse.json({ available: false, reason: "missing_username" }, { status: 400 });
+    }
+
+    if (!isAlphanumericOnly(username)) {
+      return NextResponse.json({ available: false, reason: "invalid_username" }, { status: 400 });
     }
 
     const createLookupClient = () => {

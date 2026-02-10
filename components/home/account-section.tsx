@@ -12,6 +12,7 @@ import {
   Camera,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
+import { sanitizeAlphanumeric } from "@/lib/utils/username-validation";
 
 interface AccountSectionProps {
   loginCode: string | null;
@@ -268,7 +269,7 @@ export function AccountSection({
                   id="accountCode"
                   placeholder={t.account.username_placeholder}
                   value={accountCodeInput}
-                  onChange={(e) => setAccountCodeInput(e.target.value)}
+                  onChange={(e) => setAccountCodeInput(sanitizeAlphanumeric(e.target.value))}
                   maxLength={20}
                   className="h-12 text-lg font-bold"
                 />
@@ -326,7 +327,7 @@ export function AccountSection({
                   id="newUsername"
                   placeholder={t.account.create_username_placeholder}
                   value={accountCodeInput}
-                  onChange={(e) => setAccountCodeInput(e.target.value)}
+                  onChange={(e) => setAccountCodeInput(sanitizeAlphanumeric(e.target.value))}
                   maxLength={20}
                   className="h-12 text-lg font-bold"
                 />
