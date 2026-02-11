@@ -32,10 +32,38 @@ type BurstEffect = {
 interface RaceTrackProps {
   participants: Participant[];
   isTeamMode: boolean;
+  viewerLoginCode?: string | null;
 }
 
-export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
+const LOGIN_STORAGE_KEY = "rodizio-race-login";
+const ANIMATIONS_STORAGE_PREFIX = "rodizio-race:animations";
+const GUEST_ANIMATIONS_KEY = `${ANIMATIONS_STORAGE_PREFIX}:guest`;
+
+const getAnimationsStorageKey = (viewerLoginCode?: string | null) => {
+  const normalizedViewer = viewerLoginCode?.trim().toUpperCase();
+  if (normalizedViewer) {
+    return `${ANIMATIONS_STORAGE_PREFIX}:user:${normalizedViewer}`;
+  }
+
+  if (typeof window !== "undefined") {
+    const storedLogin = localStorage.getItem(LOGIN_STORAGE_KEY);
+    const normalizedStoredLogin = storedLogin?.trim().toUpperCase();
+    if (normalizedStoredLogin) {
+      return `${ANIMATIONS_STORAGE_PREFIX}:user:${normalizedStoredLogin}`;
+    }
+  }
+
+  return GUEST_ANIMATIONS_KEY;
+};
+
+export function RaceTrack({
+  participants,
+  isTeamMode,
+  viewerLoginCode,
+}: RaceTrackProps) {
   const [enableAnimations, setEnableAnimations] = useState(true);
+  const [isPreferenceReady, setIsPreferenceReady] = useState(false);
+  const [preferenceKey, setPreferenceKey] = useState<string | null>(null);
   const { t } = useLanguage();
 
   // Armazena timestamp e as partículas geradas
@@ -124,6 +152,29 @@ export function RaceTrack({ participants, isTeamMode }: RaceTrackProps) {
     const pixelsPerSecond = 1400 / (trackSpeed * 11);
     targetSpeedRef.current = pixelsPerSecond;
   }, [trackSpeed]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setIsPreferenceReady(false);
+    const storageKey = getAnimationsStorageKey(viewerLoginCode);
+    setPreferenceKey(storageKey);
+    const storedPreference = localStorage.getItem(storageKey);
+    if (storedPreference === "0") {
+      setEnableAnimations(false);
+    } else if (storedPreference === "1") {
+      setEnableAnimations(true);
+    } else {
+      setEnableAnimations(true);
+    }
+    setIsPreferenceReady(true);
+  }, [viewerLoginCode]);
+
+  useEffect(() => {
+    if (!isPreferenceReady || !preferenceKey || typeof window === "undefined") {
+      return;
+    }
+    localStorage.setItem(preferenceKey, enableAnimations ? "1" : "0");
+  }, [enableAnimations, isPreferenceReady, preferenceKey]);
 
   useEffect(() => {
     if (!enableAnimations) {

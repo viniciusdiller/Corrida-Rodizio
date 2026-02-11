@@ -1257,6 +1257,7 @@ export default function RoomPage() {
               <RaceTrack
                 participants={participants}
                 isTeamMode={race.is_team_mode}
+                viewerLoginCode={loggedUsername}
               />
             ) : null}
 
