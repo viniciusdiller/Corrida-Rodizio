@@ -18,6 +18,7 @@ type AdminUser = {
   isPremium: boolean;
   exclusiveAvatars: string[];
   promoPermissions: string[];
+  unlockedPremiumAvatars: string[];
 };
 
 export default function AdminPage() {
@@ -44,15 +45,23 @@ export default function AdminPage() {
   >([]);
   const [showExclusiveMenu, setShowExclusiveMenu] = useState(false);
   const [showPromoMenu, setShowPromoMenu] = useState(false);
+  const [newPremiumAvatar, setNewPremiumAvatar] = useState("");
+  const [premiumStatus, setPremiumStatus] = useState<string | null>(null);
+  const [showPremiumMenu, setShowPremiumMenu] = useState(false);
   const availableExclusiveOptions = user
-    ? availableExclusiveAvatars.filter(
-        (avatar) => !user.exclusiveAvatars.includes(avatar)
-      )
+    ? availableExclusiveAvatars
+        .filter((avatar) => isExclusiveAvatar(avatar))
+        .filter((avatar) => !user.exclusiveAvatars.includes(avatar))
     : [];
   const availablePromoOptions = user
-    ? availableExclusiveAvatars.filter(
-        (avatar) => !user.promoPermissions.includes(avatar)
-      )
+    ? availableExclusiveAvatars
+        .filter((avatar) => isExclusiveAvatar(avatar))
+        .filter((avatar) => !user.promoPermissions.includes(avatar))
+    : [];
+  const availablePremiumOptions = user
+    ? availableExclusiveAvatars
+        .filter((avatar) => avatar.startsWith("avatar-premium"))
+        .filter((avatar) => !user.unlockedPremiumAvatars.includes(avatar))
     : [];
 
   useEffect(() => {
@@ -77,15 +86,21 @@ export default function AdminPage() {
         const response = await fetch("/api/avatars");
         const data = await response.json().catch(() => ({}));
         const avatars = Array.isArray(data?.avatars) ? data.avatars : [];
+        setAvailableExclusiveAvatars(avatars);
         const exclusive = avatars.filter((avatar: string) =>
           isExclusiveAvatar(avatar)
         );
-        setAvailableExclusiveAvatars(exclusive);
+        const premium = avatars.filter((avatar: string) =>
+          avatar.startsWith("avatar-premium")
+        );
         if (!newExclusiveAvatar && exclusive.length > 0) {
           setNewExclusiveAvatar(exclusive[0]);
         }
         if (!newPromoPermission && exclusive.length > 0) {
           setNewPromoPermission(exclusive[0]);
+        }
+        if (!newPremiumAvatar && premium.length > 0) {
+          setNewPremiumAvatar(premium[0]);
         }
       } catch {
         setAvailableExclusiveAvatars([]);
@@ -95,7 +110,7 @@ export default function AdminPage() {
     if (isAuthenticated) {
       loadAvatars();
     }
-  }, [isAuthenticated, newExclusiveAvatar, newPromoPermission]);
+  }, [isAuthenticated, newExclusiveAvatar, newPromoPermission, newPremiumAvatar]);
 
   const handleLogin = async () => {
     setLoginError(null);
@@ -131,6 +146,7 @@ export default function AdminPage() {
     setPasswordStatus(null);
     setExclusiveStatus(null);
     setPromoStatus(null);
+    setPremiumStatus(null);
     try {
       const supabase = createClient();
       const { data: loginData, error: loginError } = await supabase
@@ -161,6 +177,11 @@ export default function AdminPage() {
         .select("avatar")
         .eq("login_code", loginData.username);
 
+      const { data: premiumUnlockData } = await supabase
+        .from("premium_avatar_unlocks")
+        .select("avatar")
+        .eq("login_code", loginData.username);
+
       setUser({
         username: loginData.username,
         isPremium: !!profileData?.is_premium,
@@ -169,6 +190,9 @@ export default function AdminPage() {
           : [],
         promoPermissions: Array.isArray(permissionData)
           ? permissionData.map((row) => row.avatar)
+          : [],
+        unlockedPremiumAvatars: Array.isArray(premiumUnlockData)
+          ? premiumUnlockData.map((row) => row.avatar)
           : [],
       });
     } finally {
@@ -270,6 +294,7 @@ export default function AdminPage() {
     const avatarName = newPromoPermission.trim();
     if (!avatarName) return;
     setPromoStatus(null);
+    setPremiumStatus(null);
     const supabase = createClient();
     const { error } = await supabase
       .from("exclusive_avatar_permissions")
@@ -295,6 +320,7 @@ export default function AdminPage() {
   const removePromoPermission = async (avatarName: string) => {
     if (!user) return;
     setPromoStatus(null);
+    setPremiumStatus(null);
     const supabase = createClient();
     const { error } = await supabase
       .from("exclusive_avatar_permissions")
@@ -310,6 +336,57 @@ export default function AdminPage() {
     setUser({
       ...user,
       promoPermissions: user.promoPermissions.filter(
+        (item) => item !== avatarName
+      ),
+    });
+  };
+
+
+  const addPremiumAvatar = async () => {
+    if (!user) return;
+    const avatarName = newPremiumAvatar.trim();
+    if (!avatarName) return;
+    setPremiumStatus(null);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("premium_avatar_unlocks")
+      .upsert(
+        { login_code: user.username, avatar: avatarName, claimed_from: "admin_console" },
+        { onConflict: "login_code,avatar" }
+      );
+
+    if (error) {
+      setPremiumStatus("Failed to add premium avatar");
+      return;
+    }
+
+    setUser({
+      ...user,
+      unlockedPremiumAvatars: Array.from(
+        new Set([...user.unlockedPremiumAvatars, avatarName])
+      ),
+    });
+    setNewPremiumAvatar("");
+  };
+
+  const removePremiumAvatar = async (avatarName: string) => {
+    if (!user) return;
+    setPremiumStatus(null);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("premium_avatar_unlocks")
+      .delete()
+      .eq("login_code", user.username)
+      .eq("avatar", avatarName);
+
+    if (error) {
+      setPremiumStatus("Failed to remove premium avatar");
+      return;
+    }
+
+    setUser({
+      ...user,
+      unlockedPremiumAvatars: user.unlockedPremiumAvatars.filter(
         (item) => item !== avatarName
       ),
     });
@@ -559,6 +636,119 @@ export default function AdminPage() {
                           <button
                             className="text-xs text-destructive"
                             onClick={() => removeExclusiveAvatar(avatar)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">
+                      Premium Avatars
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Claimed: {user.unlockedPremiumAvatars.length}
+                    </p>
+                    <div className="flex flex-col gap-2 md:flex-row">
+                      <div className="relative w-full">
+                        <button
+                          type="button"
+                          className={`flex h-10 w-full items-center justify-between rounded-md border px-3 text-sm ${
+                            availablePremiumOptions.length === 0
+                              ? "border-muted bg-muted/40 text-muted-foreground cursor-not-allowed"
+                              : "border-input bg-background"
+                          }`}
+                          onClick={() => setShowPremiumMenu((prev) => !prev)}
+                          disabled={availablePremiumOptions.length === 0}
+                        >
+                          {newPremiumAvatar && isImageAvatar(newPremiumAvatar) ? (
+                            <img
+                              src={getAvatarUrl(newPremiumAvatar)}
+                              alt=""
+                              className="h-6 w-6 rounded-full object-contain"
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              No other premium avatar available
+                            </span>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {showPremiumMenu ? "▲" : "▼"}
+                          </span>
+                        </button>
+                        {showPremiumMenu && (
+                          <div className="absolute z-20 mt-2 w-full rounded-md border border-muted bg-background p-2 shadow-lg">
+                            {availablePremiumOptions.length === 0 ? (
+                              <p className="text-xs text-muted-foreground">
+                                No other premium avatar available
+                              </p>
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {availablePremiumOptions.map((avatar) => (
+                                  <button
+                                    key={avatar}
+                                    type="button"
+                                    className={`h-10 w-10 rounded-md border ${
+                                      newPremiumAvatar === avatar
+                                        ? "border-primary"
+                                        : "border-muted"
+                                    }`}
+                                    onClick={() => {
+                                      setNewPremiumAvatar(avatar);
+                                      setShowPremiumMenu(false);
+                                    }}
+                                  >
+                                    {isImageAvatar(avatar) && (
+                                      <img
+                                        src={getAvatarUrl(avatar)}
+                                        alt=""
+                                        className="h-8 w-8 rounded-full object-contain"
+                                      />
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={addPremiumAvatar}
+                        className="md:w-32"
+                        disabled={availablePremiumOptions.length === 0}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                    {premiumStatus && (
+                      <p className="text-xs text-muted-foreground">
+                        {premiumStatus}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {user.unlockedPremiumAvatars.length === 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          No premium avatars unlocked
+                        </span>
+                      )}
+                      {user.unlockedPremiumAvatars.map((avatar) => (
+                        <div
+                          key={avatar}
+                          className="flex items-center gap-2 rounded-full border border-muted px-3 py-1 text-xs"
+                        >
+                          {isImageAvatar(avatar) && (
+                            <img
+                              src={getAvatarUrl(avatar)}
+                              alt=""
+                              className="h-6 w-6 rounded-full object-contain"
+                            />
+                          )}
+                          <button
+                            className="text-xs text-destructive"
+                            onClick={() => removePremiumAvatar(avatar)}
                           >
                             Remove
                           </button>

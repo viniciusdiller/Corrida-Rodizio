@@ -99,6 +99,12 @@ export default function RoomPage() {
       es: "No fue posible registrar el avatar.",
       fr: "Impossible d'enregistrer l'avatar.",
     },
+    welcome_premium_error: {
+      pt: "Nao foi possivel liberar o avatar premium.",
+      en: "Unable to unlock premium avatar.",
+      es: "No fue posible desbloquear el avatar premium.",
+      fr: "Impossible de debloquer l'avatar premium.",
+    },
   } as const;
   const tx = <K extends keyof typeof uiText>(key: K) => uiText[key][language];
   const LOGIN_STORAGE_KEY = "rodizio-race-login";
@@ -121,6 +127,13 @@ export default function RoomPage() {
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
   const [isPremiumPlayer, setIsPremiumPlayer] = useState(false);
   const [exclusiveAvatars, setExclusiveAvatars] = useState<string[]>([]);
+  const [unlockedPremiumAvatars, setUnlockedPremiumAvatars] = useState<string[]>([]);
+  const [premiumClaimedCount, setPremiumClaimedCount] = useState(0);
+  const [showWelcomePremiumGrid, setShowWelcomePremiumGrid] = useState(false);
+  const [welcomePremiumOptions, setWelcomePremiumOptions] = useState<string[]>([]);
+  const [isLoadingWelcomePremium, setIsLoadingWelcomePremium] = useState(false);
+  const [isClaimingWelcomePremium, setIsClaimingWelcomePremium] = useState(false);
+  const [welcomePremiumError, setWelcomePremiumError] = useState<string | null>(null);
   const [loggedUsername, setLoggedUsername] = useState<string | null>(null);
   const [showAccountOverlay, setShowAccountOverlay] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -1091,6 +1104,8 @@ export default function RoomPage() {
         if (isMounted) {
           setIsPremiumPlayer(false);
           setExclusiveAvatars([]);
+          setUnlockedPremiumAvatars([]);
+          setPremiumClaimedCount(0);
         }
         return;
       }
@@ -1119,11 +1134,26 @@ export default function RoomPage() {
               : [],
           );
         }
+
+        const { data: premiumUnlocks, error: premiumUnlocksError } = await supabase
+          .from("premium_avatar_unlocks")
+          .select("avatar")
+          .eq("login_code", loginCode);
+
+        if (!premiumUnlocksError && isMounted) {
+          const unlocks = Array.isArray(premiumUnlocks)
+            ? premiumUnlocks.map((row) => row.avatar)
+            : [];
+          setUnlockedPremiumAvatars(unlocks);
+          setPremiumClaimedCount(unlocks.length);
+        }
       } catch (error) {
         console.error(error);
         if (isMounted) {
           setIsPremiumPlayer(false);
           setExclusiveAvatars([]);
+          setUnlockedPremiumAvatars([]);
+          setPremiumClaimedCount(0);
         }
       }
     };
@@ -1133,6 +1163,105 @@ export default function RoomPage() {
       isMounted = false;
     };
   }, [currentParticipant?.login_code]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadWelcomePremiumStatus = async () => {
+      if (!loggedUsername || !currentParticipantId || isSpectator || premiumClaimedCount > 0) {
+        if (isMounted) {
+          setShowWelcomePremiumGrid(false);
+          setWelcomePremiumOptions([]);
+          setWelcomePremiumError(null);
+        }
+        return;
+      }
+
+      setIsLoadingWelcomePremium(true);
+      setWelcomePremiumError(null);
+      try {
+        const response = await fetch(
+          `/api/premium-avatars/welcome-status?loginCode=${encodeURIComponent(
+            loggedUsername.trim().toUpperCase(),
+          )}`,
+          { cache: "no-store" },
+        );
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error("welcome_status_failed");
+        }
+        if (!isMounted) return;
+
+        const claimedCount = Number(data?.claimedCount ?? 0);
+        const unlocked = Array.isArray(data?.unlockedAvatars)
+          ? data.unlockedAvatars
+          : [];
+        const available = Array.isArray(data?.availableAvatars)
+          ? data.availableAvatars
+          : [];
+
+        setPremiumClaimedCount(claimedCount);
+        setUnlockedPremiumAvatars(unlocked);
+        setWelcomePremiumOptions(available);
+        setShowWelcomePremiumGrid(
+          Boolean(data?.shouldPrompt) && available.length > 0 && claimedCount === 0,
+        );
+      } catch (error) {
+        console.error(error);
+        if (isMounted) {
+          setWelcomePremiumOptions([]);
+          setShowWelcomePremiumGrid(false);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingWelcomePremium(false);
+        }
+      }
+    };
+
+    loadWelcomePremiumStatus();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentParticipantId, isSpectator, loggedUsername, premiumClaimedCount]);
+
+  const handleWelcomePremiumClaim = async (avatar: string) => {
+    if (!loggedUsername || !avatar || isClaimingWelcomePremium) return;
+
+    setIsClaimingWelcomePremium(true);
+    setWelcomePremiumError(null);
+
+    try {
+      const response = await fetch("/api/premium-avatars/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          loginCode: loggedUsername.trim().toUpperCase(),
+          avatar,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok && data?.status !== "already_claimed") {
+        throw new Error("welcome_claim_failed");
+      }
+
+      if (data?.status === "claimed" || data?.status === "already_claimed") {
+        const nextUnlocked = Array.from(
+          new Set([...unlockedPremiumAvatars, avatar]),
+        );
+        setUnlockedPremiumAvatars(nextUnlocked);
+        setPremiumClaimedCount(nextUnlocked.length);
+        setShowWelcomePremiumGrid(false);
+        await updateAvatar(avatar);
+      }
+    } catch (error) {
+      console.error(error);
+      setWelcomePremiumError(tx("welcome_premium_error"));
+    } finally {
+      setIsClaimingWelcomePremium(false);
+    }
+  };
+
 
   if (loading) return <LoadingScreen />;
   if (!race) return null;
@@ -1312,8 +1441,53 @@ export default function RoomPage() {
             onPhotoIncrement={handlePhotoIncrement}
             isLoggedIn={!!loggedUsername}
             isPremium={isPremiumPlayer}
+            unlockedPremiumAvatars={unlockedPremiumAvatars}
             exclusiveAvatars={exclusiveAvatars}
           />
+        )}
+
+
+
+        {showWelcomePremiumGrid && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-2xl rounded-2xl border border-muted/60 bg-background/95 p-5 shadow-2xl">
+              <div className="space-y-1">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">
+                  Premium Welcome
+                </p>
+                <h2 className="text-xl font-black">Choose 1 premium avatar to unlock</h2>
+                <p className="text-sm text-muted-foreground">
+                  Claimed premium avatars: {premiumClaimedCount}
+                </p>
+              </div>
+
+              {isLoadingWelcomePremium ? (
+                <p className="mt-4 text-sm text-muted-foreground">{t.common.loading}</p>
+              ) : (
+                <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
+                  {welcomePremiumOptions.map((avatar) => (
+                    <button
+                      key={avatar}
+                      type="button"
+                      className="rounded-xl border border-muted/60 bg-card/70 p-2 transition hover:border-primary"
+                      onClick={() => handleWelcomePremiumClaim(avatar)}
+                      disabled={isClaimingWelcomePremium}
+                    >
+                      <img
+                        src={`/avatars/${avatar}`}
+                        alt={avatar}
+                        className="mx-auto h-16 w-16 object-contain"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {welcomePremiumError && (
+                <p className="mt-3 text-xs text-destructive">{welcomePremiumError}</p>
+              )}
+            </div>
+          </div>
         )}
 
         {hasPhotoTimeline && (
