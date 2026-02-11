@@ -195,7 +195,6 @@ export default function RoomPage() {
   const [exclusiveAvatars, setExclusiveAvatars] = useState<string[]>([]);
   const [unlockedPremiumAvatars, setUnlockedPremiumAvatars] = useState<string[]>([]);
   const [premiumClaimedCount, setPremiumClaimedCount] = useState(0);
-  const [premiumClaimCredits, setPremiumClaimCredits] = useState(1);
   const [showWelcomePremiumGrid, setShowWelcomePremiumGrid] = useState(false);
   const [welcomePremiumOptions, setWelcomePremiumOptions] = useState<string[]>([]);
   const [isLoadingWelcomePremium, setIsLoadingWelcomePremium] = useState(false);
@@ -994,16 +993,6 @@ export default function RoomPage() {
     }
   };
 
-  const isMissingColumn = (error: unknown, column: string) => {
-    if (!error || typeof error !== "object") return false;
-    const maybeError = error as any;
-    const haystack = [maybeError.message, maybeError.details, maybeError.hint].filter(Boolean);
-    return (
-      maybeError.code === "42703" ||
-      haystack.some((text: string) => text?.includes(column))
-    );
-  };
-
   const handleConnectCreate = async () => {
     if (!accountUsername.trim() || !accountPassword.trim()) return;
     if (accountPassword.trim().length < 6) {
@@ -1036,29 +1025,11 @@ export default function RoomPage() {
         return;
       }
 
-      const profilePayload = {
+      await supabase.from("player_profiles").upsert({
         login_code: normalizedUsername,
         terms_accepted_at: new Date().toISOString(),
         terms_version: "v1",
-        premium_avatar_claim_credits: 1,
-      };
-      let { error: profileError } = await supabase
-        .from("player_profiles")
-        .upsert(profilePayload);
-
-      if (profileError && isMissingColumn(profileError, "premium_avatar_claim_credits")) {
-        const fallback = await supabase.from("player_profiles").upsert({
-          login_code: normalizedUsername,
-          terms_accepted_at: profilePayload.terms_accepted_at,
-          terms_version: "v1",
-        });
-        profileError = fallback.error;
-      }
-
-      if (profileError) {
-        setAccountStatus(t.account.connect_error);
-        return;
-      }
+      });
 
       await attachLoginToParticipant(normalizedUsername);
       closeConnectOverlay();
@@ -1204,7 +1175,6 @@ export default function RoomPage() {
           setExclusiveAvatars([]);
           setUnlockedPremiumAvatars([]);
           setPremiumClaimedCount(0);
-          setPremiumClaimCredits(1);
         }
         return;
       }
@@ -1213,18 +1183,12 @@ export default function RoomPage() {
         const supabase = createClient();
         const { data: profileData, error: profileError } = await supabase
           .from("player_profiles")
-          .select("is_premium,premium_avatar_claim_credits")
+          .select("is_premium")
           .eq("login_code", loginCode)
           .maybeSingle();
 
         if (!profileError && isMounted) {
           setIsPremiumPlayer(!!profileData?.is_premium);
-          const profileCredits = Number(profileData?.premium_avatar_claim_credits);
-          setPremiumClaimCredits(
-            Number.isFinite(profileCredits)
-              ? Math.max(0, Math.floor(profileCredits))
-              : 1,
-          );
         }
 
         const { data: exclusiveData, error: exclusiveError } = await supabase
@@ -1259,7 +1223,6 @@ export default function RoomPage() {
           setExclusiveAvatars([]);
           setUnlockedPremiumAvatars([]);
           setPremiumClaimedCount(0);
-          setPremiumClaimCredits(1);
         }
       }
     };
@@ -1273,7 +1236,6 @@ export default function RoomPage() {
   useEffect(() => {
     setUnlockedPremiumAvatars([]);
     setPremiumClaimedCount(0);
-    setPremiumClaimCredits(1);
     setWelcomePremiumOptions([]);
     setShowWelcomePremiumGrid(false);
     setPendingWelcomePremiumAvatar(null);
@@ -1309,10 +1271,6 @@ export default function RoomPage() {
         if (!isMounted) return;
 
         const claimedCount = Number(data?.claimedCount ?? 0);
-        const claimCredits = Number(data?.claimCredits ?? 1);
-        const remainingClaims = Number(
-          data?.remainingClaims ?? claimCredits - claimedCount,
-        );
         const unlocked = Array.isArray(data?.unlockedAvatars)
           ? data.unlockedAvatars
           : [];
@@ -1321,18 +1279,10 @@ export default function RoomPage() {
           : [];
 
         setPremiumClaimedCount(claimedCount);
-        setPremiumClaimCredits(
-          Number.isFinite(claimCredits)
-            ? Math.max(0, Math.floor(claimCredits))
-            : 1,
-        );
         setUnlockedPremiumAvatars(unlocked);
         setWelcomePremiumOptions(available);
         setShowWelcomePremiumGrid(
-          Boolean(data?.shouldPrompt) &&
-            available.length > 0 &&
-            Number.isFinite(remainingClaims) &&
-            remainingClaims > 0,
+          Boolean(data?.shouldPrompt) && available.length > 0 && claimedCount === 0,
         );
       } catch (error) {
         console.error(error);
@@ -1387,7 +1337,6 @@ export default function RoomPage() {
         );
         setUnlockedPremiumAvatars(nextUnlocked);
         setPremiumClaimedCount(nextUnlocked.length);
-        setPremiumClaimCredits((prev) => Math.max(prev, nextUnlocked.length));
         setShowWelcomePremiumGrid(false);
         setPendingWelcomePremiumAvatar(null);
         await updateAvatar(avatar);
@@ -1609,7 +1558,7 @@ export default function RoomPage() {
                   </p>
                   <h2 className="text-xl font-black">{tx("welcome_premium_title")}</h2>
                   <p className="text-sm text-muted-foreground">
-                    {tx("welcome_premium_claimed_prefix")}: {premiumClaimedCount}/{premiumClaimCredits}
+                    {tx("welcome_premium_claimed_prefix")}: {premiumClaimedCount}
                   </p>
                 </div>
 
