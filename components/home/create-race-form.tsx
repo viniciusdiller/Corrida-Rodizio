@@ -73,19 +73,19 @@ export function CreateRaceForm({
         />
       </div>
 
-      <div className="space-y-4 rounded-xl border border-muted bg-background p-4">
+      <div className="space-y-4 rounded-xl border border-border/80 bg-card p-4 shadow-sm">
         <div className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground">
           {t.home.modifiers}
         </div>
         <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-muted bg-muted/40 p-1">
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-border/80 bg-muted/60 p-1">
             <button
               type="button"
               onClick={() => setIsTeamMode(false)}
-              className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition ${
+              className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${
                 !isTeamMode
-                  ? "bg-background text-primary shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "border-primary/50 bg-background text-primary shadow-sm ring-1 ring-primary/20"
+                  : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
               }`}
             >
               <User className="h-3.5 w-3.5" />
@@ -94,10 +94,10 @@ export function CreateRaceForm({
             <button
               type="button"
               onClick={() => setIsTeamMode(true)}
-              className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition ${
+              className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${
                 isTeamMode
-                  ? "bg-background text-primary shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "border-primary/50 bg-background text-primary shadow-sm ring-1 ring-primary/20"
+                  : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
               }`}
             >
               <Users2 className="h-3.5 w-3.5" />
@@ -111,17 +111,17 @@ export function CreateRaceForm({
 
         {canEnablePhotoMode && (
           <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2 rounded-2xl border border-muted bg-muted/40 p-1">
+            <div className="grid grid-cols-2 gap-2 rounded-2xl border border-border/80 bg-muted/60 p-1">
               <button
                 type="button"
                 onClick={() => {
                   if (!isOptional) setAgreed(false);
                   setPhotoMode("optional");
                 }}
-                className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition ${
+                className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${
                   isOptional
-                    ? "bg-background text-primary shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "border-primary/50 bg-background text-primary shadow-sm ring-1 ring-primary/20"
+                    : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
                 }`}
               >
                 <Image className="h-3.5 w-3.5" />
@@ -133,10 +133,10 @@ export function CreateRaceForm({
                   if (!isMandatory) setAgreed(false);
                   setPhotoMode("mandatory");
                 }}
-                className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition ${
+                className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${
                   isMandatory
-                    ? "bg-background text-primary shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "border-primary/50 bg-background text-primary shadow-sm ring-1 ring-primary/20"
+                    : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
                 }`}
               >
                 <Camera className="h-3.5 w-3.5" />

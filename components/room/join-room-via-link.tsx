@@ -15,6 +15,7 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { LogIn, User, Loader2 } from "lucide-react";
 import type { Race } from "@/types/database";
 import { toast } from "sonner";
+import { isAlphanumericOnly, sanitizeAlphanumeric } from "@/lib/utils/username-validation";
 
 interface JoinRoomViaLinkProps {
   race: Race;
@@ -62,11 +63,15 @@ export function JoinRoomViaLink({
 
   const handleJoinAsGuest = async () => {
     if (!nickname.trim()) return;
+    const normalizedNickname = nickname.trim();
+    if (!isAlphanumericOnly(normalizedNickname)) {
+      toast.error(t.account.username_format_invalid);
+      return;
+    }
     setLoading(true);
 
     try {
       const supabase = createClient();
-      const normalizedNickname = nickname.trim();
       const { data: existingByName } = await supabase
         .from("participants")
         .select("id, login_code")
@@ -83,7 +88,7 @@ export function JoinRoomViaLink({
         if (existingLogin) {
           toast.error(
             t.room?.codename_taken ??
-              "Outro jogador ja esta usando esse codinome.",
+              t.room.codename_taken,
           );
           return;
         }
@@ -110,7 +115,7 @@ export function JoinRoomViaLink({
       onJoin();
     } catch (error) {
       console.error("Erro ao entrar como convidado:", error);
-      toast.error("Erro ao entrar na sala. Tente novamente.");
+      toast.error(t.join_room_via_link.join_room_error);
     } finally {
       setLoading(false);
     }
@@ -144,7 +149,7 @@ export function JoinRoomViaLink({
       if (nameConflict && nameConflict.login_code !== normalizedUsername) {
         toast.error(
           t.room?.codename_taken ??
-            "Outro jogador ja esta usando esse codinome.",
+            t.room.codename_taken,
         );
         return;
       }
@@ -182,7 +187,7 @@ export function JoinRoomViaLink({
       if (existingByName.login_code !== normalizedUsername) {
         toast.error(
           t.room?.codename_taken ??
-            "Outro jogador ja esta usando esse codinome.",
+            t.room.codename_taken,
         );
         return;
       }
@@ -220,6 +225,10 @@ export function JoinRoomViaLink({
     try {
       const normalizedUsername = storedLogin.trim().toUpperCase();
       const desiredName = nickname.trim() || normalizedUsername;
+      if (!isAlphanumericOnly(desiredName)) {
+        toast.error(t.account.username_format_invalid);
+        return;
+      }
 
       localStorage.setItem("rodizio-race-login", normalizedUsername);
       if (typeof window !== "undefined") {
@@ -228,7 +237,7 @@ export function JoinRoomViaLink({
       await joinWithLogin(normalizedUsername, desiredName);
     } catch (error) {
       console.error("Erro ao entrar com a conta:", error);
-      toast.error("Erro ao entrar com a conta. Tente novamente.");
+      toast.error(t.join_room_via_link.login_join_error);
     } finally {
       setLoading(false);
     }
@@ -241,6 +250,10 @@ export function JoinRoomViaLink({
     try {
       const supabase = createClient();
       const normalizedUsername = username.trim().toUpperCase();
+      if (!isAlphanumericOnly(normalizedUsername)) {
+        toast.error(t.account.username_format_invalid);
+        return;
+      }
 
       const { data: loginSuccess, error: loginError } = await supabase.rpc(
         "verify_login",
@@ -251,7 +264,7 @@ export function JoinRoomViaLink({
       );
 
       if (loginError || !loginSuccess) {
-        toast.error("Usuario ou senha invalidos.");
+        toast.error(t.account.invalid_credentials);
         setLoading(false);
         return;
       }
@@ -281,7 +294,7 @@ export function JoinRoomViaLink({
       setLoginStep("nickname");
     } catch (error) {
       console.error("Erro ao fazer login:", error);
-      toast.error("Erro ao entrar com a conta. Tente novamente.");
+      toast.error(t.join_room_via_link.login_join_error);
     } finally {
       setLoading(false);
     }
@@ -315,7 +328,7 @@ export function JoinRoomViaLink({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t.account?.guest || "Entrar como Convidado"}
+              {t.account?.guest || t.join_room_via_link.enter_as_guest}
             </button>
             <button
               onClick={() => setMode("login")}
@@ -325,7 +338,7 @@ export function JoinRoomViaLink({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t.account?.enter_btn || "Entrar com Conta"}
+              {t.account?.enter_btn || t.join_room_via_link.enter_with_account}
             </button>
             <button
               onClick={() => setMode("spectator")}
@@ -351,7 +364,7 @@ export function JoinRoomViaLink({
                       autoFocus
                       placeholder={t.account.username_placeholder}
                       value={nickname}
-                      onChange={(e) => setNickname(e.target.value)}
+                      onChange={(e) => setNickname(sanitizeAlphanumeric(e.target.value))}
                       maxLength={20}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") handleJoinAsGuest();
@@ -383,7 +396,7 @@ export function JoinRoomViaLink({
                           className="h-11 pl-9 text-lg"
                           placeholder={t.account.username_placeholder}
                           value={nickname}
-                          onChange={(e) => setNickname(e.target.value)}
+                          onChange={(e) => setNickname(sanitizeAlphanumeric(e.target.value))}
                           maxLength={20}
                         />
                       </div>
@@ -431,7 +444,7 @@ export function JoinRoomViaLink({
                             className="h-11 text-lg"
                             placeholder={t.account.username_placeholder}
                             value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            onChange={(e) => setUsername(sanitizeAlphanumeric(e.target.value))}
                             maxLength={20}
                           />
                         </div>
@@ -475,19 +488,24 @@ export function JoinRoomViaLink({
                               className="h-11 pl-9 text-lg"
                               placeholder={t.account.username_placeholder}
                               value={nickname}
-                              onChange={(e) => setNickname(e.target.value)}
+                              onChange={(e) => setNickname(sanitizeAlphanumeric(e.target.value))}
                               maxLength={20}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter" && pendingLogin) {
+                                  const desiredName = nickname.trim() || pendingLogin;
+                                  if (!isAlphanumericOnly(desiredName)) {
+                                    toast.error(t.account.username_format_invalid);
+                                    return;
+                                  }
                                   setLoading(true);
                                   joinWithLogin(
                                     pendingLogin,
-                                    nickname.trim() || pendingLogin,
+                                    desiredName,
                                   )
                                     .catch((error) => {
                                       console.error(error);
                                       toast.error(
-                                        "Erro ao entrar com a conta. Tente novamente.",
+                                        t.join_room_via_link.login_join_error,
                                       );
                                     })
                                     .finally(() => setLoading(false));
@@ -500,15 +518,20 @@ export function JoinRoomViaLink({
                           className="w-full h-11 text-lg font-bold uppercase rounded-xl"
                           onClick={() => {
                             if (!pendingLogin) return;
+                            const desiredName = nickname.trim() || pendingLogin;
+                            if (!isAlphanumericOnly(desiredName)) {
+                              toast.error(t.account.username_format_invalid);
+                              return;
+                            }
                             setLoading(true);
                             joinWithLogin(
                               pendingLogin,
-                              nickname.trim() || pendingLogin,
+                              desiredName,
                             )
                               .catch((error) => {
                                 console.error(error);
                                 toast.error(
-                                  "Erro ao entrar com a conta. Tente novamente.",
+                                  t.join_room_via_link.login_join_error,
                                 );
                               })
                               .finally(() => setLoading(false));

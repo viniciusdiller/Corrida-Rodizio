@@ -40,11 +40,69 @@ import type { Race, Participant } from "@/types/database";
 import { TeamSelection } from "@/components/room/team-selection";
 import { useLanguage } from "@/contexts/language-context";
 import { getFoodTypeUnit } from "@/lib/utils/food-type";
+import { isAlphanumericOnly, sanitizeAlphanumeric } from "@/lib/utils/username-validation";
 
 export default function RoomPage() {
   const { t, language } = useLanguage();
+  const uiText = {
+    fill_all_fields: {
+      pt: "Preencha todos os campos.",
+      en: "Fill in all fields.",
+      es: "Completa todos los campos.",
+      fr: "Remplissez tous les champs.",
+    },
+    current_password_incorrect: {
+      pt: "Senha atual incorreta.",
+      en: "Current password is incorrect.",
+      es: "La contraseña actual es incorrecta.",
+      fr: "Le mot de passe actuel est incorrect.",
+    },
+    password_updated: {
+      pt: "Senha trocada com sucesso.",
+      en: "Password updated successfully.",
+      es: "Contraseña actualizada con éxito.",
+      fr: "Mot de passe mis à jour avec succès.",
+    },
+    password_update_unavailable: {
+      pt: "Nao foi possivel atualizar a senha.",
+      en: "Unable to update the password.",
+      es: "No fue posible actualizar la contraseña.",
+      fr: "Impossible de mettre à jour le mot de passe.",
+    },
+    remove_player_error: {
+      pt: "Nao foi possivel remover o jogador.",
+      en: "Unable to remove player.",
+      es: "No fue posible eliminar al jugador.",
+      fr: "Impossible de supprimer le joueur.",
+    },
+    photo_send_error: {
+      pt: "Nao foi possivel enviar a foto.",
+      en: "Unable to send the photo.",
+      es: "No fue posible enviar la foto.",
+      fr: "Impossible d'envoyer la photo.",
+    },
+    claim_enter_code: {
+      pt: "Digite o codigo.",
+      en: "Enter the code.",
+      es: "Ingresa el codigo.",
+      fr: "Entrez le code.",
+    },
+    claim_register_error: {
+      pt: "Erro ao registrar.",
+      en: "Registration error.",
+      es: "Error al registrar.",
+      fr: "Erreur lors de l'enregistrement.",
+    },
+    claim_register_unavailable: {
+      pt: "Nao foi possivel registrar o avatar.",
+      en: "Unable to register the avatar.",
+      es: "No fue posible registrar el avatar.",
+      fr: "Impossible d'enregistrer l'avatar.",
+    },
+  } as const;
+  const tx = <K extends keyof typeof uiText>(key: K) => uiText[key][language];
   const LOGIN_STORAGE_KEY = "rodizio-race-login";
-  const addCooldownMs = 2_000;
+  const addCooldownMs = 4_000;
 
   const params = useParams();
   const router = useRouter();
@@ -76,7 +134,12 @@ export default function RoomPage() {
   const [accountFlow, setAccountFlow] = useState<"login" | "create">("login");
   const [accountUsername, setAccountUsername] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
+  const [accountConfirmPassword, setAccountConfirmPassword] = useState("");
+  const [accountAcceptTerms, setAccountAcceptTerms] = useState(false);
   const [accountStatus, setAccountStatus] = useState<string | null>(null);
+  const [accountUsernameAvailability, setAccountUsernameAvailability] = useState<
+    "checking" | "available" | "unavailable" | null
+  >(null);
   const [accountLoading, setAccountLoading] = useState(false);
   const [nameStatus, setNameStatus] = useState<string | null>(null);
   const [isUpdatingName, setIsUpdatingName] = useState(false);
@@ -210,7 +273,7 @@ export default function RoomPage() {
     if (!loggedUsername) return;
     const trimmedCode = claimCode.trim();
     if (!trimmedCode) {
-      setClaimStatus("Digite o codigo.");
+      setClaimStatus(tx("claim_enter_code"));
       return;
     }
     setIsClaiming(true);
@@ -231,9 +294,9 @@ export default function RoomPage() {
         setClaimCode("");
         return;
       }
-      setClaimStatus("Erro ao registrar.");
+      setClaimStatus(tx("claim_register_error"));
     } catch {
-      setClaimStatus("Nao foi possivel registrar o avatar.");
+      setClaimStatus(tx("claim_register_unavailable"));
     } finally {
       setIsClaiming(false);
     }
@@ -395,11 +458,11 @@ export default function RoomPage() {
     }
     if (!checkAddCooldown(event)) return;
     if (!loggedUsername) {
-      toast.error("Fa??a login para usar o modo foto.");
+      toast.error(t.room.login_to_use_camera);
       return;
     }
     if (!participant?.login_code) {
-      toast.error("Voc?? precisa estar logado para usar o modo foto.");
+      toast.error(t.room.login_to_use_camera);
       return;
     }
     if (isUploadingPhoto) return;
@@ -488,7 +551,7 @@ export default function RoomPage() {
     };
 
     if (!loggedUsername) {
-      toast.error("Fa??a login para usar o modo foto.");
+      toast.error(t.room.login_to_use_camera);
       setPhotoSendStatus("error");
       setPhotoTarget(null);
       return;
@@ -511,7 +574,7 @@ export default function RoomPage() {
       });
 
       if (!response.ok) {
-        toast.error("Nao foi possivel enviar a foto.");
+        toast.error(tx("photo_send_error"));
         setPhotoSendStatus("error");
         return;
       }
@@ -519,7 +582,7 @@ export default function RoomPage() {
       await updateCount(photoTarget.participantId, 1);
       setPhotoSendStatus("success");
     } catch {
-      toast.error("Nao foi possivel enviar a foto.");
+      toast.error(tx("photo_send_error"));
       setPhotoSendStatus("error");
     } finally {
       setIsUploadingPhoto(false);
@@ -613,7 +676,7 @@ export default function RoomPage() {
       }
       setRemoveTarget(null);
     } catch {
-      toast.error("Nao foi possivel remover o jogador.");
+      toast.error(tx("remove_player_error"));
     } finally {
       setIsRemovingPlayer(false);
     }
@@ -668,15 +731,15 @@ export default function RoomPage() {
     const trimmedNew = newPassword.trim();
     const trimmedConfirm = confirmNewPassword.trim();
     if (!trimmedCurrent || !trimmedNew || !trimmedConfirm) {
-      setPasswordStatus("Preencha todos os campos.");
+      setPasswordStatus(tx("fill_all_fields"));
       return;
     }
     if (trimmedNew !== trimmedConfirm) {
-      setPasswordStatus("As novas senhas nao conferem.");
+      setPasswordStatus(t.account.passwords_do_not_match);
       return;
     }
     if (trimmedNew.length < 6) {
-      setPasswordStatus("A nova senha precisa de pelo menos 6 caracteres.");
+      setPasswordStatus(t.account.password_too_short);
       return;
     }
 
@@ -691,22 +754,22 @@ export default function RoomPage() {
       });
 
       if (error) {
-        setPasswordStatus(error.message || "Senha atual incorreta.");
+        setPasswordStatus(error.message || tx("current_password_incorrect"));
         return;
       }
       if (data === false) {
-        setPasswordStatus("Senha atual incorreta.");
+        setPasswordStatus(tx("current_password_incorrect"));
         return;
       }
 
-      setPasswordStatus("Senha trocada com sucesso.");
+      setPasswordStatus(tx("password_updated"));
       setShowPasswordSuccess(true);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
       setShowPasswordForm(false);
     } catch {
-      setPasswordStatus("Nao foi possivel atualizar a senha.");
+      setPasswordStatus(tx("password_update_unavailable"));
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -758,7 +821,10 @@ export default function RoomPage() {
   const resetConnectForm = () => {
     setAccountUsername("");
     setAccountPassword("");
+    setAccountConfirmPassword("");
+    setAccountAcceptTerms(false);
     setAccountStatus(null);
+    setAccountUsernameAvailability(null);
   };
 
   const closeConnectOverlay = () => {
@@ -821,6 +887,10 @@ export default function RoomPage() {
     try {
       const supabase = createClient();
       const normalizedUsername = accountUsername.trim().toUpperCase();
+      if (!isAlphanumericOnly(normalizedUsername)) {
+        setAccountStatus(t.account.username_format_invalid);
+        return;
+      }
       const { data, error } = await supabase.rpc("verify_login", {
         p_username: normalizedUsername,
         p_password: accountPassword,
@@ -847,11 +917,23 @@ export default function RoomPage() {
       setAccountStatus(t.account.password_too_short);
       return;
     }
+    if (accountPassword !== accountConfirmPassword) {
+      setAccountStatus(t.account.passwords_do_not_match);
+      return;
+    }
+    if (!accountAcceptTerms) {
+      setAccountStatus(t.account.accept_terms_required);
+      return;
+    }
     setAccountLoading(true);
     setAccountStatus(null);
     try {
       const supabase = createClient();
       const normalizedUsername = accountUsername.trim().toUpperCase();
+      if (!isAlphanumericOnly(normalizedUsername)) {
+        setAccountStatus(t.account.username_format_invalid);
+        return;
+      }
       const { data, error } = await supabase.rpc("create_login", {
         p_username: normalizedUsername,
         p_password: accountPassword,
@@ -860,6 +942,12 @@ export default function RoomPage() {
         setAccountStatus(t.account.create_error);
         return;
       }
+
+      await supabase.from("player_profiles").upsert({
+        login_code: normalizedUsername,
+        terms_accepted_at: new Date().toISOString(),
+        terms_version: "v1",
+      });
 
       await attachLoginToParticipant(normalizedUsername);
       closeConnectOverlay();
@@ -870,6 +958,47 @@ export default function RoomPage() {
       setAccountLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!showConnectOverlay || accountFlow !== "create") {
+      setAccountUsernameAvailability(null);
+      return;
+    }
+
+    const normalizedUsername = accountUsername.trim().toUpperCase();
+    if (normalizedUsername.length < 3) {
+      setAccountUsernameAvailability(null);
+      return;
+    }
+
+    if (!isAlphanumericOnly(normalizedUsername)) {
+      setAccountUsernameAvailability("unavailable");
+      return;
+    }
+
+    setAccountUsernameAvailability("checking");
+    const timeout = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/account/availability?username=${encodeURIComponent(
+            normalizedUsername,
+          )}`,
+        );
+        if (!response.ok) {
+          setAccountUsernameAvailability(null);
+          return;
+        }
+        const data = await response.json().catch(() => ({}));
+        setAccountUsernameAvailability(
+          data?.available ? "available" : "unavailable",
+        );
+      } catch {
+        setAccountUsernameAvailability(null);
+      }
+    }, 450);
+
+    return () => clearTimeout(timeout);
+  }, [accountFlow, accountUsername, showConnectOverlay]);
 
   useEffect(() => {
     loadRoomData();
@@ -1390,6 +1519,9 @@ export default function RoomPage() {
                   onClick={() => {
                     setAccountFlow("login");
                     setAccountStatus(null);
+                    setAccountConfirmPassword("");
+                    setAccountAcceptTerms(false);
+                    setAccountUsernameAvailability(null);
                   }}
                 >
                   {t.account.login_tab}
@@ -1404,6 +1536,8 @@ export default function RoomPage() {
                   onClick={() => {
                     setAccountFlow("create");
                     setAccountStatus(null);
+                    setAccountConfirmPassword("");
+                    setAccountAcceptTerms(false);
                   }}
                 >
                   {t.account.create_tab}
@@ -1414,10 +1548,30 @@ export default function RoomPage() {
                   <Label>{t.account.username_label}</Label>
                 <Input
                   value={accountUsername}
-                  onChange={(event) => setAccountUsername(event.target.value)}
+                  onChange={(event) => {
+                    setAccountUsername(sanitizeAlphanumeric(event.target.value));
+                    setAccountStatus(null);
+                  }}
                   placeholder={t.account.username_placeholder}
                   maxLength={20}
                 />
+                {accountUsernameAvailability && (
+                  <p
+                    className={`text-xs font-semibold ${
+                      accountUsernameAvailability === "available"
+                        ? "text-emerald-600"
+                        : accountUsernameAvailability === "unavailable"
+                          ? "text-destructive"
+                          : "text-muted-foreground"
+                    }`}
+                  >
+                    {accountUsernameAvailability === "checking"
+                      ? t.account.username_checking
+                      : accountUsernameAvailability === "available"
+                        ? t.account.username_available
+                        : t.account.username_not_available}
+                  </p>
+                )}
                 </div>
                 <div className="space-y-2">
                   <Label>{t.account.password_label}</Label>
@@ -1436,6 +1590,56 @@ export default function RoomPage() {
                     }}
                   />
                 </div>
+                {accountFlow === "create" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>{t.account.create_confirm_password_label}</Label>
+                      <Input
+                        type="password"
+                        value={accountConfirmPassword}
+                        onChange={(event) =>
+                          setAccountConfirmPassword(event.target.value)
+                        }
+                        placeholder={t.account.create_confirm_password_placeholder}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") handleConnectCreate();
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                      <input
+                        id="room-account-terms"
+                        type="checkbox"
+                        className="mt-0.5 h-4 w-4"
+                        checked={accountAcceptTerms}
+                        onChange={(event) =>
+                          setAccountAcceptTerms(event.target.checked)
+                        }
+                      />
+                      <label htmlFor="room-account-terms" className="leading-tight">
+                        {t.common.terms_pre_link}
+                        <a
+                          href="/terms"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-primary"
+                        >
+                          {t.common.terms_link}
+                        </a>
+                        {t.common.privacy_connector}
+                        <a
+                          href="/privacy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-primary"
+                        >
+                          {t.common.privacy_link}
+                        </a>
+                        {t.common.terms_post_link}
+                      </label>
+                    </div>
+                  </>
+                )}
                 {accountStatus && (
                   <p className="text-xs text-destructive">{accountStatus}</p>
                 )}
@@ -1444,7 +1648,11 @@ export default function RoomPage() {
                   disabled={
                     accountLoading ||
                     !accountUsername.trim() ||
-                    !accountPassword.trim()
+                    !accountPassword.trim() ||
+                    (accountFlow === "create" &&
+                      (accountUsernameAvailability === "unavailable" ||
+                        !accountConfirmPassword.trim() ||
+                        !accountAcceptTerms))
                   }
                   onClick={
                     accountFlow === "login"

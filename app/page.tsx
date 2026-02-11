@@ -13,6 +13,7 @@ import { generateRoomCode } from "@/lib/utils/room-code";
 import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
 import { DEFAULT_AVATAR } from "@/lib/utils/avatars";
 import { useLanguage } from "@/contexts/language-context";
+import { isAlphanumericOnly } from "@/lib/utils/username-validation";
 
 // Componentes refatorados
 import { HomeHeader } from "@/components/home/home-header";
@@ -27,6 +28,81 @@ const LOGIN_STORAGE_KEY = "rodizio-race-login";
 export default function Home() {
   const router = useRouter();
   const { t, language } = useLanguage();
+  const uiText = {
+    create_account_success: {
+      pt: "Conta criada com sucesso!",
+      en: "Account created successfully!",
+      es: "Cuenta creada con éxito!",
+      fr: "Compte créé avec succès !",
+    },
+    login_error: {
+      pt: "Erro ao entrar. Tente novamente.",
+      en: "Unable to log in. Please try again.",
+      es: "Error al iniciar sesión. Inténtalo de nuevo.",
+      fr: "Erreur de connexion. Réessayez.",
+    },
+    claim_enter_code: {
+      pt: "Digite o codigo.",
+      en: "Enter the code.",
+      es: "Ingresa el código.",
+      fr: "Entrez le code.",
+    },
+    claim_register_error: {
+      pt: "Erro ao registrar.",
+      en: "Registration error.",
+      es: "Error al registrar.",
+      fr: "Erreur lors de l'enregistrement.",
+    },
+    claim_register_unavailable: {
+      pt: "Nao foi possivel registrar o avatar.",
+      en: "Unable to register the avatar.",
+      es: "No fue posible registrar el avatar.",
+      fr: "Impossible d'enregistrer l'avatar.",
+    },
+    fill_all_fields: {
+      pt: "Preencha todos os campos.",
+      en: "Fill in all fields.",
+      es: "Completa todos los campos.",
+      fr: "Remplissez tous les champs.",
+    },
+    current_password_incorrect: {
+      pt: "Senha atual incorreta.",
+      en: "Current password is incorrect.",
+      es: "La contraseña actual es incorrecta.",
+      fr: "Le mot de passe actuel est incorrect.",
+    },
+    password_updated: {
+      pt: "Senha trocada com sucesso.",
+      en: "Password updated successfully.",
+      es: "Contraseña actualizada con éxito.",
+      fr: "Mot de passe mis à jour avec succès.",
+    },
+    password_update_unavailable: {
+      pt: "Nao foi possivel atualizar a senha.",
+      en: "Unable to update the password.",
+      es: "No fue posible actualizar la contraseña.",
+      fr: "Impossible de mettre à jour le mot de passe.",
+    },
+    login_required_photo: {
+      pt: "Você precisa estar logado para o modo foto.",
+      en: "You must be logged in to use photo mode.",
+      es: "Debes iniciar sesión para usar el modo foto.",
+      fr: "Vous devez être connecté pour utiliser le mode photo.",
+    },
+    create_room_error: {
+      pt: "Erro ao criar sala.",
+      en: "Unable to create room.",
+      es: "No se pudo crear la sala.",
+      fr: "Impossible de créer la salle.",
+    },
+    join_room_error: {
+      pt: "Erro ao entrar na sala.",
+      en: "Unable to join the room.",
+      es: "Error al entrar a la sala.",
+      fr: "Impossible de rejoindre la salle.",
+    },
+  } as const;
+  const tx = <K extends keyof typeof uiText>(key: K) => uiText[key][language];
 
   // ESTADOS PRINCIPAIS
   const [playerName, setPlayerName] = useState("");
@@ -50,6 +126,7 @@ export default function Home() {
   );
   const [accountCodeInput, setAccountCodeInput] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
+  const [accountConfirmPassword, setAccountConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [loginCode, setLoginCode] = useState<string | null>(null);
@@ -330,6 +407,14 @@ export default function Home() {
 
   const handleCreateLogin = async () => {
     if (!accountPassword.trim() || !accountCodeInput.trim()) return;
+    if (accountPassword.trim().length < 6) {
+      toast.error(t.account.password_too_short);
+      return;
+    }
+    if (accountPassword !== accountConfirmPassword) {
+      toast.error(t.account.passwords_do_not_match);
+      return;
+    }
     if (!acceptTerms) {
       toast.error(t.account.accept_terms_required);
       return;
@@ -339,6 +424,10 @@ export default function Home() {
     try {
       const supabase = createClient();
       const normalizedName = accountCodeInput.trim().toUpperCase();
+      if (!isAlphanumericOnly(normalizedName)) {
+        toast.error(t.account.username_format_invalid);
+        return;
+      }
 
       const { data, error } = await supabase.rpc("create_login", {
         p_username: normalizedName,
@@ -359,9 +448,10 @@ export default function Home() {
       notifyLoginUpdated();
       setAccountFlow(null);
       setAccountPassword("");
+      setAccountConfirmPassword("");
       setAccountCodeInput("");
       setAcceptTerms(false);
-      toast.success("Conta criada com sucesso!");
+      toast.success(tx("create_account_success"));
     } catch (error: any) {
       toast.error(
         `Erro ao criar conta: ${error.message || "Tente outro nome"}`,
@@ -393,6 +483,10 @@ export default function Home() {
     try {
       const supabase = createClient();
       const normalizedName = accountCodeInput.trim().toUpperCase();
+      if (!isAlphanumericOnly(normalizedName)) {
+        toast.error(t.account.username_format_invalid);
+        return;
+      }
 
       const { data, error } = await supabase.rpc("verify_login", {
         p_username: normalizedName, // Nome do parâmetro corrigido para o banco
@@ -400,7 +494,7 @@ export default function Home() {
       });
 
       if (error || !data) {
-        toast.error("Nome de usuário ou senha inválidos.");
+        toast.error(t.account.invalid_credentials);
         return;
       }
 
@@ -413,7 +507,7 @@ export default function Home() {
 
       handleLoadGroups(normalizedName);
     } catch (error: any) {
-      toast.error("Erro ao entrar. Tente novamente.");
+      toast.error(tx("login_error"));
     } finally {
       setAccountLoading(false);
     }
@@ -545,7 +639,7 @@ export default function Home() {
     if (!loginCode) return;
     const trimmedCode = claimCode.trim();
     if (!trimmedCode) {
-      setClaimStatus("Digite o codigo.");
+      setClaimStatus(tx("claim_enter_code"));
       return;
     }
     setIsClaiming(true);
@@ -566,9 +660,9 @@ export default function Home() {
         setClaimCode("");
         return;
       }
-      setClaimStatus("Erro ao registrar.");
+      setClaimStatus(tx("claim_register_error"));
     } catch {
-      setClaimStatus("Nao foi possivel registrar o avatar.");
+      setClaimStatus(tx("claim_register_unavailable"));
     } finally {
       setIsClaiming(false);
     }
@@ -580,15 +674,15 @@ export default function Home() {
     const trimmedNew = newPassword.trim();
     const trimmedConfirm = confirmNewPassword.trim();
     if (!trimmedCurrent || !trimmedNew || !trimmedConfirm) {
-      setPasswordStatus("Preencha todos os campos.");
+      setPasswordStatus(tx("fill_all_fields"));
       return;
     }
     if (trimmedNew !== trimmedConfirm) {
-      setPasswordStatus("As novas senhas nao conferem.");
+      setPasswordStatus(t.account.passwords_do_not_match);
       return;
     }
     if (trimmedNew.length < 6) {
-      setPasswordStatus("A nova senha precisa de pelo menos 6 caracteres.");
+      setPasswordStatus(t.account.password_too_short);
       return;
     }
 
@@ -603,22 +697,22 @@ export default function Home() {
       });
 
       if (error) {
-        setPasswordStatus(error.message || "Senha atual incorreta.");
+        setPasswordStatus(error.message || tx("current_password_incorrect"));
         return;
       }
       if (data === false) {
-        setPasswordStatus("Senha atual incorreta.");
+        setPasswordStatus(tx("current_password_incorrect"));
         return;
       }
 
-      setPasswordStatus("Senha trocada com sucesso.");
+      setPasswordStatus(tx("password_updated"));
       setShowPasswordSuccess(true);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
       setShowPasswordForm(false);
     } catch {
-      setPasswordStatus("Nao foi possivel atualizar a senha.");
+      setPasswordStatus(tx("password_update_unavailable"));
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -630,7 +724,7 @@ export default function Home() {
     const roomOwnerName = loginCode?.trim() || normalizedName;
     if (!normalizedName || !roomOwnerName || !selectedFood) return;
     if (photoModeEnabled && !loginCode) {
-      toast.error("Você precisa estar logado para o modo foto.");
+      toast.error(tx("login_required_photo"));
       return;
     }
     setLoading(true);
@@ -693,7 +787,7 @@ export default function Home() {
         localStorage.setItem(getParticipantStorageKey(code), participant.id);
       router.push(`/sala/${code}`);
     } catch (e) {
-      toast.error("Erro ao criar sala.");
+      toast.error(tx("create_room_error"));
     } finally {
       setLoading(false);
     }
@@ -789,7 +883,7 @@ export default function Home() {
 
       router.push(`/sala/${normalized}`);
     } catch (e: any) {
-      toast.error(e.message ?? "Erro ao entrar na sala.");
+      toast.error(e.message ?? tx("join_room_error"));
     } finally {
       setLoading(false);
     }
@@ -969,6 +1063,7 @@ export default function Home() {
                   accountLoading={accountLoading}
                   accountCodeInput={accountCodeInput}
                   accountPassword={accountPassword}
+                  accountConfirmPassword={accountConfirmPassword}
                   acceptTerms={acceptTerms}
                   setAcceptTerms={setAcceptTerms}
                   myGroups={myGroups}
@@ -985,6 +1080,7 @@ export default function Home() {
                   setAccountFlow={setAccountFlow}
                   setAccountCodeInput={setAccountCodeInput}
                   setAccountPassword={setAccountPassword}
+                  setAccountConfirmPassword={setAccountConfirmPassword}
                   onMenuStateChange={setIsAccountMenuOpen}
                   router={router}
                   roomsWithPhotos={roomsWithPhotos}

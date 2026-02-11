@@ -13,6 +13,7 @@ import {
   isImageAvatar,
   isPremiumAvatar,
 } from "@/lib/utils/avatars";
+import { sanitizeAlphanumeric } from "@/lib/utils/username-validation";
 import { Participant } from "@/types/database";
 import { useLanguage } from "@/contexts/language-context";
 
@@ -293,7 +294,7 @@ export function PersonalProgress({
                 <Input
                   value={nameDraft}
                   onChange={(event) => {
-                    setNameDraft(event.target.value);
+                    setNameDraft(sanitizeAlphanumeric(event.target.value));
                     setShowNameIndicator(false);
                   }}
                   placeholder={t.room.change_name_placeholder}
@@ -333,7 +334,7 @@ export function PersonalProgress({
                   {nameStatus}
                 </p>
               )}
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex w-full flex-wrap justify-center gap-1.5">
                 {avatarOptions.map((opt) => {
                   const isSelected = participant.avatar === opt;
                   const isPremiumOption = isPremiumAvatar(opt);
@@ -368,7 +369,7 @@ export function PersonalProgress({
                         setShowAvatarPicker(false);
                       }}
                       aria-disabled={isLocked}
-                      className={`w-11 h-11 rounded-lg border transition-all text-xl flex items-center justify-center cursor-pointer ${
+                      className={`h-12 w-12 rounded-lg border transition-all text-xl flex items-center justify-center cursor-pointer ${
                         isSelected
                           ? "ring-2 ring-primary bg-primary/20 scale-110 shadow-lg"
                           : "hover:border-primary/40 bg-background/40 hover:bg-background/60"
@@ -382,7 +383,7 @@ export function PersonalProgress({
                         <img
                           src={getAvatarUrl(opt)}
                           alt=""
-                          className="h-9 w-9 object-contain"
+                          className="h-10 w-10 object-contain object-center"
                         />
                       )}
                     </button>

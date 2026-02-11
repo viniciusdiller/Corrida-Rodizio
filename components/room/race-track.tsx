@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Participant } from "@/types/database";
 import { Card } from "@/components/ui/card";
-import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
+import { getAvatarUrl, isGifAvatar, isImageAvatar } from "@/lib/utils/avatars";
 import { Trophy, Zap, ZapOff } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 
@@ -56,6 +56,48 @@ const getAnimationsStorageKey = (viewerLoginCode?: string | null) => {
   return GUEST_ANIMATIONS_KEY;
 };
 
+function AvatarImage({
+  avatar,
+  enableAnimations,
+}: {
+  avatar: string;
+  enableAnimations: boolean;
+}) {
+  const isGif = isGifAvatar(avatar);
+  const [staticGifFrame, setStaticGifFrame] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isGif || staticGifFrame) {
+      return;
+    }
+
+    const image = new Image();
+    image.src = getAvatarUrl(avatar);
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(image, 0, 0);
+      setStaticGifFrame(canvas.toDataURL("image/png"));
+    };
+  }, [avatar, isGif, staticGifFrame]);
+
+  const avatarSrc =
+    !enableAnimations && isGif && staticGifFrame
+      ? staticGifFrame
+      : getAvatarUrl(avatar);
+
+  return (
+    <img
+      src={avatarSrc}
+      alt=""
+      className="block h-12 md:h-14 w-auto max-w-none object-contain"
+    />
+  );
+}
+
 export function RaceTrack({
   participants,
   isTeamMode,
@@ -72,6 +114,7 @@ export function RaceTrack({
   >({});
 
   const prevScoresRef = useRef<Record<string, number>>({});
+  const hasInitializedRef = useRef(false);
 
   const scores = participants.map((p) => p.items_eaten);
   const currentMax = scores.length > 0 ? Math.max(...scores) : 0;
@@ -82,6 +125,20 @@ export function RaceTrack({
     (a, b) =>
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
+
+  useEffect(() => {
+    if (hasInitializedRef.current) {
+      return;
+    }
+
+    const fallbackScores: Record<string, number> = {};
+    participants.forEach((participant) => {
+      fallbackScores[participant.id] = participant.items_eaten;
+    });
+    prevScoresRef.current = fallbackScores;
+
+    hasInitializedRef.current = true;
+  }, [participants]);
 
   // Lógica de detecção de pontos
   useEffect(() => {
@@ -144,6 +201,10 @@ export function RaceTrack({
   const showTails = currentMax >= 3;
 
   const [scrollX, setScrollX] = useState(0);
+  const [trackWidth, setTrackWidth] = useState(0);
+  const [runnerWidths, setRunnerWidths] = useState<Record<string, number>>({});
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const runnerRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const speedRef = useRef(0);
   const targetSpeedRef = useRef(0);
   const lastFrameRef = useRef<number | null>(null);
@@ -201,6 +262,48 @@ export function RaceTrack({
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [enableAnimations]);
+
+  useEffect(() => {
+    const trackElement = trackRef.current;
+    if (!trackElement) return;
+
+    const measure = () => {
+      setTrackWidth(trackElement.clientWidth);
+      const widths: Record<string, number> = {};
+
+      participants.forEach((participant) => {
+        const element = runnerRefs.current[participant.id];
+        if (element) {
+          widths[participant.id] = element.offsetWidth;
+        }
+      });
+
+      setRunnerWidths(widths);
+    };
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(trackElement);
+
+    participants.forEach((participant) => {
+      const element = runnerRefs.current[participant.id];
+      if (element) {
+        observer.observe(element);
+      }
+    });
+
+    measure();
+
+    return () => observer.disconnect();
+  }, [participants, enableAnimations]);
+
+  const maxRunnerWidth = useMemo(() => {
+    const widths = Object.values(runnerWidths);
+    if (widths.length === 0) return 0;
+    return Math.max(...widths);
+  }, [runnerWidths]);
+
+  const minProgressOffset =
+    trackWidth > 0 ? Math.min((maxRunnerWidth / trackWidth) * 100, 100) : 0;
 
   return (
     <div className="space-y-3 w-full overflow-hidden">
@@ -361,6 +464,7 @@ export function RaceTrack({
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-[repeating-linear-gradient(45deg,#ef4444,#ef4444_8px,#fff_8px,#fff_16px)] opacity-30" />
 
         <div
+          ref={trackRef}
           className="py-6 pl-2 pr-12 space-y-1 relative min-h-[160px] bg-[#222]"
           style={{
             ["--dot-offset" as any]: "20px",
@@ -394,27 +498,32 @@ export function RaceTrack({
             const burstData = effectTrigger[participant.id];
             const burstTimestamp = burstData?.ts;
             const diffValue = burstData?.diff || 0;
+            const anchoredProgress =
+              minProgressOffset + (progress / 100) * (100 - minProgressOffset);
 
             return (
               <div
                 key={participant.id}
-                className="relative h-12 flex items-center"
+                className="relative h-16 md:h-20 flex items-center"
               >
                 <div
+                  ref={(el) => {
+                    runnerRefs.current[participant.id] = el;
+                  }}
                   className={`absolute flex items-center gap-1 ${
                     enableAnimations
                       ? "transition-all duration-1000 ease-in-out"
                       : ""
                   }`}
                   style={{
-                    left: `${progress}%`,
-                    transform: `translateX(-${progress}%)`,
+                    left: `${anchoredProgress}%`,
+                    transform: "translateX(-100%)",
                     zIndex: isLeader ? 20 : 10,
                   }}
                 >
-                  <div className="flex flex-col min-w-[64px] p-1 text-right text-white">
+                  <div className="flex flex-col p-1 text-right text-white">
                     <span
-                      className="font-black uppercase leading-tight max-w-[88px] md:max-w-[140px] whitespace-normal break-words"
+                      className="font-black uppercase leading-tight max-w-[100px] md:max-w-[140px] whitespace-normal break-words"
                       style={{ fontSize: `${nameFontSize}px` }}
                     >
                       <span className="inline-flex items-center justify-end gap-1">
@@ -447,7 +556,7 @@ export function RaceTrack({
                   </div>
 
                   <div
-                    className={`relative shrink-0 w-14 h-14 md:w-16 md:h-16 flex items-center justify-center ${
+                    className={`relative shrink-0 w-fit h-12 md:h-14 flex items-center justify-start ${
                       enableAnimations ? "animate-avatar" : ""
                     }`}
                     style={{
@@ -523,16 +632,15 @@ export function RaceTrack({
                     <div
                       key={`${participant.id}-${participant.items_eaten}`}
                       // AQUI: Só usa animate-pop se estiver no momento do burst. Se não, nenhuma animação de classe.
-                      className={`rounded-full z-10 ${enableAnimations && burstTimestamp ? "animate-pop" : ""}`}
+                      className={`z-10 ${enableAnimations && burstTimestamp ? "animate-pop" : ""}`}
                     >
                       {isImageAvatar(participant.avatar) ? (
-                        <img
-                          src={getAvatarUrl(participant.avatar)}
-                          alt=""
-                          className="h-11 w-11 md:h-14 md:w-14 object-contain"
+                        <AvatarImage
+                          avatar={participant.avatar}
+                          enableAnimations={enableAnimations}
                         />
                       ) : (
-                        <span className="inline-block h-11 w-11 rounded-full bg-white/10 md:h-14 md:w-14" />
+                        <span className="inline-flex h-12 min-w-12 items-center justify-center rounded-full bg-white/10 px-2 text-lg md:h-14 md:min-w-14" />
                       )}
                     </div>
                   </div>

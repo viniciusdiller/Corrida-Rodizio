@@ -48,7 +48,10 @@ export function HallOfFame({
   onReopenRace,
 }: HallOfFameProps) {
   const { t } = useLanguage();
-  const MOTIVATIONAL_PHRASES = t.hall_of_fame.phrases;
+  const MOTIVATIONAL_PHRASES =
+    race.food_type === "drinks"
+      ? (t.hall_of_fame.drinks_phrases ?? t.hall_of_fame.phrases)
+      : t.hall_of_fame.phrases;
   const currentParticipant = participants.find(
     (participant) => participant.id === currentParticipantId,
   );
@@ -425,7 +428,7 @@ export function HallOfFame({
                   }
                 }}
               >
-                {isSharingPhoto ? "..." : "Compartilhar foto"}
+                {isSharingPhoto ? "..." : t.hall_of_fame.share_photo}
               </Button>
             </div>
           </div>
