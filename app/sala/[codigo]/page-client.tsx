@@ -123,17 +123,11 @@ export default function RoomPage() {
       es: "No fue posible desbloquear el avatar premium.",
       fr: "Impossible de debloquer l'avatar premium.",
     },
-    welcome_premium_badge: {
-      pt: "Boas-vindas Premium",
-      en: "Premium Welcome",
-      es: "Bienvenida Premium",
-      fr: "Bienvenue Premium",
-    },
     welcome_premium_title: {
-      pt: "Escolha 1 avatar premium para desbloquear",
-      en: "Choose 1 premium avatar to unlock",
-      es: "Elige 1 avatar premium para desbloquear",
-      fr: "Choisissez 1 avatar premium a debloquer",
+      pt: "Boa noticia! Voce pode desbloquear um avatar premium!",
+      en: "Good news! You can unlock one premium avatar!",
+      es: "Buenas noticias! Puedes desbloquear un avatar premium!",
+      fr: "Bonne nouvelle ! Vous pouvez debloquer un avatar premium !",
     },
     welcome_premium_claimed_prefix: {
       pt: "Avatares premium resgatados",
@@ -1604,9 +1598,6 @@ export default function RoomPage() {
             <div className="mx-auto flex h-full w-full max-w-2xl items-center justify-center">
               <div className="relative flex max-h-[85vh] w-full flex-col overflow-hidden rounded-2xl border border-muted/60 bg-background/95 shadow-2xl">
                 <div className="space-y-1 border-b border-muted/50 bg-background/95 p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">
-                    {tx("welcome_premium_badge")}
-                  </p>
                   <h2 className="text-xl font-black">{tx("welcome_premium_title")}</h2>
                   <p className="text-sm text-muted-foreground">
                     {tx("welcome_premium_claimed_prefix")}: {premiumClaimedCount}/{premiumClaimCredits}
@@ -1662,6 +1653,13 @@ export default function RoomPage() {
                       <p className="mt-2 text-sm text-muted-foreground">
                         {tx("welcome_premium_confirm_message")}
                       </p>
+                      <div className="mt-3 flex justify-center">
+                        <img
+                          src={`/avatars/${pendingWelcomePremiumAvatar}`}
+                          alt=""
+                          className="h-24 w-24 rounded-lg border border-muted/60 bg-card/70 p-2 object-contain"
+                        />
+                      </div>
                       <div className="mt-4 grid grid-cols-2 gap-2">
                         <Button
                           type="button"
