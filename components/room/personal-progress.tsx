@@ -42,6 +42,7 @@ interface PersonalProgressProps {
   ) => void;
   isLoggedIn: boolean;
   isPremium: boolean;
+  unlockedPremiumAvatars: string[];
   exclusiveAvatars: string[];
 }
 
@@ -63,6 +64,7 @@ export function PersonalProgress({
   onPhotoIncrement,
   isLoggedIn,
   isPremium,
+  unlockedPremiumAvatars,
   exclusiveAvatars,
 }: PersonalProgressProps) {
   const { t } = useLanguage();
@@ -111,16 +113,20 @@ export function PersonalProgress({
         const data = await response.json();
         const list = Array.isArray(data?.avatars) ? data.avatars : [];
         if (list.length === 0) return;
-        const unlocked = list.filter((opt) => {
+        const unlocked = list.filter((opt: string) => {
           if (opt === participant.avatar) return true;
           if (isExclusiveAvatar(opt)) return exclusiveAvatars.includes(opt);
-          if (isPremiumAvatar(opt)) return isPremium;
+          if (isPremiumAvatar(opt)) {
+            return isPremium || unlockedPremiumAvatars.includes(opt);
+          }
           return true;
         });
-        const locked = list.filter((opt) => {
+        const locked = list.filter((opt: string) => {
           if (opt === participant.avatar) return false;
           if (isExclusiveAvatar(opt)) return !exclusiveAvatars.includes(opt);
-          if (isPremiumAvatar(opt)) return !isPremium;
+          if (isPremiumAvatar(opt)) {
+            return !isPremium && !unlockedPremiumAvatars.includes(opt);
+          }
           return false;
         });
         if (isMounted) setAvatarOptions([...unlocked, ...locked]);
@@ -133,7 +139,7 @@ export function PersonalProgress({
     return () => {
       isMounted = false;
     };
-  }, [exclusiveAvatars, isPremium, participant.avatar]);
+  }, [exclusiveAvatars, isPremium, participant.avatar, unlockedPremiumAvatars]);
 
   useEffect(() => {
     if (showAvatarPicker) {
@@ -340,7 +346,9 @@ export function PersonalProgress({
                   const isPremiumOption = isPremiumAvatar(opt);
                   const isExclusiveOption = isExclusiveAvatar(opt);
                   const isLocked =
-                    (isPremiumOption && !isPremium) ||
+                    (isPremiumOption &&
+                      !isPremium &&
+                      !unlockedPremiumAvatars.includes(opt)) ||
                     (isExclusiveOption && !exclusiveAvatars.includes(opt));
                   const lockedMessage = isExclusiveOption
                     ? t.room.exclusive_avatar_locked ??
