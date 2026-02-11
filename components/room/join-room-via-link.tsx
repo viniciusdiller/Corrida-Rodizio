@@ -88,7 +88,7 @@ export function JoinRoomViaLink({
         if (existingLogin) {
           toast.error(
             t.room?.codename_taken ??
-              "Outro jogador ja esta usando esse codinome.",
+              t.room.codename_taken,
           );
           return;
         }
@@ -115,7 +115,7 @@ export function JoinRoomViaLink({
       onJoin();
     } catch (error) {
       console.error("Erro ao entrar como convidado:", error);
-      toast.error("Erro ao entrar na sala. Tente novamente.");
+      toast.error(t.join_room_via_link.join_room_error);
     } finally {
       setLoading(false);
     }
@@ -149,7 +149,7 @@ export function JoinRoomViaLink({
       if (nameConflict && nameConflict.login_code !== normalizedUsername) {
         toast.error(
           t.room?.codename_taken ??
-            "Outro jogador ja esta usando esse codinome.",
+            t.room.codename_taken,
         );
         return;
       }
@@ -187,7 +187,7 @@ export function JoinRoomViaLink({
       if (existingByName.login_code !== normalizedUsername) {
         toast.error(
           t.room?.codename_taken ??
-            "Outro jogador ja esta usando esse codinome.",
+            t.room.codename_taken,
         );
         return;
       }
@@ -237,7 +237,7 @@ export function JoinRoomViaLink({
       await joinWithLogin(normalizedUsername, desiredName);
     } catch (error) {
       console.error("Erro ao entrar com a conta:", error);
-      toast.error("Erro ao entrar com a conta. Tente novamente.");
+      toast.error(t.join_room_via_link.login_join_error);
     } finally {
       setLoading(false);
     }
@@ -264,7 +264,7 @@ export function JoinRoomViaLink({
       );
 
       if (loginError || !loginSuccess) {
-        toast.error("Usuario ou senha invalidos.");
+        toast.error(t.account.invalid_credentials);
         setLoading(false);
         return;
       }
@@ -294,7 +294,7 @@ export function JoinRoomViaLink({
       setLoginStep("nickname");
     } catch (error) {
       console.error("Erro ao fazer login:", error);
-      toast.error("Erro ao entrar com a conta. Tente novamente.");
+      toast.error(t.join_room_via_link.login_join_error);
     } finally {
       setLoading(false);
     }
@@ -328,7 +328,7 @@ export function JoinRoomViaLink({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t.account?.guest || "Entrar como Convidado"}
+              {t.account?.guest || t.join_room_via_link.enter_as_guest}
             </button>
             <button
               onClick={() => setMode("login")}
@@ -338,7 +338,7 @@ export function JoinRoomViaLink({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t.account?.enter_btn || "Entrar com Conta"}
+              {t.account?.enter_btn || t.join_room_via_link.enter_with_account}
             </button>
             <button
               onClick={() => setMode("spectator")}
@@ -505,7 +505,7 @@ export function JoinRoomViaLink({
                                     .catch((error) => {
                                       console.error(error);
                                       toast.error(
-                                        "Erro ao entrar com a conta. Tente novamente.",
+                                        t.join_room_via_link.login_join_error,
                                       );
                                     })
                                     .finally(() => setLoading(false));
@@ -531,7 +531,7 @@ export function JoinRoomViaLink({
                               .catch((error) => {
                                 console.error(error);
                                 toast.error(
-                                  "Erro ao entrar com a conta. Tente novamente.",
+                                  t.join_room_via_link.login_join_error,
                                 );
                               })
                               .finally(() => setLoading(false));

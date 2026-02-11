@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
+import { useLanguage } from "@/contexts/language-context";
 
 type PromoCode = {
   id: string;
@@ -21,6 +22,41 @@ const LOGIN_STORAGE_KEY = "rodizio-race-login";
 
 export default function PromoCodesPage() {
   const router = useRouter();
+  const { language } = useLanguage();
+  const uiText = {
+    back: { pt: "Voltar", en: "Back", es: "Volver", fr: "Retour" },
+    loading: {
+      pt: "Carregando...",
+      en: "Loading...",
+      es: "Cargando...",
+      fr: "Chargement...",
+    },
+    load_codes_error: {
+      pt: "Nao foi possivel carregar os codigos.",
+      en: "Unable to load codes.",
+      es: "No fue posible cargar los codigos.",
+      fr: "Impossible de charger les codes.",
+    },
+    create_code_error: {
+      pt: "Nao foi possivel criar o codigo.",
+      en: "Unable to create code.",
+      es: "No fue posible crear el codigo.",
+      fr: "Impossible de creer le code.",
+    },
+    reveal_code_error: {
+      pt: "Nao foi possivel mostrar o codigo.",
+      en: "Unable to reveal code.",
+      es: "No fue posible mostrar el codigo.",
+      fr: "Impossible d'afficher le code.",
+    },
+    disable_code_error: {
+      pt: "Nao foi possivel desativar o codigo.",
+      en: "Unable to disable code.",
+      es: "No fue posible desactivar el codigo.",
+      fr: "Impossible de desactiver le code.",
+    },
+  } as const;
+  const tx = <K extends keyof typeof uiText>(key: K) => uiText[key][language];
   const [loginCode, setLoginCode] = useState<string | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [codes, setCodes] = useState<PromoCode[]>([]);
@@ -60,7 +96,7 @@ export default function PromoCodesPage() {
       const codesData = await codesResponse.json().catch(() => ({}));
       setCodes(Array.isArray(codesData?.codes) ? codesData.codes : []);
     } catch {
-      setStatusMessage("Nao foi possivel carregar os codigos.");
+      setStatusMessage(tx("load_codes_error"));
     } finally {
       setIsLoading(false);
     }
@@ -89,13 +125,13 @@ export default function PromoCodesPage() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data?.status !== "created") {
-        setStatusMessage("Nao foi possivel criar o codigo.");
+        setStatusMessage(tx("create_code_error"));
         return;
       }
       setGeneratedCode(data?.code ?? null);
       await loadData(loginCode.trim().toUpperCase());
     } catch {
-      setStatusMessage("Nao foi possivel criar o codigo.");
+      setStatusMessage(tx("create_code_error"));
     } finally {
       setIsCreating(false);
     }
@@ -114,12 +150,12 @@ export default function PromoCodesPage() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data?.status !== "ok" || !data?.code) {
-        setStatusMessage("Nao foi possivel mostrar o codigo.");
+        setStatusMessage(tx("reveal_code_error"));
         return;
       }
       setRevealedCodes((prev) => ({ ...prev, [codeId]: data.code }));
     } catch {
-      setStatusMessage("Nao foi possivel mostrar o codigo.");
+      setStatusMessage(tx("reveal_code_error"));
     }
   };
 
@@ -137,12 +173,12 @@ export default function PromoCodesPage() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data?.status !== "disabled") {
-        setStatusMessage("Nao foi possivel desativar o codigo.");
+        setStatusMessage(tx("disable_code_error"));
         return;
       }
       await loadData(loginCode.trim().toUpperCase());
     } catch {
-      setStatusMessage("Nao foi possivel desativar o codigo.");
+      setStatusMessage(tx("disable_code_error"));
     }
   };
 
@@ -185,7 +221,7 @@ export default function PromoCodesPage() {
             <p className="text-sm text-muted-foreground">
               Faca login para gerenciar codigos promocionais.
             </p>
-            <Button onClick={() => router.push("/")}>Voltar</Button>
+            <Button onClick={() => router.push("/")}>{tx("back")}</Button>
           </CardContent>
         </Card>
       </div>
@@ -203,7 +239,7 @@ export default function PromoCodesPage() {
             <p className="text-lg font-black">{loginCode}</p>
           </div>
           <Button variant="outline" onClick={() => router.push("/")}>
-            Voltar
+            {tx("back")}
           </Button>
         </div>
 
@@ -282,7 +318,7 @@ export default function PromoCodesPage() {
               Codigos criados
             </Label>
             {isLoading ? (
-              <p className="text-xs text-muted-foreground">Carregando...</p>
+              <p className="text-xs text-muted-foreground">{tx("loading")}</p>
             ) : codesWithStatus.length === 0 ? (
               <p className="text-xs text-muted-foreground">
                 Nenhum codigo criado.

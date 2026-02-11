@@ -284,6 +284,13 @@ export const translations = {
         "Campeão dos drinks, vice no prato!",
       ],
       share: "Compartilhar resultado!",
+      share_photo: "Compartilhar foto",
+    },
+    join_room_via_link: {
+      join_room_error: "Erro ao entrar na sala. Tente novamente.",
+      login_join_error: "Erro ao entrar com a conta. Tente novamente.",
+      enter_as_guest: "Entrar como Convidado",
+      enter_with_account: "Entrar com Conta",
     },
     terms_page: {
       header_label: "📄 Termos de Uso",
@@ -718,6 +725,13 @@ export const translations = {
         "Drinks champion, plate runner-up!",
       ],
       share: "Share result!",
+      share_photo: "Share photo",
+    },
+    join_room_via_link: {
+      join_room_error: "Error joining the room. Please try again.",
+      login_join_error: "Error joining with account. Please try again.",
+      enter_as_guest: "Join as Guest",
+      enter_with_account: "Join with Account",
     },
     terms_page: {
       header_label: "📄 Terms of Use",
@@ -1121,6 +1135,10 @@ export const translations = {
       legendary: "🏆 Mangeur légendaire",
       print_post: "Imprimer et publier",
       home: "Accueil",
+      photo_timeline: "Chronologie des photos",
+      timeline_loading: "Chargement...",
+      timeline_empty: "Aucune photo enregistrée.",
+      timeline_error: "Impossible de charger les photos.",
       reopen_race: "Rouvrir la course",
       reopen_confirm_title: "Rouvrir la course ?",
       reopen_confirm_desc:
@@ -1147,6 +1165,13 @@ export const translations = {
         "Champion des verres, second assiette !",
       ],
       share: "Partager le résultat !",
+      share_photo: "Partager la photo",
+    },
+    join_room_via_link: {
+      join_room_error: "Erreur lors de l'entrée dans la salle. Réessayez.",
+      login_join_error: "Erreur lors de l'entrée avec le compte. Réessayez.",
+      enter_as_guest: "Entrer comme invité",
+      enter_with_account: "Entrer avec un compte",
     },
     terms_page: {
       header_label: "📄 Conditions d’utilisation",
@@ -1554,6 +1579,10 @@ export const translations = {
       legendary: "🏆 Glotón Legendario",
       print_post: "Captura y Publica",
       home: "Inicio",
+      photo_timeline: "Línea de tiempo",
+      timeline_loading: "Cargando...",
+      timeline_empty: "No hay fotos registradas.",
+      timeline_error: "No fue posible cargar las fotos.",
       reopen_race: "Reabrir carrera",
       reopen_confirm_title: "¿Reabrir carrera?",
       reopen_confirm_desc: "¿Deseas reabrir esta carrera para seguir jugando?",
@@ -1579,9 +1608,16 @@ export const translations = {
         "Campeón de tragos, vice del plato!",
       ],
       share: "¡Compartir resultado!",
+      share_photo: "Compartir foto",
     },
     footer: {
       copyright: "© {{year}} Passa Raiva. Todos los derechos reservados.",
+    },
+    join_room_via_link: {
+      join_room_error: "Error al entrar a la sala. Inténtalo de nuevo.",
+      login_join_error: "Error al entrar con la cuenta. Inténtalo de nuevo.",
+      enter_as_guest: "Entrar como invitado",
+      enter_with_account: "Entrar con cuenta",
     },
     terms_page: {
       header_label: "📄 Términos de Uso",
