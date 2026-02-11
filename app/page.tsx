@@ -436,26 +436,11 @@ export default function Home() {
 
       if (error) throw error;
 
-      const profilePayload = {
+      await supabase.from("player_profiles").upsert({
         login_code: data,
         terms_accepted_at: new Date().toISOString(),
         terms_version: "v1",
-        premium_avatar_claim_credits: 1,
-      };
-      let { error: profileError } = await supabase
-        .from("player_profiles")
-        .upsert(profilePayload);
-
-      if (profileError && isMissingColumn(profileError, "premium_avatar_claim_credits")) {
-        const fallback = await supabase.from("player_profiles").upsert({
-          login_code: data,
-          terms_accepted_at: profilePayload.terms_accepted_at,
-          terms_version: "v1",
-        });
-        profileError = fallback.error;
-      }
-
-      if (profileError) throw profileError;
+      });
       setHasAcceptedTerms(true);
 
       setLoginCode(data);

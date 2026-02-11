@@ -19,7 +19,6 @@ type AdminUser = {
   exclusiveAvatars: string[];
   promoPermissions: string[];
   unlockedPremiumAvatars: string[];
-  premiumAvatarClaimCredits: number;
 };
 
 export default function AdminPage() {
@@ -48,7 +47,6 @@ export default function AdminPage() {
   const [showPromoMenu, setShowPromoMenu] = useState(false);
   const [newPremiumAvatar, setNewPremiumAvatar] = useState("");
   const [premiumStatus, setPremiumStatus] = useState<string | null>(null);
-  const [premiumClaimCreditInput, setPremiumClaimCreditInput] = useState("1");
   const [showPremiumMenu, setShowPremiumMenu] = useState(false);
   const availableExclusiveOptions = user
     ? availableExclusiveAvatars
@@ -165,7 +163,7 @@ export default function AdminPage() {
 
       const { data: profileData } = await supabase
         .from("player_profiles")
-        .select("is_premium,premium_avatar_claim_credits")
+        .select("is_premium")
         .eq("login_code", loginData.username)
         .maybeSingle();
 
@@ -196,19 +194,7 @@ export default function AdminPage() {
         unlockedPremiumAvatars: Array.isArray(premiumUnlockData)
           ? premiumUnlockData.map((row) => row.avatar)
           : [],
-        premiumAvatarClaimCredits: Number.isFinite(
-          Number(profileData?.premium_avatar_claim_credits),
-        )
-          ? Math.max(0, Math.floor(Number(profileData?.premium_avatar_claim_credits)))
-          : 1,
       });
-      setPremiumClaimCreditInput(
-        String(
-          Number.isFinite(Number(profileData?.premium_avatar_claim_credits))
-            ? Math.max(0, Math.floor(Number(profileData?.premium_avatar_claim_credits)))
-            : 1,
-        ),
-      );
     } finally {
       setIsSearching(false);
     }
@@ -405,39 +391,6 @@ export default function AdminPage() {
       ),
     });
   };
-  const updatePremiumClaimCredits = async () => {
-    if (!user) return;
-
-    const parsedValue = Number.parseInt(premiumClaimCreditInput, 10);
-    if (!Number.isFinite(parsedValue) || parsedValue < 0) {
-      setPremiumStatus("Claim credits must be 0 or greater");
-      return;
-    }
-
-    setPremiumStatus(null);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("player_profiles")
-      .upsert(
-        {
-          login_code: user.username,
-          premium_avatar_claim_credits: parsedValue,
-        },
-        { onConflict: "login_code" },
-      );
-
-    if (error) {
-      setPremiumStatus("Failed to update claim credits");
-      return;
-    }
-
-    setUser({
-      ...user,
-      premiumAvatarClaimCredits: parsedValue,
-    });
-    setPremiumStatus("Claim credits updated");
-  };
-
 
   if (isCheckingSession) {
     return <div className="min-h-screen bg-background" />;
@@ -696,26 +649,8 @@ export default function AdminPage() {
                       Premium Avatars
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      Claimed: {user.unlockedPremiumAvatars.length} / Credits:{" "}
-                      {user.premiumAvatarClaimCredits}
+                      Claimed: {user.unlockedPremiumAvatars.length}
                     </p>
-                    <div className="flex flex-col gap-2 md:flex-row">
-                      <Input
-                        value={premiumClaimCreditInput}
-                        onChange={(event) =>
-                          setPremiumClaimCreditInput(event.target.value)
-                        }
-                        placeholder="Claim credits"
-                        inputMode="numeric"
-                      />
-                      <Button
-                        variant="outline"
-                        onClick={updatePremiumClaimCredits}
-                        className="md:w-40"
-                      >
-                        Update credits
-                      </Button>
-                    </div>
                     <div className="flex flex-col gap-2 md:flex-row">
                       <div className="relative w-full">
                         <button
