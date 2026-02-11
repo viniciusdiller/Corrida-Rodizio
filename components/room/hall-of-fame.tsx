@@ -425,7 +425,7 @@ export function HallOfFame({
                   }
                 }}
               >
-                {isSharingPhoto ? "..." : "Compartilhar foto"}
+                {isSharingPhoto ? "..." : t.hall_of_fame.share_photo}
               </Button>
             </div>
           </div>

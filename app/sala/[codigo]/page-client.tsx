@@ -44,6 +44,63 @@ import { isAlphanumericOnly, sanitizeAlphanumeric } from "@/lib/utils/username-v
 
 export default function RoomPage() {
   const { t, language } = useLanguage();
+  const uiText = {
+    fill_all_fields: {
+      pt: "Preencha todos os campos.",
+      en: "Fill in all fields.",
+      es: "Completa todos los campos.",
+      fr: "Remplissez tous les champs.",
+    },
+    current_password_incorrect: {
+      pt: "Senha atual incorreta.",
+      en: "Current password is incorrect.",
+      es: "La contraseña actual es incorrecta.",
+      fr: "Le mot de passe actuel est incorrect.",
+    },
+    password_updated: {
+      pt: "Senha trocada com sucesso.",
+      en: "Password updated successfully.",
+      es: "Contraseña actualizada con éxito.",
+      fr: "Mot de passe mis à jour avec succès.",
+    },
+    password_update_unavailable: {
+      pt: "Nao foi possivel atualizar a senha.",
+      en: "Unable to update the password.",
+      es: "No fue posible actualizar la contraseña.",
+      fr: "Impossible de mettre à jour le mot de passe.",
+    },
+    remove_player_error: {
+      pt: "Nao foi possivel remover o jogador.",
+      en: "Unable to remove player.",
+      es: "No fue posible eliminar al jugador.",
+      fr: "Impossible de supprimer le joueur.",
+    },
+    photo_send_error: {
+      pt: "Nao foi possivel enviar a foto.",
+      en: "Unable to send the photo.",
+      es: "No fue posible enviar la foto.",
+      fr: "Impossible d'envoyer la photo.",
+    },
+    claim_enter_code: {
+      pt: "Digite o codigo.",
+      en: "Enter the code.",
+      es: "Ingresa el codigo.",
+      fr: "Entrez le code.",
+    },
+    claim_register_error: {
+      pt: "Erro ao registrar.",
+      en: "Registration error.",
+      es: "Error al registrar.",
+      fr: "Erreur lors de l'enregistrement.",
+    },
+    claim_register_unavailable: {
+      pt: "Nao foi possivel registrar o avatar.",
+      en: "Unable to register the avatar.",
+      es: "No fue posible registrar el avatar.",
+      fr: "Impossible d'enregistrer l'avatar.",
+    },
+  } as const;
+  const tx = <K extends keyof typeof uiText>(key: K) => uiText[key][language];
   const LOGIN_STORAGE_KEY = "rodizio-race-login";
   const addCooldownMs = 4_000;
 
@@ -216,7 +273,7 @@ export default function RoomPage() {
     if (!loggedUsername) return;
     const trimmedCode = claimCode.trim();
     if (!trimmedCode) {
-      setClaimStatus("Digite o codigo.");
+      setClaimStatus(tx("claim_enter_code"));
       return;
     }
     setIsClaiming(true);
@@ -237,9 +294,9 @@ export default function RoomPage() {
         setClaimCode("");
         return;
       }
-      setClaimStatus("Erro ao registrar.");
+      setClaimStatus(tx("claim_register_error"));
     } catch {
-      setClaimStatus("Nao foi possivel registrar o avatar.");
+      setClaimStatus(tx("claim_register_unavailable"));
     } finally {
       setIsClaiming(false);
     }
@@ -401,11 +458,11 @@ export default function RoomPage() {
     }
     if (!checkAddCooldown(event)) return;
     if (!loggedUsername) {
-      toast.error("Fa??a login para usar o modo foto.");
+      toast.error(t.room.login_to_use_camera);
       return;
     }
     if (!participant?.login_code) {
-      toast.error("Voc?? precisa estar logado para usar o modo foto.");
+      toast.error(t.room.login_to_use_camera);
       return;
     }
     if (isUploadingPhoto) return;
@@ -494,7 +551,7 @@ export default function RoomPage() {
     };
 
     if (!loggedUsername) {
-      toast.error("Fa??a login para usar o modo foto.");
+      toast.error(t.room.login_to_use_camera);
       setPhotoSendStatus("error");
       setPhotoTarget(null);
       return;
@@ -517,7 +574,7 @@ export default function RoomPage() {
       });
 
       if (!response.ok) {
-        toast.error("Nao foi possivel enviar a foto.");
+        toast.error(tx("photo_send_error"));
         setPhotoSendStatus("error");
         return;
       }
@@ -525,7 +582,7 @@ export default function RoomPage() {
       await updateCount(photoTarget.participantId, 1);
       setPhotoSendStatus("success");
     } catch {
-      toast.error("Nao foi possivel enviar a foto.");
+      toast.error(tx("photo_send_error"));
       setPhotoSendStatus("error");
     } finally {
       setIsUploadingPhoto(false);
@@ -619,7 +676,7 @@ export default function RoomPage() {
       }
       setRemoveTarget(null);
     } catch {
-      toast.error("Nao foi possivel remover o jogador.");
+      toast.error(tx("remove_player_error"));
     } finally {
       setIsRemovingPlayer(false);
     }
@@ -674,15 +731,15 @@ export default function RoomPage() {
     const trimmedNew = newPassword.trim();
     const trimmedConfirm = confirmNewPassword.trim();
     if (!trimmedCurrent || !trimmedNew || !trimmedConfirm) {
-      setPasswordStatus("Preencha todos os campos.");
+      setPasswordStatus(tx("fill_all_fields"));
       return;
     }
     if (trimmedNew !== trimmedConfirm) {
-      setPasswordStatus("As novas senhas nao conferem.");
+      setPasswordStatus(t.account.passwords_do_not_match);
       return;
     }
     if (trimmedNew.length < 6) {
-      setPasswordStatus("A nova senha precisa de pelo menos 6 caracteres.");
+      setPasswordStatus(t.account.password_too_short);
       return;
     }
 
@@ -697,22 +754,22 @@ export default function RoomPage() {
       });
 
       if (error) {
-        setPasswordStatus(error.message || "Senha atual incorreta.");
+        setPasswordStatus(error.message || tx("current_password_incorrect"));
         return;
       }
       if (data === false) {
-        setPasswordStatus("Senha atual incorreta.");
+        setPasswordStatus(tx("current_password_incorrect"));
         return;
       }
 
-      setPasswordStatus("Senha trocada com sucesso.");
+      setPasswordStatus(tx("password_updated"));
       setShowPasswordSuccess(true);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
       setShowPasswordForm(false);
     } catch {
-      setPasswordStatus("Nao foi possivel atualizar a senha.");
+      setPasswordStatus(tx("password_update_unavailable"));
     } finally {
       setIsUpdatingPassword(false);
     }
