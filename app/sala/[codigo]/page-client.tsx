@@ -1234,9 +1234,18 @@ export default function RoomPage() {
   }, [currentParticipant?.login_code]);
 
   useEffect(() => {
+    setUnlockedPremiumAvatars([]);
+    setPremiumClaimedCount(0);
+    setWelcomePremiumOptions([]);
+    setShowWelcomePremiumGrid(false);
+    setPendingWelcomePremiumAvatar(null);
+    setWelcomePremiumError(null);
+  }, [loggedUsername]);
+
+  useEffect(() => {
     let isMounted = true;
     const loadWelcomePremiumStatus = async () => {
-      if (!loggedUsername || !currentParticipantId || isSpectator || premiumClaimedCount > 0) {
+      if (!loggedUsername || !currentParticipantId || isSpectator) {
         if (isMounted) {
           setShowWelcomePremiumGrid(false);
           setWelcomePremiumOptions([]);
@@ -1293,7 +1302,7 @@ export default function RoomPage() {
     return () => {
       isMounted = false;
     };
-  }, [currentParticipantId, isSpectator, loggedUsername, premiumClaimedCount]);
+  }, [currentParticipantId, isSpectator, loggedUsername]);
 
   const handleWelcomePremiumSelect = (avatar: string) => {
     if (!avatar || isClaimingWelcomePremium) return;
