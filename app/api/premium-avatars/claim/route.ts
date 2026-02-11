@@ -10,12 +10,6 @@ interface ClaimPayload {
 const normalizeLoginCode = (value?: string) => value?.trim().toUpperCase() ?? "";
 const normalizeAvatar = (value?: string) => value?.trim() ?? "";
 
-const isMissingColumnError = (error: unknown) => {
-  if (!error || typeof error !== "object") return false;
-  const maybeError = error as { code?: string };
-  return maybeError.code === "42703";
-};
-
 export async function POST(request: Request) {
   const payload = (await request.json().catch(() => ({}))) as ClaimPayload;
   const loginCode = normalizeLoginCode(payload.loginCode);
@@ -28,19 +22,10 @@ export async function POST(request: Request) {
   try {
     const supabase = createAdminClient();
 
-    const [claimsResponse, profileResponse] = await Promise.all([
-      supabase
-        .from("premium_avatar_unlocks")
-        .select("avatar")
-        .eq("login_code", loginCode),
-      supabase
-        .from("player_profiles")
-        .select("premium_avatar_claim_credits")
-        .eq("login_code", loginCode)
-        .maybeSingle(),
-    ]);
-
-    const { data: existingClaims, error: countError } = claimsResponse;
+    const { data: existingClaims, error: countError } = await supabase
+      .from("premium_avatar_unlocks")
+      .select("avatar")
+      .eq("login_code", loginCode);
 
     if (countError) {
       throw countError;
@@ -52,16 +37,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ status: "already_claimed", avatar });
     }
 
-    if (profileResponse.error && !isMissingColumnError(profileResponse.error)) {
-      throw profileResponse.error;
-    }
-
-    const rawClaimCredits = Number(profileResponse.data?.premium_avatar_claim_credits);
-    const claimCredits = Number.isFinite(rawClaimCredits)
-      ? Math.max(0, Math.floor(rawClaimCredits))
-      : 1;
-
-    if (currentClaims.length >= claimCredits) {
+    if (currentClaims.length > 0) {
       return NextResponse.json(
         { error: "claim_limit_reached" },
         { status: 409 },
