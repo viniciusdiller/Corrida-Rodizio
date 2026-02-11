@@ -99,11 +99,77 @@ export default function RoomPage() {
       es: "No fue posible registrar el avatar.",
       fr: "Impossible d'enregistrer l'avatar.",
     },
+    claim_registered_success: {
+      pt: "Avatar registrado com sucesso.",
+      en: "Avatar registered successfully.",
+      es: "Avatar registrado con exito.",
+      fr: "Avatar enregistre avec succes.",
+    },
+    claim_prompt_label: {
+      pt: "Codigo de resgate",
+      en: "Claim code",
+      es: "Codigo de canje",
+      fr: "Code de redemption",
+    },
+    claim_prompt_placeholder: {
+      pt: "EX: BETA-2025-01",
+      en: "E.g. BETA-2025-01",
+      es: "Ej: BETA-2025-01",
+      fr: "Ex: BETA-2025-01",
+    },
     welcome_premium_error: {
       pt: "Nao foi possivel liberar o avatar premium.",
       en: "Unable to unlock premium avatar.",
       es: "No fue posible desbloquear el avatar premium.",
       fr: "Impossible de debloquer l'avatar premium.",
+    },
+    welcome_premium_badge: {
+      pt: "Boas-vindas Premium",
+      en: "Premium Welcome",
+      es: "Bienvenida Premium",
+      fr: "Bienvenue Premium",
+    },
+    welcome_premium_title: {
+      pt: "Escolha 1 avatar premium para desbloquear",
+      en: "Choose 1 premium avatar to unlock",
+      es: "Elige 1 avatar premium para desbloquear",
+      fr: "Choisissez 1 avatar premium a debloquer",
+    },
+    welcome_premium_claimed_prefix: {
+      pt: "Avatares premium resgatados",
+      en: "Claimed premium avatars",
+      es: "Avatares premium reclamados",
+      fr: "Avatars premium recuperes",
+    },
+    welcome_premium_choose_later: {
+      pt: "Escolher depois",
+      en: "Choose later",
+      es: "Elegir despues",
+      fr: "Choisir plus tard",
+    },
+    welcome_premium_confirm_title: {
+      pt: "Confirmar desbloqueio",
+      en: "Confirm unlock",
+      es: "Confirmar desbloqueo",
+      fr: "Confirmer le debloquage",
+    },
+    welcome_premium_confirm_message: {
+      pt: "Deseja desbloquear um avatar premium? Esta escolha nao pode ser desfeita.",
+      en: "Unlock this premium avatar? This choice cannot be undone.",
+      es: "Quieres desbloquear este avatar premium? Esta eleccion no se puede deshacer.",
+      fr: "Voulez-vous debloquer cet avatar premium ? Ce choix est definitif.",
+    },
+    welcome_premium_confirm_cancel: {
+      pt: "Cancelar",
+      en: "Cancel",
+      es: "Cancelar",
+      fr: "Annuler",
+    },
+    welcome_premium_confirm_unlock: {
+      pt: "Desbloquear avatar",
+      en: "Unlock avatar",
+      es: "Desbloquear avatar",
+      fr: "Debloquer avatar",
     },
   } as const;
   const tx = <K extends keyof typeof uiText>(key: K) => uiText[key][language];
@@ -134,6 +200,9 @@ export default function RoomPage() {
   const [isLoadingWelcomePremium, setIsLoadingWelcomePremium] = useState(false);
   const [isClaimingWelcomePremium, setIsClaimingWelcomePremium] = useState(false);
   const [welcomePremiumError, setWelcomePremiumError] = useState<string | null>(null);
+  const [pendingWelcomePremiumAvatar, setPendingWelcomePremiumAvatar] = useState<string | null>(
+    null,
+  );
   const [loggedUsername, setLoggedUsername] = useState<string | null>(null);
   const [showAccountOverlay, setShowAccountOverlay] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -303,7 +372,7 @@ export default function RoomPage() {
       const data = await response.json().catch(() => ({}));
       const status = String(data?.status || "");
       if (status === "claimed") {
-        setClaimStatus(`Avatar registrado: ${data?.avatar ?? ""}`.trim());
+        setClaimStatus(tx("claim_registered_success"));
         setClaimCode("");
         return;
       }
@@ -1172,6 +1241,7 @@ export default function RoomPage() {
           setShowWelcomePremiumGrid(false);
           setWelcomePremiumOptions([]);
           setWelcomePremiumError(null);
+          setPendingWelcomePremiumAvatar(null);
         }
         return;
       }
@@ -1210,6 +1280,7 @@ export default function RoomPage() {
         if (isMounted) {
           setWelcomePremiumOptions([]);
           setShowWelcomePremiumGrid(false);
+          setPendingWelcomePremiumAvatar(null);
         }
       } finally {
         if (isMounted) {
@@ -1223,6 +1294,12 @@ export default function RoomPage() {
       isMounted = false;
     };
   }, [currentParticipantId, isSpectator, loggedUsername, premiumClaimedCount]);
+
+  const handleWelcomePremiumSelect = (avatar: string) => {
+    if (!avatar || isClaimingWelcomePremium) return;
+    setWelcomePremiumError(null);
+    setPendingWelcomePremiumAvatar(avatar);
+  };
 
   const handleWelcomePremiumClaim = async (avatar: string) => {
     if (!loggedUsername || !avatar || isClaimingWelcomePremium) return;
@@ -1252,14 +1329,28 @@ export default function RoomPage() {
         setUnlockedPremiumAvatars(nextUnlocked);
         setPremiumClaimedCount(nextUnlocked.length);
         setShowWelcomePremiumGrid(false);
+        setPendingWelcomePremiumAvatar(null);
         await updateAvatar(avatar);
       }
     } catch (error) {
       console.error(error);
+      setPendingWelcomePremiumAvatar(null);
       setWelcomePremiumError(tx("welcome_premium_error"));
     } finally {
       setIsClaimingWelcomePremium(false);
     }
+  };
+
+  const handleWelcomePremiumChooseLater = () => {
+    if (isClaimingWelcomePremium) return;
+    setWelcomePremiumError(null);
+    setPendingWelcomePremiumAvatar(null);
+    setShowWelcomePremiumGrid(false);
+  };
+
+  const handleWelcomePremiumCancelConfirm = () => {
+    if (isClaimingWelcomePremium) return;
+    setPendingWelcomePremiumAvatar(null);
   };
 
 
@@ -1449,43 +1540,91 @@ export default function RoomPage() {
 
 
         {showWelcomePremiumGrid && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-2xl rounded-2xl border border-muted/60 bg-background/95 p-5 shadow-2xl">
-              <div className="space-y-1">
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">
-                  Premium Welcome
-                </p>
-                <h2 className="text-xl font-black">Choose 1 premium avatar to unlock</h2>
-                <p className="text-sm text-muted-foreground">
-                  Claimed premium avatars: {premiumClaimedCount}
-                </p>
-              </div>
-
-              {isLoadingWelcomePremium ? (
-                <p className="mt-4 text-sm text-muted-foreground">{t.common.loading}</p>
-              ) : (
-                <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
-                  {welcomePremiumOptions.map((avatar) => (
-                    <button
-                      key={avatar}
-                      type="button"
-                      className="rounded-xl border border-muted/60 bg-card/70 p-2 transition hover:border-primary"
-                      onClick={() => handleWelcomePremiumClaim(avatar)}
-                      disabled={isClaimingWelcomePremium}
-                    >
-                      <img
-                        src={`/avatars/${avatar}`}
-                        alt={avatar}
-                        className="mx-auto h-16 w-16 object-contain"
-                      />
-                    </button>
-                  ))}
+          <div className="fixed inset-0 z-[70] bg-black/70 p-4">
+            <div className="mx-auto flex h-full w-full max-w-2xl items-center justify-center">
+              <div className="relative flex max-h-[85vh] w-full flex-col overflow-hidden rounded-2xl border border-muted/60 bg-background/95 shadow-2xl">
+                <div className="space-y-1 border-b border-muted/50 bg-background/95 p-5">
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">
+                    {tx("welcome_premium_badge")}
+                  </p>
+                  <h2 className="text-xl font-black">{tx("welcome_premium_title")}</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {tx("welcome_premium_claimed_prefix")}: {premiumClaimedCount}
+                  </p>
                 </div>
-              )}
 
-              {welcomePremiumError && (
-                <p className="mt-3 text-xs text-destructive">{welcomePremiumError}</p>
-              )}
+                <div className="min-h-0 flex-1 overflow-y-auto p-5 pt-4">
+                  {isLoadingWelcomePremium ? (
+                    <p className="text-sm text-muted-foreground">{t.common.loading}</p>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                      {welcomePremiumOptions.map((avatar) => (
+                        <button
+                          key={avatar}
+                          type="button"
+                          className="rounded-xl border border-muted/60 bg-card/70 p-2 transition hover:border-primary"
+                          onClick={() => handleWelcomePremiumSelect(avatar)}
+                          disabled={isClaimingWelcomePremium}
+                        >
+                          <img
+                            src={`/avatars/${avatar}`}
+                            alt={avatar}
+                            className="mx-auto h-16 w-16 object-contain"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {welcomePremiumError && (
+                    <p className="mt-3 text-xs text-destructive">{welcomePremiumError}</p>
+                  )}
+                </div>
+
+                <div className="border-t border-muted/50 p-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleWelcomePremiumChooseLater}
+                    disabled={isClaimingWelcomePremium}
+                  >
+                    {tx("welcome_premium_choose_later")}
+                  </Button>
+                </div>
+
+                {pendingWelcomePremiumAvatar && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/45 p-4">
+                    <div className="w-full max-w-sm rounded-xl border border-muted/60 bg-background p-4 shadow-2xl">
+                      <h3 className="text-sm font-black uppercase tracking-wide">
+                        {tx("welcome_premium_confirm_title")}
+                      </h3>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {tx("welcome_premium_confirm_message")}
+                      </p>
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleWelcomePremiumCancelConfirm}
+                          disabled={isClaimingWelcomePremium}
+                        >
+                          {tx("welcome_premium_confirm_cancel")}
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={() =>
+                            handleWelcomePremiumClaim(pendingWelcomePremiumAvatar)
+                          }
+                          disabled={isClaimingWelcomePremium}
+                        >
+                          {tx("welcome_premium_confirm_unlock")}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -1918,14 +2057,14 @@ export default function RoomPage() {
             {showClaimForm && (
               <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
                 <Label className="text-xs uppercase font-bold text-muted-foreground">
-                  Codigo de resgate
+                  {tx("claim_prompt_label")}
                 </Label>
                 <div className="flex flex-col gap-2 md:flex-row">
                   <Input
                     value={claimCode}
                     onChange={(e) => setClaimCode(e.target.value)}
                     className="h-10"
-                    placeholder="EX: BETA-2025-01"
+                    placeholder={tx("claim_prompt_placeholder")}
                   />
                   <Button
                     className="h-10 md:w-40"
