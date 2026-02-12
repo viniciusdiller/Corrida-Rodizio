@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Pizza, Fish, Beef, Beer, Settings } from "lucide-react";
 import type { FoodType, Race } from "@/types/database";
 import { generateRoomCode } from "@/lib/utils/room-code";
@@ -14,6 +12,7 @@ import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
 import { DEFAULT_AVATAR } from "@/lib/utils/avatars";
 import { useLanguage } from "@/contexts/language-context";
 import { isAlphanumericOnly } from "@/lib/utils/username-validation";
+import { AccountMenuOverlay } from "@/components/account/account-menu-overlay";
 
 // Componentes refatorados
 import { HomeHeader } from "@/components/home/home-header";
@@ -58,6 +57,24 @@ export default function Home() {
       en: "Unable to register the avatar.",
       es: "No fue posible registrar el avatar.",
       fr: "Impossible d'enregistrer l'avatar.",
+    },
+    claim_registered_success: {
+      pt: "Avatar registrado com sucesso.",
+      en: "Avatar registered successfully.",
+      es: "Avatar registrado con exito.",
+      fr: "Avatar enregistre avec succes.",
+    },
+    claim_prompt_label: {
+      pt: "Codigo de resgate",
+      en: "Claim code",
+      es: "Codigo de canje",
+      fr: "Code de redemption",
+    },
+    claim_prompt_placeholder: {
+      pt: "EX: BETA-2025-01",
+      en: "E.g. BETA-2025-01",
+      es: "Ej: BETA-2025-01",
+      fr: "Ex: BETA-2025-01",
     },
     fill_all_fields: {
       pt: "Preencha todos os campos.",
@@ -867,6 +884,9 @@ export default function Home() {
   const handleLogout = () => {
     recoveryReminderShownForLoginRef.current = null;
     setRecoveryEmailState("unknown");
+    setSavedRecoveryEmail(null);
+    setRecoveryEmailInput("");
+    setRecoveryEmailStatus(null);
     setLoginCode(null);
     setMyGroups([]);
     localStorage.removeItem(LOGIN_STORAGE_KEY);
@@ -893,6 +913,7 @@ export default function Home() {
         setShowClaimForm(false);
         setClaimStatus(null);
         setClaimCode("");
+        setRecoveryEmailStatus(null);
       }
       return next;
     });
@@ -919,7 +940,7 @@ export default function Home() {
       const data = await response.json().catch(() => ({}));
       const status = String(data?.status || "");
       if (status === "claimed") {
-        setClaimStatus(`Avatar registrado: ${data?.avatar ?? ""}`.trim());
+        setClaimStatus(tx("claim_registered_success"));
         setClaimCode("");
         return;
       }
@@ -1157,177 +1178,76 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black px-6 pb-4 pt-0 md:px-12 md:pb-12 md:pt-8 transition-colors duration-500">
-      {loginCode && showAccountOverlay && (
-        <>
-          <div
-            className={`fixed inset-0 z-30 transition ${
-              showPasswordForm
-                ? "bg-black/40 backdrop-blur-sm"
-                : "bg-transparent"
-            }`}
-            onClick={toggleAccountOverlay}
-          />
-          <div className="fixed left-3 top-14 z-40 w-[min(320px,calc(100%-1.5rem))] space-y-3 rounded-2xl border border-muted/60 bg-background/95 p-4 shadow-xl backdrop-blur">
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 min-w-[140px]"
-                onClick={() => {
-                  setShowPasswordForm((prev) => !prev);
-                  setPasswordStatus(null);
-                }}
-              >
-                {t.account.change_password}
-              </Button>
-              <Button
-                variant="ghost"
-                className="flex-1 min-w-[120px]"
-                onClick={handleLogout}
-              >
-                {t.account.logout}
-              </Button>
-            </div>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                setShowClaimForm((prev) => !prev);
-                setClaimStatus(null);
-              }}
-            >
-              {showClaimForm ? t.common.back : t.account.register_avatar}
-            </Button>
-            {!isLoadingPermissions && promoPermissions.length > 0 && (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setShowAccountOverlay(false);
-                  router.push("/codigos-promocionais");
-                }}
-              >
-                {t.account.manage_codes}
-              </Button>
-            )}
-            {isIosDevice && !isStandalone && (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setShowAddToHomeHelp(true)}
-              >
-                {t.common.add_to_home}
-              </Button>
-            )}
-            <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
-              <Label className="text-xs uppercase font-bold text-muted-foreground">
-                {tx("recovery_email_label")}
-              </Label>
-              <div className="flex flex-col gap-2 md:flex-row">
-                <Input
-                  type="email"
-                  value={recoveryEmailInput}
-                  onChange={(e) => setRecoveryEmailInput(e.target.value)}
-                  className="h-10"
-                  placeholder={tx("recovery_email_placeholder")}
-                />
-                <Button
-                  className="h-10 md:w-40"
-                  onClick={handleSaveRecoveryEmail}
-                  disabled={isSavingRecoveryEmail}
-                >
-                  {isSavingRecoveryEmail ? "..." : savedRecoveryEmail ? tx("update_btn") : tx("save_btn")}
-                </Button>
-              </div>
-              {recoveryEmailStatus && (
-                <p className="text-xs text-muted-foreground font-semibold">
-                  {recoveryEmailStatus}
-                </p>
-              )}
-            </div>
-
-            {showClaimForm && (
-              <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
-                <Label className="text-xs uppercase font-bold text-muted-foreground">
-                  Codigo de resgate
-                </Label>
-                <div className="flex flex-col gap-2 md:flex-row">
-                  <Input
-                    value={claimCode}
-                    onChange={(e) => setClaimCode(e.target.value)}
-                    className="h-10"
-                    placeholder="EX: BETA-2025-01"
-                  />
-                  <Button
-                    className="h-10 md:w-40"
-                    onClick={handleClaimExclusiveAvatar}
-                    disabled={isClaiming}
-                  >
-                    {isClaiming ? "..." : "OK"}
-                  </Button>
-                </div>
-                {claimStatus && (
-                  <p className="text-xs text-muted-foreground font-semibold">
-                    {claimStatus}
-                  </p>
-                )}
-              </div>
-            )}
-            {showPasswordForm && (
-              <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
-                <div className="space-y-2">
-                  <Label className="text-xs uppercase font-bold text-muted-foreground">
-                    {t.account.current_password}
-                  </Label>
-                  <Input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="h-10"
-                    placeholder="***"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs uppercase font-bold text-muted-foreground">
-                    {t.account.new_password}
-                  </Label>
-                  <Input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="h-10"
-                    placeholder="***"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs uppercase font-bold text-muted-foreground">
-                    {t.account.confirm_password}
-                  </Label>
-                  <Input
-                    type="password"
-                    value={confirmNewPassword}
-                    onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    className="h-10"
-                    placeholder="***"
-                  />
-                </div>
-                {passwordStatus && (
-                  <p className="text-xs text-muted-foreground font-semibold">
-                    {passwordStatus}
-                  </p>
-                )}
-                <Button
-                  className="w-full h-10 rounded-xl font-bold"
-                  onClick={handleChangePassword}
-                  disabled={isUpdatingPassword}
-                >
-                  {isUpdatingPassword
-                    ? t.account.updating
-                    : t.account.update_password}
-                </Button>
-              </div>
-            )}
-          </div>
-        </>
+      {loginCode && (
+        <AccountMenuOverlay
+          open={showAccountOverlay}
+          onClose={toggleAccountOverlay}
+          labels={{
+            addToHome: t.common.add_to_home,
+            back: t.common.back,
+            changePassword: t.account.change_password,
+            claimPromptLabel: tx("claim_prompt_label"),
+            claimPromptPlaceholder: tx("claim_prompt_placeholder"),
+            claimSubmit: "OK",
+            confirmPassword: t.account.confirm_password,
+            currentPassword: t.account.current_password,
+            loading: t.common.loading,
+            logout: t.account.logout,
+            manageCodes: t.account.manage_codes,
+            newPassword: t.account.new_password,
+            recoveryEmailLabel: tx("recovery_email_label"),
+            recoveryEmailPlaceholder: tx("recovery_email_placeholder"),
+            registerAvatar: t.account.register_avatar,
+            save: tx("save_btn"),
+            update: tx("update_btn"),
+            updatePassword: t.account.update_password,
+            updatingPassword: t.account.updating,
+          }}
+          showPasswordForm={showPasswordForm}
+          onTogglePasswordForm={() => {
+            setShowPasswordForm((prev) => !prev);
+            setPasswordStatus(null);
+          }}
+          showClaimForm={showClaimForm}
+          onToggleClaimForm={() => {
+            setShowClaimForm((prev) => !prev);
+            setClaimStatus(null);
+          }}
+          onLogout={handleLogout}
+          canManageCodes={!isLoadingPermissions && promoPermissions.length > 0}
+          onManageCodes={() => {
+            setShowAccountOverlay(false);
+            router.push("/codigos-promocionais");
+          }}
+          showAddToHome={isIosDevice && !isStandalone}
+          onAddToHome={() => setShowAddToHomeHelp(true)}
+          recoveryEmail={{
+            value: recoveryEmailInput,
+            onChange: setRecoveryEmailInput,
+            onSave: handleSaveRecoveryEmail,
+            isSaving: isSavingRecoveryEmail,
+            hasSaved: !!savedRecoveryEmail,
+            status: recoveryEmailStatus,
+          }}
+          claim={{
+            value: claimCode,
+            onChange: setClaimCode,
+            onSubmit: handleClaimExclusiveAvatar,
+            isSubmitting: isClaiming,
+            status: claimStatus,
+          }}
+          password={{
+            current: currentPassword,
+            onCurrentChange: setCurrentPassword,
+            newPassword,
+            onNewChange: setNewPassword,
+            confirm: confirmNewPassword,
+            onConfirmChange: setConfirmNewPassword,
+            onSubmit: handleChangePassword,
+            isSubmitting: isUpdatingPassword,
+            status: passwordStatus,
+          }}
+        />
       )}
       <div className="mx-auto max-w-xl space-y-6">
         <div className="space-y-3">

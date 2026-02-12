@@ -43,6 +43,7 @@ import type { Race, Participant } from "@/types/database";
 import { TeamSelection } from "@/components/room/team-selection";
 import { useLanguage } from "@/contexts/language-context";
 import { getFoodTypeUnit } from "@/lib/utils/food-type";
+import { AccountMenuOverlay } from "@/components/account/account-menu-overlay";
 import {
   isAlphanumericOnly,
   sanitizeAlphanumeric,
@@ -122,6 +123,42 @@ export default function RoomPage() {
       en: "E.g. BETA-2025-01",
       es: "Ej: BETA-2025-01",
       fr: "Ex: BETA-2025-01",
+    },
+    recovery_email_label: {
+      pt: "E-mail de recuperacao",
+      en: "Recovery email",
+      es: "Correo de recuperacion",
+      fr: "E-mail de recuperation",
+    },
+    recovery_email_placeholder: {
+      pt: "voce@email.com",
+      en: "you@email.com",
+      es: "tu@email.com",
+      fr: "vous@email.com",
+    },
+    recovery_email_save_error: {
+      pt: "Nao foi possivel salvar o e-mail.",
+      en: "Could not save the email.",
+      es: "No se pudo guardar el correo.",
+      fr: "Impossible d'enregistrer l'e-mail.",
+    },
+    recovery_email_saved: {
+      pt: "E-mail de recuperacao salvo.",
+      en: "Recovery email saved.",
+      es: "Correo de recuperacion guardado.",
+      fr: "E-mail de recuperation enregistre.",
+    },
+    update_btn: {
+      pt: "Atualizar",
+      en: "Update",
+      es: "Actualizar",
+      fr: "Mettre a jour",
+    },
+    save_btn: {
+      pt: "Salvar",
+      en: "Save",
+      es: "Guardar",
+      fr: "Enregistrer",
     },
     welcome_premium_error: {
       pt: "Nao foi possivel liberar o avatar premium.",
@@ -244,6 +281,14 @@ export default function RoomPage() {
   const [claimCode, setClaimCode] = useState("");
   const [claimStatus, setClaimStatus] = useState<string | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
+  const [recoveryEmailInput, setRecoveryEmailInput] = useState("");
+  const [savedRecoveryEmail, setSavedRecoveryEmail] = useState<string | null>(
+    null,
+  );
+  const [isSavingRecoveryEmail, setIsSavingRecoveryEmail] = useState(false);
+  const [recoveryEmailStatus, setRecoveryEmailStatus] = useState<string | null>(
+    null,
+  );
   const [promoPermissions, setPromoPermissions] = useState<string[]>([]);
   const [needsJoinPrompt, setNeedsJoinPrompt] = useState(true);
   const [raceView, setRaceView] = useState<"live" | "photos">("live");
@@ -358,6 +403,35 @@ export default function RoomPage() {
       setPromoPermissions([]);
     } finally {
       setIsLoadingPermissions(false);
+    }
+  };
+
+  const handleSaveRecoveryEmail = async () => {
+    if (!loggedUsername || !recoveryEmailInput.trim()) {
+      setRecoveryEmailStatus(tx("fill_all_fields"));
+      return;
+    }
+    setIsSavingRecoveryEmail(true);
+    setRecoveryEmailStatus(null);
+    try {
+      const response = await fetch("/api/account/recovery-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          loginCode: loggedUsername.trim().toUpperCase(),
+          email: recoveryEmailInput.trim().toLowerCase(),
+        }),
+      });
+      if (!response.ok) {
+        setRecoveryEmailStatus(tx("recovery_email_save_error"));
+        return;
+      }
+      setSavedRecoveryEmail(recoveryEmailInput.trim().toLowerCase());
+      setRecoveryEmailStatus(tx("recovery_email_saved"));
+    } catch {
+      setRecoveryEmailStatus(tx("recovery_email_save_error"));
+    } finally {
+      setIsSavingRecoveryEmail(false);
     }
   };
 
@@ -791,6 +865,7 @@ export default function RoomPage() {
         setShowClaimForm(false);
         setClaimStatus(null);
         setClaimCode("");
+        setRecoveryEmailStatus(null);
       }
       return next;
     });
@@ -817,6 +892,9 @@ export default function RoomPage() {
     setShowClaimForm(false);
     setClaimStatus(null);
     setClaimCode("");
+    setSavedRecoveryEmail(null);
+    setRecoveryEmailInput("");
+    setRecoveryEmailStatus(null);
     router.push("/");
   };
 
@@ -1212,6 +1290,31 @@ export default function RoomPage() {
 
   useEffect(() => {
     loadPromoPermissions();
+  }, [loggedUsername]);
+
+  useEffect(() => {
+    const loadRecoveryEmail = async () => {
+      if (!loggedUsername) {
+        setSavedRecoveryEmail(null);
+        setRecoveryEmailInput("");
+        setRecoveryEmailStatus(null);
+        return;
+      }
+      try {
+        const response = await fetch(
+          `/api/account/recovery-email?loginCode=${encodeURIComponent(
+            loggedUsername.trim().toUpperCase(),
+          )}`,
+        );
+        const data = await response.json().catch(() => ({}));
+        const email = typeof data?.email === "string" ? data.email : null;
+        setSavedRecoveryEmail(email);
+        setRecoveryEmailInput(email ?? "");
+      } catch {
+        setSavedRecoveryEmail(null);
+      }
+    };
+    loadRecoveryEmail();
   }, [loggedUsername]);
 
   const currentParticipant = participants.find(
@@ -2108,151 +2211,76 @@ export default function RoomPage() {
         </>
       )}
 
-      {loggedUsername && showAccountOverlay && (
-        <>
-          <div
-            className={`fixed inset-0 z-30 transition ${
-              showPasswordForm
-                ? "bg-black/40 backdrop-blur-sm"
-                : "bg-transparent"
-            }`}
-            onClick={toggleAccountOverlay}
-          />
-          <div className="fixed left-3 top-14 z-40 w-[min(320px,calc(100%-1.5rem))] space-y-3 rounded-2xl border border-muted/60 bg-background/95 p-4 shadow-xl backdrop-blur">
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 min-w-[140px]"
-                onClick={() => {
-                  setShowPasswordForm((prev) => !prev);
-                  setPasswordStatus(null);
-                }}
-              >
-                {t.account.change_password}
-              </Button>
-              <Button
-                variant="ghost"
-                className="flex-1 min-w-[120px]"
-                onClick={handleLogout}
-              >
-                {t.account.logout}
-              </Button>
-            </div>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                setShowClaimForm((prev) => !prev);
-                setClaimStatus(null);
-              }}
-            >
-              {showClaimForm ? t.common.back : t.account.register_avatar}
-            </Button>
-            {!isLoadingPermissions && promoPermissions.length > 0 && (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setShowAccountOverlay(false);
-                  router.push("/codigos-promocionais");
-                }}
-              >
-                {t.account.manage_codes}
-              </Button>
-            )}
-            {/* ... restante do overlay de conta */}
-            {isIosDevice && !isStandalone && (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setShowAddToHomeHelp(true)}
-              >
-                {t.common.add_to_home}
-              </Button>
-            )}
-            {showClaimForm && (
-              <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
-                <Label className="text-xs uppercase font-bold text-muted-foreground">
-                  {tx("claim_prompt_label")}
-                </Label>
-                <div className="flex flex-col gap-2 md:flex-row">
-                  <Input
-                    value={claimCode}
-                    onChange={(e) => setClaimCode(e.target.value)}
-                    className="h-10"
-                    placeholder={tx("claim_prompt_placeholder")}
-                  />
-                  <Button
-                    className="h-10 md:w-40"
-                    onClick={handleClaimExclusiveAvatar}
-                    disabled={isClaiming}
-                  >
-                    {isClaiming ? "..." : "OK"}
-                  </Button>
-                </div>
-                {claimStatus && (
-                  <p className="text-xs text-muted-foreground font-semibold">
-                    {claimStatus}
-                  </p>
-                )}
-              </div>
-            )}
-            {showPasswordForm && (
-              <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
-                <div className="space-y-2">
-                  <Label className="text-xs uppercase font-bold text-muted-foreground">
-                    {t.account.current_password}
-                  </Label>
-                  <Input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="h-10"
-                    placeholder="***"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs uppercase font-bold text-muted-foreground">
-                    {t.account.new_password}
-                  </Label>
-                  <Input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="h-10"
-                    placeholder="***"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs uppercase font-bold text-muted-foreground">
-                    {t.account.confirm_password}
-                  </Label>
-                  <Input
-                    type="password"
-                    value={confirmNewPassword}
-                    onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    className="h-10"
-                    placeholder="***"
-                  />
-                </div>
-                {passwordStatus && (
-                  <p className="text-xs text-muted-foreground font-semibold">
-                    {passwordStatus}
-                  </p>
-                )}
-                <Button
-                  className="w-full h-10 rounded-xl font-bold"
-                  onClick={handleChangePassword}
-                  disabled={isUpdatingPassword}
-                >
-                  {isUpdatingPassword
-                    ? t.account.updating
-                    : t.account.update_password}
-                </Button>
-              </div>
-            )}
-          </div>
-        </>
+      {loggedUsername && (
+        <AccountMenuOverlay
+          open={showAccountOverlay}
+          onClose={toggleAccountOverlay}
+          labels={{
+            addToHome: t.common.add_to_home,
+            back: t.common.back,
+            changePassword: t.account.change_password,
+            claimPromptLabel: tx("claim_prompt_label"),
+            claimPromptPlaceholder: tx("claim_prompt_placeholder"),
+            claimSubmit: "OK",
+            confirmPassword: t.account.confirm_password,
+            currentPassword: t.account.current_password,
+            loading: t.common.loading,
+            logout: t.account.logout,
+            manageCodes: t.account.manage_codes,
+            newPassword: t.account.new_password,
+            recoveryEmailLabel: tx("recovery_email_label"),
+            recoveryEmailPlaceholder: tx("recovery_email_placeholder"),
+            registerAvatar: t.account.register_avatar,
+            save: tx("save_btn"),
+            update: tx("update_btn"),
+            updatePassword: t.account.update_password,
+            updatingPassword: t.account.updating,
+          }}
+          showPasswordForm={showPasswordForm}
+          onTogglePasswordForm={() => {
+            setShowPasswordForm((prev) => !prev);
+            setPasswordStatus(null);
+          }}
+          showClaimForm={showClaimForm}
+          onToggleClaimForm={() => {
+            setShowClaimForm((prev) => !prev);
+            setClaimStatus(null);
+          }}
+          onLogout={handleLogout}
+          canManageCodes={!isLoadingPermissions && promoPermissions.length > 0}
+          onManageCodes={() => {
+            setShowAccountOverlay(false);
+            router.push("/codigos-promocionais");
+          }}
+          showAddToHome={isIosDevice && !isStandalone}
+          onAddToHome={() => setShowAddToHomeHelp(true)}
+          recoveryEmail={{
+            value: recoveryEmailInput,
+            onChange: setRecoveryEmailInput,
+            onSave: handleSaveRecoveryEmail,
+            isSaving: isSavingRecoveryEmail,
+            hasSaved: !!savedRecoveryEmail,
+            status: recoveryEmailStatus,
+          }}
+          claim={{
+            value: claimCode,
+            onChange: setClaimCode,
+            onSubmit: handleClaimExclusiveAvatar,
+            isSubmitting: isClaiming,
+            status: claimStatus,
+          }}
+          password={{
+            current: currentPassword,
+            onCurrentChange: setCurrentPassword,
+            newPassword,
+            onNewChange: setNewPassword,
+            confirm: confirmNewPassword,
+            onConfirmChange: setConfirmNewPassword,
+            onSubmit: handleChangePassword,
+            isSubmitting: isUpdatingPassword,
+            status: passwordStatus,
+          }}
+        />
       )}
 
       {/* TOASTS E MODAIS AUXILIARES */}
