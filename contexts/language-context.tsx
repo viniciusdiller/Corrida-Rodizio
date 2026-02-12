@@ -60,6 +60,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     if (accountLanguage) {
       setLanguage(accountLanguage);
       localStorage.setItem("rodizio-lang", accountLanguage);
+      return;
+    }
+
+    const savedLanguage = normalizeLanguage(localStorage.getItem("rodizio-lang"));
+    if (savedLanguage) {
+      void supabase
+        .from("logins")
+        .update({ preferred_language: savedLanguage })
+        .eq("username", normalizedLogin);
     }
   }, []);
 
