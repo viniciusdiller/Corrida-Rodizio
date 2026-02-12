@@ -1258,9 +1258,9 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={toggleAccountOverlay}
-                  className="inline-flex items-center rounded-xl border border-muted/60 bg-background/80 px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground backdrop-blur transition hover:border-primary/40 hover:text-primary whitespace-nowrap"
+                  className="inline-flex h-9 items-center gap-2 rounded-xl border border-border bg-background/90 px-3 text-xs font-bold text-foreground shadow-sm backdrop-blur transition hover:bg-accent/30 whitespace-nowrap"
                 >
-                  <Settings className="mr-2 h-3.5 w-3.5" />
+                  <Settings className="h-4 w-4 text-muted-foreground" />
                   {formatAccountLabel(loginCode)}
                 </button>
               ) : null
