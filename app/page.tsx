@@ -710,7 +710,7 @@ export default function Home() {
           await fetch("/api/account/welcome", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: data, email: normalizedEmail }),
+            body: JSON.stringify({ username: data, email: normalizedEmail, language }),
           }).catch(() => null);
         }
 
