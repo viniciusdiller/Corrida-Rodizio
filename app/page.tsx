@@ -121,16 +121,19 @@ export default function Home() {
   );
 
   // ESTADOS DE CONTA
-  const [accountFlow, setAccountFlow] = useState<"login" | "create" | null>(
+  const [accountFlow, setAccountFlow] = useState<"login" | "create" | "reset" | null>(
     null,
   );
   const [accountCodeInput, setAccountCodeInput] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
   const [accountConfirmPassword, setAccountConfirmPassword] = useState("");
+  const [accountEmail, setAccountEmail] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [loginCode, setLoginCode] = useState<string | null>(null);
   const [accountLoading, setAccountLoading] = useState(false);
+  const [passwordResetLoading, setPasswordResetLoading] = useState(false);
+  const [passwordResetStatus, setPasswordResetStatus] = useState<string | null>(null);
   const [myGroups, setMyGroups] = useState<Race[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [groupsError, setGroupsError] = useState<string | null>(null);
@@ -157,6 +160,10 @@ export default function Home() {
   const [claimCode, setClaimCode] = useState("");
   const [claimStatus, setClaimStatus] = useState<string | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
+  const [recoveryEmailInput, setRecoveryEmailInput] = useState("");
+  const [savedRecoveryEmail, setSavedRecoveryEmail] = useState<string | null>(null);
+  const [isSavingRecoveryEmail, setIsSavingRecoveryEmail] = useState(false);
+  const [recoveryEmailStatus, setRecoveryEmailStatus] = useState<string | null>(null);
   const [promoPermissions, setPromoPermissions] = useState<string[]>([]);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
 
@@ -275,6 +282,61 @@ export default function Home() {
   useEffect(() => {
     loadPromoPermissions();
   }, [loginCode]);
+
+  useEffect(() => {
+    const loadRecoveryEmail = async () => {
+      if (!loginCode) {
+        setSavedRecoveryEmail(null);
+        setRecoveryEmailInput("");
+        return;
+      }
+      try {
+        const response = await fetch(
+          `/api/account/recovery-email?loginCode=${encodeURIComponent(loginCode.trim().toUpperCase())}`,
+        );
+        const data = await response.json().catch(() => ({}));
+        const email = typeof data?.email === "string" ? data.email : null;
+        setSavedRecoveryEmail(email);
+        if (email) {
+          setRecoveryEmailInput(email);
+        }
+      } catch {
+        setSavedRecoveryEmail(null);
+      }
+    };
+
+    loadRecoveryEmail();
+  }, [loginCode]);
+
+  const handleSaveRecoveryEmail = async () => {
+    if (!loginCode || !recoveryEmailInput.trim()) {
+      setRecoveryEmailStatus(tx("fill_all_fields"));
+      return;
+    }
+    setIsSavingRecoveryEmail(true);
+    setRecoveryEmailStatus(null);
+    try {
+      const response = await fetch("/api/account/recovery-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          loginCode: loginCode.trim().toUpperCase(),
+          email: recoveryEmailInput.trim().toLowerCase(),
+        }),
+      });
+      if (!response.ok) {
+        setRecoveryEmailStatus("Não foi possível salvar o e-mail.");
+        return;
+      }
+      setSavedRecoveryEmail(recoveryEmailInput.trim().toLowerCase());
+      setRecoveryEmailStatus("E-mail de recuperação salvo.");
+    } catch {
+      setRecoveryEmailStatus("Não foi possível salvar o e-mail.");
+    } finally {
+      setIsSavingRecoveryEmail(false);
+    }
+  };
+
 
   useEffect(() => {
     let isMounted = true;
@@ -456,6 +518,18 @@ export default function Home() {
       }
 
       if (profileError) throw profileError;
+
+      if (accountEmail.trim()) {
+        await fetch("/api/account/recovery-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            loginCode: data,
+            email: accountEmail.trim().toLowerCase(),
+          }),
+        });
+      }
+
       setHasAcceptedTerms(true);
 
       setLoginCode(data);
@@ -465,6 +539,7 @@ export default function Home() {
       setAccountPassword("");
       setAccountConfirmPassword("");
       setAccountCodeInput("");
+      setAccountEmail("");
       setAcceptTerms(false);
       toast.success(tx("create_account_success"));
     } catch (error: any) {
@@ -525,6 +600,79 @@ export default function Home() {
       toast.error(tx("login_error"));
     } finally {
       setAccountLoading(false);
+    }
+  };
+
+
+  const handleRequestPasswordReset = async (username: string, email: string) => {
+    const normalizedName = username.trim().toUpperCase();
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedName || !normalizedEmail) {
+      setPasswordResetStatus(tx("fill_all_fields"));
+      return;
+    }
+
+    setPasswordResetLoading(true);
+    setPasswordResetStatus(null);
+    try {
+      await fetch("/api/account/password-reset/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: normalizedName, email: normalizedEmail }),
+      });
+      setPasswordResetStatus("Se existir uma conta com esse usuário e e-mail, enviamos um código.");
+    } catch {
+      setPasswordResetStatus("Não foi possível iniciar a recuperação agora.");
+    } finally {
+      setPasswordResetLoading(false);
+    }
+  };
+
+  const handleConfirmPasswordReset = async (payload: {
+    username: string;
+    code: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) => {
+    const normalizedName = payload.username.trim().toUpperCase();
+    const normalizedCode = payload.code.trim().toUpperCase();
+    if (!normalizedName || !normalizedCode || !payload.newPassword.trim() || !payload.confirmPassword.trim()) {
+      setPasswordResetStatus(tx("fill_all_fields"));
+      return;
+    }
+    if (payload.newPassword.trim() !== payload.confirmPassword.trim()) {
+      setPasswordResetStatus(t.account.passwords_do_not_match);
+      return;
+    }
+    if (payload.newPassword.trim().length < 6) {
+      setPasswordResetStatus(t.account.password_too_short);
+      return;
+    }
+
+    setPasswordResetLoading(true);
+    setPasswordResetStatus(null);
+    try {
+      const response = await fetch("/api/account/password-reset/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: normalizedName,
+          code: normalizedCode,
+          newPassword: payload.newPassword,
+        }),
+      });
+      if (!response.ok) {
+        setPasswordResetStatus("Código inválido ou expirado.");
+        return;
+      }
+      setPasswordResetStatus("Senha redefinida com sucesso. Faça login.");
+      setAccountFlow("login");
+      setAccountPassword("");
+      setAccountConfirmPassword("");
+    } catch {
+      setPasswordResetStatus("Não foi possível redefinir a senha agora.");
+    } finally {
+      setPasswordResetLoading(false);
     }
   };
 
@@ -970,6 +1118,33 @@ export default function Home() {
                 {t.common.add_to_home}
               </Button>
             )}
+            <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
+              <Label className="text-xs uppercase font-bold text-muted-foreground">
+                E-mail de recuperação
+              </Label>
+              <div className="flex flex-col gap-2 md:flex-row">
+                <Input
+                  type="email"
+                  value={recoveryEmailInput}
+                  onChange={(e) => setRecoveryEmailInput(e.target.value)}
+                  className="h-10"
+                  placeholder="voce@email.com"
+                />
+                <Button
+                  className="h-10 md:w-40"
+                  onClick={handleSaveRecoveryEmail}
+                  disabled={isSavingRecoveryEmail}
+                >
+                  {isSavingRecoveryEmail ? "..." : savedRecoveryEmail ? "Atualizar" : "Salvar"}
+                </Button>
+              </div>
+              {recoveryEmailStatus && (
+                <p className="text-xs text-muted-foreground font-semibold">
+                  {recoveryEmailStatus}
+                </p>
+              )}
+            </div>
+
             {showClaimForm && (
               <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
                 <Label className="text-xs uppercase font-bold text-muted-foreground">
@@ -1082,6 +1257,7 @@ export default function Home() {
                   accountCodeInput={accountCodeInput}
                   accountPassword={accountPassword}
                   accountConfirmPassword={accountConfirmPassword}
+                  accountEmail={accountEmail}
                   acceptTerms={acceptTerms}
                   setAcceptTerms={setAcceptTerms}
                   myGroups={myGroups}
@@ -1099,6 +1275,11 @@ export default function Home() {
                   setAccountCodeInput={setAccountCodeInput}
                   setAccountPassword={setAccountPassword}
                   setAccountConfirmPassword={setAccountConfirmPassword}
+                  setAccountEmail={setAccountEmail}
+                  onRequestPasswordReset={handleRequestPasswordReset}
+                  onConfirmPasswordReset={handleConfirmPasswordReset}
+                  passwordResetLoading={passwordResetLoading}
+                  passwordResetStatus={passwordResetStatus}
                   onMenuStateChange={setIsAccountMenuOpen}
                   router={router}
                   roomsWithPhotos={roomsWithPhotos}

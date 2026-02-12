@@ -16,11 +16,12 @@ import { sanitizeAlphanumeric } from "@/lib/utils/username-validation";
 
 interface AccountSectionProps {
   loginCode: string | null;
-  accountFlow: "login" | "create" | null;
+  accountFlow: "login" | "create" | "reset" | null;
   accountLoading: boolean;
   accountCodeInput: string;
   accountPassword: string;
   accountConfirmPassword: string;
+  accountEmail: string;
   acceptTerms: boolean;
   setAcceptTerms: (val: boolean) => void;
   roomsWithPhotos: string[];
@@ -35,10 +36,20 @@ interface AccountSectionProps {
   onLoadGroups: () => void;
   onLogin: () => void;
   onCreateLogin: () => void;
-  setAccountFlow: (flow: "login" | "create" | null) => void;
+  setAccountFlow: (flow: "login" | "create" | "reset" | null) => void;
   setAccountCodeInput: (val: string) => void;
   setAccountPassword: (val: string) => void;
   setAccountConfirmPassword: (val: string) => void;
+  setAccountEmail: (val: string) => void;
+  onRequestPasswordReset: (username: string, email: string) => void;
+  onConfirmPasswordReset: (payload: {
+    username: string;
+    code: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) => void;
+  passwordResetLoading: boolean;
+  passwordResetStatus: string | null;
   onMenuStateChange?: (isOpen: boolean) => void;
   router: any;
 }
@@ -50,6 +61,7 @@ export function AccountSection({
   accountCodeInput,
   accountPassword,
   accountConfirmPassword,
+  accountEmail,
   acceptTerms,
   setAcceptTerms,
   roomsWithPhotos,
@@ -66,6 +78,11 @@ export function AccountSection({
   setAccountCodeInput,
   setAccountPassword,
   setAccountConfirmPassword,
+  setAccountEmail,
+  onRequestPasswordReset,
+  onConfirmPasswordReset,
+  passwordResetLoading,
+  passwordResetStatus,
   onToggleHistory,
   setCurrentPage,
   onMenuStateChange,
@@ -76,6 +93,10 @@ export function AccountSection({
   const [usernameAvailability, setUsernameAvailability] = useState<
     "checking" | "available" | "unavailable" | null
   >(null);
+  const [resetCodeSent, setResetCodeSent] = useState(false);
+  const [resetCode, setResetCode] = useState("");
+  const [resetNewPassword, setResetNewPassword] = useState("");
+  const [resetConfirmPassword, setResetConfirmPassword] = useState("");
 
   useEffect(() => {
     if (accountFlow !== "create") {
@@ -114,6 +135,15 @@ export function AccountSection({
   useEffect(() => {
     onMenuStateChange?.(isHistoryView || accountFlow !== null);
   }, [isHistoryView, accountFlow, onMenuStateChange]);
+
+  useEffect(() => {
+    if (accountFlow !== "reset") {
+      setResetCodeSent(false);
+      setResetCode("");
+      setResetNewPassword("");
+      setResetConfirmPassword("");
+    }
+  }, [accountFlow]);
 
   // Lógica de Paginação interna
   const totalPages = Math.ceil(myGroups.length / itemsPerPage);
@@ -303,6 +333,15 @@ export function AccountSection({
                 {accountLoading ? t.common.loading : t.account.login_btn}
               </Button>
               <Button
+                variant="link"
+                className="h-auto px-0 text-xs"
+                onClick={() => {
+                  setAccountFlow("reset");
+                }}
+              >
+                Esqueci minha senha
+              </Button>
+              <Button
                 variant="outline"
                 className="w-full h-12 rounded-xl font-semibold"
                 onClick={() => {
@@ -314,7 +353,7 @@ export function AccountSection({
                 {t.account.no_account}
               </Button>
             </>
-          ) : (
+          ) : accountFlow === "create" ? (
             <>
               <div className="space-y-2">
                 <Label
@@ -348,6 +387,22 @@ export function AccountSection({
                         : t.account.username_not_available}
                   </p>
                 )}
+              </div>
+              <div className="space-y-2">
+                <Label
+                  htmlFor="newRecoveryEmail"
+                  className="text-xs uppercase font-bold text-muted-foreground"
+                >
+                  E-mail de recuperação (opcional)
+                </Label>
+                <Input
+                  id="newRecoveryEmail"
+                  type="email"
+                  placeholder="voce@email.com"
+                  value={accountEmail}
+                  onChange={(e) => setAccountEmail(e.target.value)}
+                  className="h-12"
+                />
               </div>
               <div className="space-y-2">
                 <Label
@@ -433,6 +488,106 @@ export function AccountSection({
               >
                 {t.account.have_account}
               </Button>
+            </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-muted-foreground">
+                  Usuário
+                </Label>
+                <Input
+                  placeholder={t.account.username_placeholder}
+                  value={accountCodeInput}
+                  onChange={(e) =>
+                    setAccountCodeInput(sanitizeAlphanumeric(e.target.value))
+                  }
+                  maxLength={20}
+                  className="h-12 text-lg font-bold"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-muted-foreground">
+                  E-mail de recuperação
+                </Label>
+                <Input
+                  type="email"
+                  placeholder="voce@email.com"
+                  value={accountEmail}
+                  onChange={(e) => setAccountEmail(e.target.value)}
+                  className="h-12"
+                />
+              </div>
+              <Button
+                className="w-full h-12 rounded-xl font-bold"
+                onClick={() => {
+                  onRequestPasswordReset(accountCodeInput, accountEmail);
+                  setResetCodeSent(true);
+                }}
+                disabled={passwordResetLoading}
+              >
+                {passwordResetLoading ? t.common.loading : "Enviar código"}
+              </Button>
+
+              {resetCodeSent && (
+                <>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase font-bold text-muted-foreground">
+                      Código (6 caracteres)
+                    </Label>
+                    <Input
+                      value={resetCode}
+                      onChange={(e) =>
+                        setResetCode(sanitizeAlphanumeric(e.target.value))
+                      }
+                      maxLength={6}
+                      className="h-12 text-lg font-bold tracking-[0.3em]"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase font-bold text-muted-foreground">
+                      Nova senha
+                    </Label>
+                    <Input
+                      type="password"
+                      value={resetNewPassword}
+                      onChange={(e) => setResetNewPassword(e.target.value)}
+                      className="h-12"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase font-bold text-muted-foreground">
+                      Confirmar nova senha
+                    </Label>
+                    <Input
+                      type="password"
+                      value={resetConfirmPassword}
+                      onChange={(e) => setResetConfirmPassword(e.target.value)}
+                      className="h-12"
+                    />
+                  </div>
+                  <Button
+                    className="w-full h-12 rounded-xl font-bold"
+                    onClick={() =>
+                      onConfirmPasswordReset({
+                        username: accountCodeInput,
+                        code: resetCode,
+                        newPassword: resetNewPassword,
+                        confirmPassword: resetConfirmPassword,
+                      })
+                    }
+                    disabled={passwordResetLoading}
+                  >
+                    {passwordResetLoading
+                      ? t.common.loading
+                      : "Redefinir senha"}
+                  </Button>
+                </>
+              )}
+              {passwordResetStatus && (
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {passwordResetStatus}
+                </p>
+              )}
             </>
           )}
           <Button
