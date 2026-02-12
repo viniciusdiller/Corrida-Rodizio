@@ -162,13 +162,16 @@ declare
 begin
   identity_col := public._logins_identity_column();
 
-  for login_value in execute format('select %I from public.logins where coalesce(referral_code, '''') = ''''', identity_col)
+  for login_value in execute format(
+    'select %1$I from public.logins where coalesce(referral_code, '''') = '''' or upper(coalesce(referral_code, '''')) = upper(%1$I) or referral_code !~ ''^[A-Z0-9]{3}[0-9]{4}$''',
+    identity_col
+  )
   loop
     for attempt in 1..50 loop
       generated_code := public._generate_referral_code(login_value);
       begin
         execute format(
-          'update public.logins set referral_code = $1 where %I = $2 and coalesce(referral_code, '''') = ''''',
+          'update public.logins set referral_code = $1 where %1$I = $2 and (coalesce(referral_code, '''') = '''' or upper(coalesce(referral_code, '''')) = upper(%1$I) or referral_code !~ ''^[A-Z0-9]{3}[0-9]{4}$'')',
           identity_col
         ) using generated_code, login_value;
 
