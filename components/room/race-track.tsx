@@ -634,7 +634,7 @@ export function RaceTrack({
                       // AQUI: Só usa animate-pop se estiver no momento do burst. Se não, nenhuma animação de classe.
                       className={`z-10 ${enableAnimations && burstTimestamp ? "animate-pop" : ""}`}
                     >
-                      {isImageAvatar(participant.avatar) ? (
+                      {participant.avatar && isImageAvatar(participant.avatar) ? (
                         <AvatarImage
                           avatar={participant.avatar}
                           enableAnimations={enableAnimations}
