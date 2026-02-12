@@ -1,3 +1,5 @@
+"use client";
+
 import { Check, Copy, Users, Utensils } from "lucide-react";
 import { FoodIcon } from "@/components/food-icon";
 import { Button } from "@/components/ui/button";
@@ -8,7 +10,7 @@ import { getFoodTypeLabel } from "@/lib/utils/food-type";
 interface RoomInfoProps {
   race: Race;
   participantsCount: number;
-  totalItems: number; // Nova prop
+  totalItems: number;
   roomCode: string;
   copied: boolean;
   onCopyCode: () => void;
@@ -75,6 +77,7 @@ export function RoomInfo({
 
         <span className="w-1 h-1 bg-muted rounded-full" />
 
+        {/* Novo contador total */}
         <span className="flex items-center gap-1.5 text-foreground/80">
           <Utensils className="h-3.5 w-3.5" /> {totalItems} total
         </span>

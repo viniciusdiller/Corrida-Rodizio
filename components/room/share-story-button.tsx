@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toBlob } from "html-to-image";
 import { Instagram, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,12 +43,31 @@ export function ShareStoryButton({
   className,
 }: ShareStoryButtonProps) {
   const [loading, setLoading] = useState(false);
+  const [logoBase64, setLogoBase64] = useState("/logo-big-light.png");
   const storyRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
 
   const MOTIVATIONAL_PHRASES = t.hall_of_fame.phrases;
 
-  // ALTERADO: Aumentado para 8 participantes
+  useEffect(() => {
+    const loadLogo = async () => {
+      try {
+        const response = await fetch("/logo-big-light.png");
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === "string") {
+            setLogoBase64(reader.result);
+          }
+        };
+        reader.readAsDataURL(blob);
+      } catch (e) {
+        console.error("Erro ao carregar logo para share", e);
+      }
+    };
+    loadLogo();
+  }, []);
+
   const displayParticipants = participants.slice(0, 8);
 
   const handleShare = async () => {
@@ -56,6 +75,7 @@ export function ShareStoryButton({
     setLoading(true);
 
     try {
+      // Pequeno delay para garantir que o DOM esteja estável
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const blob = await toBlob(storyRef.current, {
@@ -64,6 +84,11 @@ export function ShareStoryButton({
         backgroundColor: "#09090b",
         width: 450,
         height: 800,
+        // Força o carregamento de imagens externas/locais se necessário
+        style: {
+          visibility: "visible",
+          opacity: "1",
+        },
       });
 
       if (!blob) throw new Error("Falha ao gerar imagem");
@@ -115,12 +140,13 @@ export function ShareStoryButton({
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(249,115,22,0.15),transparent_60%)] z-0" />
           <div className="absolute bottom-0 right-0 w-full h-1/2 bg-[radial-gradient(circle_at_100%_100%,rgba(59,130,246,0.1),transparent_50%)] z-0" />
 
-          {/* CABEÇALHO: Logo e Título (Compactado: pt-8 -> pt-4, gap-4 -> gap-2, w-48 -> w-40) */}
+          {/* CABEÇALHO: Compactado (pt-4, gap-2, logo w-36) */}
           <div className="w-full flex flex-col items-center gap-2 z-10 pt-4">
+            {/* Usa o Base64 aqui */}
             <img
-              src="/logo-big-light.png"
+              src={logoBase64}
               alt="Rodízio Race"
-              className="w-40 object-contain drop-shadow-2xl"
+              className="w-36 object-contain drop-shadow-2xl"
               crossOrigin="anonymous"
             />
 
@@ -142,7 +168,7 @@ export function ShareStoryButton({
             </div>
           </div>
 
-          {/* LISTA: Compactado space-y e padding dos cards */}
+          {/* LISTA: Compactado space-y e padding dos cards para caber 8 */}
           <div className="w-full space-y-2 z-10 flex-1 flex flex-col justify-start pb-4">
             {displayParticipants.map((p, i) => {
               const isWinner = p.items_eaten === maxScore && maxScore > 0;
