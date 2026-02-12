@@ -37,6 +37,7 @@ interface AccountMenuLabels {
   updatePassword: string;
   updatingPassword: string;
   confirmPassword: string;
+  premiumCreditsAvailable: string;
 }
 
 interface RecoveryEmailState {
@@ -113,6 +114,9 @@ export function AccountMenuOverlay({
       />
       <div className="fixed left-1/2 top-1/2 z-40 w-[calc(100%-2rem)] max-h-[85vh] max-w-md -translate-x-1/2 -translate-y-1/2 space-y-3 overflow-y-auto rounded-2xl border border-muted/60 bg-background/95 p-4 shadow-xl backdrop-blur">
         <div className="flex flex-wrap gap-2">
+          <div className="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+            {labels.premiumCreditsAvailable}
+          </div>
           <Button
             variant="outline"
             className="min-w-[140px] flex-1 gap-2"

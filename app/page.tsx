@@ -178,6 +178,12 @@ export default function Home() {
       es: "Guardar",
       fr: "Enregistrer",
     },
+    premium_credits_available: {
+      pt: "Créditos premium disponíveis: {count}",
+      en: "Premium credits available: {count}",
+      es: "Créditos premium disponibles: {count}",
+      fr: "Crédits premium disponibles : {count}",
+    },
   } as const;
   const tx = <K extends keyof typeof uiText>(key: K) => uiText[key][language];
 
@@ -244,6 +250,7 @@ export default function Home() {
   const [recoveryEmailStatus, setRecoveryEmailStatus] = useState<string | null>(null);
   const [promoPermissions, setPromoPermissions] = useState<string[]>([]);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
+  const [availablePremiumCredits, setAvailablePremiumCredits] = useState<number | null>(null);
   const recoveryReminderShownForLoginRef = useRef<string | null>(null);
 
   const notifyLoginUpdated = () => {
@@ -360,6 +367,34 @@ export default function Home() {
 
   useEffect(() => {
     loadPromoPermissions();
+  }, [loginCode]);
+
+  const loadAvailablePremiumCredits = async () => {
+    if (!loginCode) {
+      setAvailablePremiumCredits(null);
+      return;
+    }
+    try {
+      const response = await fetch(
+        `/api/premium-avatars/welcome-status?loginCode=${encodeURIComponent(
+          loginCode.trim().toUpperCase(),
+        )}`,
+      );
+      const data = await response.json().catch(() => ({}));
+      const claimCredits = Number(data?.claimCredits);
+      const claimedCount = Number(data?.claimedCount);
+      if (Number.isFinite(claimCredits) && Number.isFinite(claimedCount)) {
+        setAvailablePremiumCredits(Math.max(0, Math.floor(claimCredits - claimedCount)));
+        return;
+      }
+      setAvailablePremiumCredits(0);
+    } catch {
+      setAvailablePremiumCredits(0);
+    }
+  };
+
+  useEffect(() => {
+    loadAvailablePremiumCredits();
   }, [loginCode]);
 
   useEffect(() => {
@@ -898,6 +933,7 @@ export default function Home() {
     setCurrentPassword("");
     setNewPassword("");
     setConfirmNewPassword("");
+    setAvailablePremiumCredits(null);
   };
 
   const toggleAccountOverlay = () => {
@@ -1195,6 +1231,10 @@ export default function Home() {
             logout: t.account.logout,
             manageCodes: t.account.manage_codes,
             newPassword: t.account.new_password,
+            premiumCreditsAvailable: tx("premium_credits_available").replace(
+              "{count}",
+              String(Math.max(0, availablePremiumCredits ?? 0)),
+            ),
             recoveryEmailLabel: tx("recovery_email_label"),
             recoveryEmailPlaceholder: tx("recovery_email_placeholder"),
             registerAvatar: t.account.register_avatar,
@@ -1258,9 +1298,9 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={toggleAccountOverlay}
-                  className="inline-flex items-center rounded-xl border border-muted/60 bg-background/80 px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground backdrop-blur transition hover:border-primary/40 hover:text-primary whitespace-nowrap"
+                  className="inline-flex h-9 items-center gap-2 rounded-xl border border-border bg-background/90 px-3 text-xs font-bold text-foreground shadow-sm backdrop-blur transition hover:bg-accent/30 whitespace-nowrap"
                 >
-                  <Settings className="mr-2 h-3.5 w-3.5" />
+                  <Settings className="h-4 w-4 text-muted-foreground" />
                   {formatAccountLabel(loginCode)}
                 </button>
               ) : null
