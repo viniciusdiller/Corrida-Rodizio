@@ -40,7 +40,10 @@ import type { Race, Participant } from "@/types/database";
 import { TeamSelection } from "@/components/room/team-selection";
 import { useLanguage } from "@/contexts/language-context";
 import { getFoodTypeUnit } from "@/lib/utils/food-type";
-import { isAlphanumericOnly, sanitizeAlphanumeric } from "@/lib/utils/username-validation";
+import {
+  isAlphanumericOnly,
+  sanitizeAlphanumeric,
+} from "@/lib/utils/username-validation";
 
 export default function RoomPage() {
   const { t, language } = useLanguage();
@@ -187,17 +190,23 @@ export default function RoomPage() {
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
   const [isPremiumPlayer, setIsPremiumPlayer] = useState(false);
   const [exclusiveAvatars, setExclusiveAvatars] = useState<string[]>([]);
-  const [unlockedPremiumAvatars, setUnlockedPremiumAvatars] = useState<string[]>([]);
+  const [unlockedPremiumAvatars, setUnlockedPremiumAvatars] = useState<
+    string[]
+  >([]);
   const [premiumClaimedCount, setPremiumClaimedCount] = useState(0);
   const [premiumClaimCredits, setPremiumClaimCredits] = useState(1);
   const [showWelcomePremiumGrid, setShowWelcomePremiumGrid] = useState(false);
-  const [welcomePremiumOptions, setWelcomePremiumOptions] = useState<string[]>([]);
+  const [welcomePremiumOptions, setWelcomePremiumOptions] = useState<string[]>(
+    [],
+  );
   const [isLoadingWelcomePremium, setIsLoadingWelcomePremium] = useState(false);
-  const [isClaimingWelcomePremium, setIsClaimingWelcomePremium] = useState(false);
-  const [welcomePremiumError, setWelcomePremiumError] = useState<string | null>(null);
-  const [pendingWelcomePremiumAvatar, setPendingWelcomePremiumAvatar] = useState<string | null>(
+  const [isClaimingWelcomePremium, setIsClaimingWelcomePremium] =
+    useState(false);
+  const [welcomePremiumError, setWelcomePremiumError] = useState<string | null>(
     null,
   );
+  const [pendingWelcomePremiumAvatar, setPendingWelcomePremiumAvatar] =
+    useState<string | null>(null);
   const [loggedUsername, setLoggedUsername] = useState<string | null>(null);
   const [showAccountOverlay, setShowAccountOverlay] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -214,9 +223,8 @@ export default function RoomPage() {
   const [accountConfirmPassword, setAccountConfirmPassword] = useState("");
   const [accountAcceptTerms, setAccountAcceptTerms] = useState(false);
   const [accountStatus, setAccountStatus] = useState<string | null>(null);
-  const [accountUsernameAvailability, setAccountUsernameAvailability] = useState<
-    "checking" | "available" | "unavailable" | null
-  >(null);
+  const [accountUsernameAvailability, setAccountUsernameAvailability] =
+    useState<"checking" | "available" | "unavailable" | null>(null);
   const [accountLoading, setAccountLoading] = useState(false);
   const [nameStatus, setNameStatus] = useState<string | null>(null);
   const [isUpdatingName, setIsUpdatingName] = useState(false);
@@ -295,15 +303,13 @@ export default function RoomPage() {
   }, [hasPhotoTimeline, raceView]);
 
   const handleCopyCode = () => {
-    const lang =
-      language ?? localStorage.getItem("rodizio-lang") ?? "pt";
+    const lang = language ?? localStorage.getItem("rodizio-lang") ?? "pt";
     const url = new URL(window.location.href);
     url.searchParams.set("lang", lang);
     navigator.clipboard.writeText(url.toString());
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
 
   const handleExit = () => {
     if (window.history.length > 1) {
@@ -444,7 +450,11 @@ export default function RoomPage() {
 
         setCurrentParticipantId(resolvedParticipantId);
 
-        if (raceData.photo_mode && raceData.room_code && resolvedParticipantId) {
+        if (
+          raceData.photo_mode &&
+          raceData.room_code &&
+          resolvedParticipantId
+        ) {
           try {
             const response = await fetch(
               `/api/race-photos/timeline?roomCode=${encodeURIComponent(
@@ -528,9 +538,7 @@ export default function RoomPage() {
     if (!race) return;
     const participant = participants.find((item) => item.id === participantId);
     if (race.is_team_mode && !participant?.team) {
-      toast.error(
-        t.room.choose_team_required ?? "Escolha um time para jogar.",
-      );
+      toast.error(t.room.choose_team_required ?? "Escolha um time para jogar.");
       return;
     }
     if (!checkAddCooldown(event)) return;
@@ -554,7 +562,9 @@ export default function RoomPage() {
     event?: MouseEvent<HTMLButtonElement>,
   ) => {
     if (change > 0 && race?.is_team_mode) {
-      const participant = participants.find((item) => item.id === participantId);
+      const participant = participants.find(
+        (item) => item.id === participantId,
+      );
       if (!participant?.team) {
         toast.error(
           t.room.choose_team_required ?? "Escolha um time para jogar.",
@@ -574,9 +584,7 @@ export default function RoomPage() {
     await updateCount(participantId, change);
   };
 
-  const handlePhotoSelected = async (
-    event: ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handlePhotoSelected = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !photoTarget || !race) {
       setPhotoTarget(null);
@@ -592,7 +600,7 @@ export default function RoomPage() {
         bitmap = await createImageBitmap(input);
         let ratio = Math.min(
           1,
-          maxSize / Math.max(bitmap.width, bitmap.height)
+          maxSize / Math.max(bitmap.width, bitmap.height),
         );
         let blob: Blob | null = null;
         let targetWidth = Math.round(bitmap.width * ratio);
@@ -607,7 +615,7 @@ export default function RoomPage() {
           ctx.clearRect(0, 0, targetWidth, targetHeight);
           ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
           blob = await new Promise<Blob | null>((resolve) =>
-            canvas.toBlob(resolve, "image/jpeg", quality)
+            canvas.toBlob(resolve, "image/jpeg", quality),
           );
           if (blob && blob.size <= 1_000_000) break;
           quality = Math.max(0.5, quality - 0.1);
@@ -921,7 +929,10 @@ export default function RoomPage() {
 
     const storageKey = getParticipantStorageKey(roomCode);
 
-    if (existingParticipant && existingParticipant.id !== currentParticipant.id) {
+    if (
+      existingParticipant &&
+      existingParticipant.id !== currentParticipant.id
+    ) {
       const itemsToKeep = Math.max(
         existingParticipant.items_eaten ?? 0,
         currentParticipant.items_eaten ?? 0,
@@ -991,7 +1002,11 @@ export default function RoomPage() {
   const isMissingColumn = (error: unknown, column: string) => {
     if (!error || typeof error !== "object") return false;
     const maybeError = error as any;
-    const haystack = [maybeError.message, maybeError.details, maybeError.hint].filter(Boolean);
+    const haystack = [
+      maybeError.message,
+      maybeError.details,
+      maybeError.hint,
+    ].filter(Boolean);
     return (
       maybeError.code === "42703" ||
       haystack.some((text: string) => text?.includes(column))
@@ -1040,7 +1055,10 @@ export default function RoomPage() {
         .from("player_profiles")
         .upsert(profilePayload);
 
-      if (profileError && isMissingColumn(profileError, "premium_avatar_claim_credits")) {
+      if (
+        profileError &&
+        isMissingColumn(profileError, "premium_avatar_claim_credits")
+      ) {
         const fallback = await supabase.from("player_profiles").upsert({
           login_code: normalizedUsername,
           terms_accepted_at: profilePayload.terms_accepted_at,
@@ -1213,7 +1231,9 @@ export default function RoomPage() {
 
         if (!profileError && isMounted) {
           setIsPremiumPlayer(!!profileData?.is_premium);
-          const profileCredits = Number(profileData?.premium_avatar_claim_credits);
+          const profileCredits = Number(
+            profileData?.premium_avatar_claim_credits,
+          );
           setPremiumClaimCredits(
             Number.isFinite(profileCredits)
               ? Math.max(0, Math.floor(profileCredits))
@@ -1234,10 +1254,11 @@ export default function RoomPage() {
           );
         }
 
-        const { data: premiumUnlocks, error: premiumUnlocksError } = await supabase
-          .from("premium_avatar_unlocks")
-          .select("avatar")
-          .eq("login_code", loginCode);
+        const { data: premiumUnlocks, error: premiumUnlocksError } =
+          await supabase
+            .from("premium_avatar_unlocks")
+            .select("avatar")
+            .eq("login_code", loginCode);
 
         if (!premiumUnlocksError && isMounted) {
           const unlocks = Array.isArray(premiumUnlocks)
@@ -1407,11 +1428,15 @@ export default function RoomPage() {
     setPendingWelcomePremiumAvatar(null);
   };
 
-
   if (loading) return <LoadingScreen />;
   if (!race) return null;
 
   const maxScore = Math.max(...participants.map((p) => p.items_eaten), 0);
+
+  const totalItemsEaten = participants.reduce(
+    (acc, p) => acc + p.items_eaten,
+    0,
+  );
 
   if (!race.is_active) {
     return (
@@ -1483,6 +1508,7 @@ export default function RoomPage() {
         <RoomInfo
           race={race}
           participantsCount={participants.length}
+          totalItems={totalItemsEaten}
           roomCode={roomCode}
           copied={copied}
           onCopyCode={handleCopyCode}
@@ -1591,22 +1617,25 @@ export default function RoomPage() {
           />
         )}
 
-
-
         {showWelcomePremiumGrid && (
           <div className="fixed inset-0 z-[70] bg-black/70 p-4">
             <div className="mx-auto flex h-full w-full max-w-2xl items-center justify-center">
               <div className="relative flex max-h-[85vh] w-full flex-col overflow-hidden rounded-2xl border border-muted/60 bg-background/95 shadow-2xl">
                 <div className="space-y-1 border-b border-muted/50 bg-background/95 p-5">
-                  <h2 className="text-xl font-black">{tx("welcome_premium_title")}</h2>
+                  <h2 className="text-xl font-black">
+                    {tx("welcome_premium_title")}
+                  </h2>
                   <p className="text-sm text-muted-foreground">
-                    {tx("welcome_premium_claimed_prefix")}: {premiumClaimedCount}/{premiumClaimCredits}
+                    {tx("welcome_premium_claimed_prefix")}:{" "}
+                    {premiumClaimedCount}/{premiumClaimCredits}
                   </p>
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto p-5 pt-4">
                   {isLoadingWelcomePremium ? (
-                    <p className="text-sm text-muted-foreground">{t.common.loading}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t.common.loading}
+                    </p>
                   ) : (
                     <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
                       {welcomePremiumOptions.map((avatar) => (
@@ -1628,7 +1657,9 @@ export default function RoomPage() {
                   )}
 
                   {welcomePremiumError && (
-                    <p className="mt-3 text-xs text-destructive">{welcomePremiumError}</p>
+                    <p className="mt-3 text-xs text-destructive">
+                      {welcomePremiumError}
+                    </p>
                   )}
                 </div>
 
@@ -1672,7 +1703,9 @@ export default function RoomPage() {
                         <Button
                           type="button"
                           onClick={() =>
-                            handleWelcomePremiumClaim(pendingWelcomePremiumAvatar)
+                            handleWelcomePremiumClaim(
+                              pendingWelcomePremiumAvatar,
+                            )
                           }
                           disabled={isClaimingWelcomePremium}
                         >
@@ -1716,7 +1749,10 @@ export default function RoomPage() {
 
         {hasPhotoTimeline && raceView === "photos" ? (
           <div className="rounded-2xl border border-muted/60 bg-background/70 p-4 shadow-sm">
-            <PhotoFeed race={race} currentParticipantId={currentParticipantId} />
+            <PhotoFeed
+              race={race}
+              currentParticipantId={currentParticipantId}
+            />
           </div>
         ) : (
           <>
@@ -1784,7 +1820,9 @@ export default function RoomPage() {
           <Button
             size="icon"
             className={`relative h-14 w-14 overflow-hidden rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/90 via-primary to-primary/70 text-white shadow-[0_16px_35px_rgba(0,0,0,0.22)] backdrop-blur transition-all duration-200 hover:scale-105 active:scale-95 ${
-              isAddCooldownActive || isUploadingPhoto ? "opacity-50 grayscale" : ""
+              isAddCooldownActive || isUploadingPhoto
+                ? "opacity-50 grayscale"
+                : ""
             }`}
             onClick={(event) =>
               isPhotoRequired
@@ -1810,8 +1848,8 @@ export default function RoomPage() {
               </span>
             )}
           </Button>
-          </div>
-        )}
+        </div>
+      )}
 
       <div className="fixed left-4 bottom-4 sm:left-6 sm:bottom-6 pb-[env(safe-area-inset-bottom)] z-40">
         <Button
@@ -1838,7 +1876,8 @@ export default function RoomPage() {
                   {t.room.confirm_remove_title ?? "Remover jogador?"}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {(t.room.confirm_remove_desc ??
+                  {(
+                    t.room.confirm_remove_desc ??
                     "Tem certeza que deseja remover {name} da corrida?"
                   ).replace("{name}", removeTarget.name)}
                 </p>
@@ -1917,32 +1956,34 @@ export default function RoomPage() {
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label>{t.account.username_label}</Label>
-                <Input
-                  value={accountUsername}
-                  onChange={(event) => {
-                    setAccountUsername(sanitizeAlphanumeric(event.target.value));
-                    setAccountStatus(null);
-                  }}
-                  placeholder={t.account.username_placeholder}
-                  maxLength={20}
-                />
-                {accountUsernameAvailability && (
-                  <p
-                    className={`text-xs font-semibold ${
-                      accountUsernameAvailability === "available"
-                        ? "text-emerald-600"
-                        : accountUsernameAvailability === "unavailable"
-                          ? "text-destructive"
-                          : "text-muted-foreground"
-                    }`}
-                  >
-                    {accountUsernameAvailability === "checking"
-                      ? t.account.username_checking
-                      : accountUsernameAvailability === "available"
-                        ? t.account.username_available
-                        : t.account.username_not_available}
-                  </p>
-                )}
+                  <Input
+                    value={accountUsername}
+                    onChange={(event) => {
+                      setAccountUsername(
+                        sanitizeAlphanumeric(event.target.value),
+                      );
+                      setAccountStatus(null);
+                    }}
+                    placeholder={t.account.username_placeholder}
+                    maxLength={20}
+                  />
+                  {accountUsernameAvailability && (
+                    <p
+                      className={`text-xs font-semibold ${
+                        accountUsernameAvailability === "available"
+                          ? "text-emerald-600"
+                          : accountUsernameAvailability === "unavailable"
+                            ? "text-destructive"
+                            : "text-muted-foreground"
+                      }`}
+                    >
+                      {accountUsernameAvailability === "checking"
+                        ? t.account.username_checking
+                        : accountUsernameAvailability === "available"
+                          ? t.account.username_available
+                          : t.account.username_not_available}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>{t.account.password_label}</Label>
@@ -1971,7 +2012,9 @@ export default function RoomPage() {
                         onChange={(event) =>
                           setAccountConfirmPassword(event.target.value)
                         }
-                        placeholder={t.account.create_confirm_password_placeholder}
+                        placeholder={
+                          t.account.create_confirm_password_placeholder
+                        }
                         onKeyDown={(event) => {
                           if (event.key === "Enter") handleConnectCreate();
                         }}
@@ -1987,7 +2030,10 @@ export default function RoomPage() {
                           setAccountAcceptTerms(event.target.checked)
                         }
                       />
-                      <label htmlFor="room-account-terms" className="leading-tight">
+                      <label
+                        htmlFor="room-account-terms"
+                        className="leading-tight"
+                      >
                         {t.common.terms_pre_link}
                         <a
                           href="/terms"
@@ -2034,8 +2080,8 @@ export default function RoomPage() {
                   {accountLoading
                     ? t.common.loading
                     : accountFlow === "login"
-                    ? t.account.login_btn
-                    : t.account.create_btn}
+                      ? t.account.login_btn
+                      : t.account.create_btn}
                 </Button>
                 <Button
                   variant="ghost"

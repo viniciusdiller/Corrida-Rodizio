@@ -48,7 +48,8 @@ export function ShareStoryButton({
 
   const MOTIVATIONAL_PHRASES = t.hall_of_fame.phrases;
 
-  const displayParticipants = participants.slice(0, 5);
+  // ALTERADO: Aumentado para 8 participantes
+  const displayParticipants = participants.slice(0, 8);
 
   const handleShare = async () => {
     if (!storyRef.current) return;
@@ -114,34 +115,35 @@ export function ShareStoryButton({
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(249,115,22,0.15),transparent_60%)] z-0" />
           <div className="absolute bottom-0 right-0 w-full h-1/2 bg-[radial-gradient(circle_at_100%_100%,rgba(59,130,246,0.1),transparent_50%)] z-0" />
 
-          {/* CABEÇALHO: Logo e Título */}
-          <div className="w-full flex flex-col items-center gap-4 z-10 pt-8">
+          {/* CABEÇALHO: Logo e Título (Compactado: pt-8 -> pt-4, gap-4 -> gap-2, w-48 -> w-40) */}
+          <div className="w-full flex flex-col items-center gap-2 z-10 pt-4">
             <img
               src="/logo-big-light.png"
               alt="Rodízio Race"
-              className="w-48 object-contain drop-shadow-2xl"
+              className="w-40 object-contain drop-shadow-2xl"
               crossOrigin="anonymous"
             />
 
             <div className="text-center">
-              <h2 className="text-3xl font-black italic tracking-tighter uppercase text-white drop-shadow-md">
+              <h2 className="text-2xl font-black italic tracking-tighter uppercase text-white drop-shadow-md">
                 {t.hall_of_fame.title}
               </h2>
-              <div className="inline-block mt-2 px-4 py-1 bg-white/10 rounded-full border border-white/10 backdrop-blur-md">
-                <p className="text-orange-400 font-mono text-sm tracking-widest font-bold">
+              <div className="inline-block mt-1 px-4 py-0.5 bg-white/10 rounded-full border border-white/10 backdrop-blur-md">
+                <p className="text-orange-400 font-mono text-xs tracking-widest font-bold">
                   SALA: {race.room_code}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="w-full z-10 pb-8 flex flex-col items-center gap-2">
-            <div className="bg-white text-black px-4 py-1 rounded-full font-black text-lg tracking-wide shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+          <div className="w-full z-10 pb-4 flex flex-col items-center gap-2 mt-2">
+            <div className="bg-white text-black px-4 py-0.5 rounded-full font-black text-sm tracking-wide shadow-[0_0_20px_rgba(255,255,255,0.3)]">
               rodiziorace.mechama.eu
             </div>
           </div>
 
-          <div className="w-full space-y-3 z-10 flex-1 flex flex-col justify-start pb-6">
+          {/* LISTA: Compactado space-y e padding dos cards */}
+          <div className="w-full space-y-2 z-10 flex-1 flex flex-col justify-start pb-4">
             {displayParticipants.map((p, i) => {
               const isWinner = p.items_eaten === maxScore && maxScore > 0;
               const team = TEAM_OPTIONS.find((t) => t.id === p.team);
@@ -149,14 +151,14 @@ export function ShareStoryButton({
               return (
                 <div
                   key={p.id}
-                  className={`relative overflow-hidden flex items-center justify-between p-3 rounded-2xl border-2 shadow-lg ${
+                  className={`relative overflow-hidden flex items-center justify-between p-2.5 rounded-xl border-2 shadow-lg ${
                     isWinner
                       ? "border-orange-500 bg-gradient-to-r from-orange-500/20 to-orange-900/20 scale-105 z-20"
                       : "border-white/5 bg-zinc-900/80 backdrop-blur-sm"
                   }`}
                 >
-                  <div className="flex items-center gap-3 z-10">
-                    <div className="text-3xl font-black italic w-8 text-center opacity-50">
+                  <div className="flex items-center gap-2.5 z-10">
+                    <div className="text-2xl font-black italic w-6 text-center opacity-50">
                       #{i + 1}
                     </div>
 
@@ -165,17 +167,17 @@ export function ShareStoryButton({
                         <img
                           src={getAvatarUrl(p.avatar)}
                           alt=""
-                          className="h-10 w-10 object-contain drop-shadow-md"
+                          className="h-9 w-9 object-contain drop-shadow-md"
                           crossOrigin="anonymous"
                         />
                       ) : (
-                        <span className="inline-block h-10 w-10 rounded-full bg-white/10" />
+                        <span className="inline-block h-9 w-9 rounded-full bg-white/10" />
                       )}
                     </div>
 
                     <div>
                       <p
-                        className={`font-bold text-lg leading-tight flex items-center gap-2 ${isWinner ? "text-white" : "text-zinc-200"}`}
+                        className={`font-bold text-base leading-tight flex items-center gap-2 ${isWinner ? "text-white" : "text-zinc-200"}`}
                       >
                         {p.name}
                         {race.is_team_mode && team && (
@@ -186,7 +188,7 @@ export function ShareStoryButton({
                           </span>
                         )}
                       </p>
-                      <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-wider max-w-[250px] truncate">
+                      <p className="text-[8px] text-zinc-400 uppercase font-bold tracking-wider max-w-[220px] truncate">
                         {isWinner
                           ? "👑 " + t.hall_of_fame.legendary
                           : MOTIVATIONAL_PHRASES[
@@ -198,11 +200,11 @@ export function ShareStoryButton({
 
                   <div className="text-right z-10 pl-2">
                     <p
-                      className={`text-2xl font-black leading-none ${isWinner ? "text-orange-400" : "text-white"}`}
+                      className={`text-xl font-black leading-none ${isWinner ? "text-orange-400" : "text-white"}`}
                     >
                       {p.items_eaten}
                     </p>
-                    <p className="text-[8px] uppercase font-bold text-zinc-500 mt-0.5">
+                    <p className="text-[7px] uppercase font-bold text-zinc-500 mt-0.5">
                       {getItemLabel(p.items_eaten)}
                     </p>
                   </div>
@@ -210,8 +212,6 @@ export function ShareStoryButton({
               );
             })}
           </div>
-
-          {/* RODAPÉ: Link em destaque (Movido para baixo) */}
         </div>
       </div>
     </>

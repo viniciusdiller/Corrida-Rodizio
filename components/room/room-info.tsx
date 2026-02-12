@@ -1,4 +1,4 @@
-import { Check, Copy, Users } from "lucide-react";
+import { Check, Copy, Users, Utensils } from "lucide-react";
 import { FoodIcon } from "@/components/food-icon";
 import { Button } from "@/components/ui/button";
 import { Race } from "@/types/database";
@@ -8,6 +8,7 @@ import { getFoodTypeLabel } from "@/lib/utils/food-type";
 interface RoomInfoProps {
   race: Race;
   participantsCount: number;
+  totalItems: number; // Nova prop
   roomCode: string;
   copied: boolean;
   onCopyCode: () => void;
@@ -16,6 +17,7 @@ interface RoomInfoProps {
 export function RoomInfo({
   race,
   participantsCount,
+  totalItems,
   roomCode,
   copied,
   onCopyCode,
@@ -65,12 +67,20 @@ export function RoomInfo({
           </Button>
         </div>
       </div>
-      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground sm:gap-3 sm:text-xs">
+      <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground sm:gap-3 sm:text-xs">
         <span className="flex items-center gap-1.5">
           <Users className="h-3.5 w-3.5" /> {participantsCount}{" "}
           {t.common.players}
         </span>
+
         <span className="w-1 h-1 bg-muted rounded-full" />
+
+        <span className="flex items-center gap-1.5 text-foreground/80">
+          <Utensils className="h-3.5 w-3.5" /> {totalItems} total
+        </span>
+
+        <span className="w-1 h-1 bg-muted rounded-full" />
+
         <span className="text-primary animate-pulse">● {t.common.live}</span>
       </div>
     </div>
