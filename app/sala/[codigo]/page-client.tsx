@@ -1050,6 +1050,7 @@ export default function RoomPage() {
       const { data, error } = await supabase.rpc("create_login", {
         p_username: normalizedUsername,
         p_password: accountPassword,
+        p_preferred_language: language,
       });
       if (error || !data) {
         setAccountStatus(t.account.create_error);

@@ -575,6 +575,7 @@ export default function Home() {
       const { data, error } = await supabase.rpc("create_login", {
         p_username: normalizedName,
         p_password: accountPassword,
+        p_preferred_language: language,
       });
 
       if (error) throw error;
