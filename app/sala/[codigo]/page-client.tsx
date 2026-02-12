@@ -31,7 +31,10 @@ import { LoadingScreen } from "@/components/room/loading-screen";
 import { JoinRoomViaLink } from "@/components/room/join-room-via-link"; // NOVO IMPORT
 import { PhotoFeed } from "@/components/room/photo-feed";
 
-import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
+import {
+  getLegacyParticipantStorageKey,
+  getParticipantStorageKey,
+} from "@/lib/utils/participant-storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -171,6 +174,12 @@ export default function RoomPage() {
   } as const;
   const tx = <K extends keyof typeof uiText>(key: K) => uiText[key][language];
   const LOGIN_STORAGE_KEY = "rodizio-race-login";
+
+  const clearParticipantSession = (loginCode?: string | null) => {
+    const participantKey = getParticipantStorageKey(roomCode, loginCode);
+    localStorage.removeItem(participantKey);
+    localStorage.removeItem(getLegacyParticipantStorageKey(roomCode));
+  };
   const addCooldownMs = 4_000;
 
   const params = useParams();
@@ -416,21 +425,23 @@ export default function RoomPage() {
         setParticipants(participantsData);
         let resolvedParticipantId: string | null = null;
         if (!isSpectator) {
-          const storageKey = getParticipantStorageKey(roomCode);
-          const storedId = localStorage.getItem(storageKey);
+          const loginCode = localStorage.getItem(LOGIN_STORAGE_KEY);
+          const normalizedLogin = loginCode?.trim().toUpperCase();
+          const storageKey = getParticipantStorageKey(roomCode, normalizedLogin);
+          const legacyStorageKey = getLegacyParticipantStorageKey(roomCode);
+          const storedId =
+            localStorage.getItem(storageKey) || localStorage.getItem(legacyStorageKey);
 
           if (storedId) {
             const isValid = participantsData.some((p) => p.id === storedId);
             if (isValid) {
               resolvedParticipantId = storedId;
             } else {
-              localStorage.removeItem(storageKey);
+              clearParticipantSession(normalizedLogin);
             }
           }
 
           if (!resolvedParticipantId) {
-            const loginCode = localStorage.getItem(LOGIN_STORAGE_KEY);
-            const normalizedLogin = loginCode?.trim().toUpperCase();
             if (normalizedLogin) {
               const match = participantsData.find((participant) => {
                 const loginMatch = participant.login_code?.trim().toUpperCase();
@@ -443,6 +454,7 @@ export default function RoomPage() {
               if (match) {
                 resolvedParticipantId = match.id;
                 localStorage.setItem(storageKey, match.id);
+                localStorage.removeItem(legacyStorageKey);
               }
             }
           }
@@ -754,8 +766,7 @@ export default function RoomPage() {
         throw new Error("remove_failed");
       }
       if (removeTarget.id === currentParticipantId) {
-        const participantKey = getParticipantStorageKey(roomCode);
-        localStorage.removeItem(participantKey);
+        clearParticipantSession(loggedUsername);
         setCurrentParticipantId(null);
         setNeedsJoinPrompt(true);
       }
@@ -787,8 +798,7 @@ export default function RoomPage() {
 
   const handleLogout = () => {
     localStorage.removeItem(LOGIN_STORAGE_KEY);
-    const participantKey = getParticipantStorageKey(roomCode);
-    localStorage.removeItem(participantKey);
+    clearParticipantSession(loggedUsername);
     if (typeof window !== "undefined") {
       sessionStorage.removeItem(`rodizio-join-prompt-${roomCode}`);
       window.dispatchEvent(new Event("rodizio-login-updated"));
@@ -927,7 +937,7 @@ export default function RoomPage() {
       .eq("login_code", normalizedUsername)
       .maybeSingle();
 
-    const storageKey = getParticipantStorageKey(roomCode);
+    const storageKey = getParticipantStorageKey(roomCode, normalizedUsername);
 
     if (
       existingParticipant &&
@@ -961,6 +971,7 @@ export default function RoomPage() {
     }
 
     localStorage.setItem(LOGIN_STORAGE_KEY, normalizedUsername);
+    localStorage.removeItem(getLegacyParticipantStorageKey(roomCode));
     setLoggedUsername(normalizedUsername);
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("rodizio-login-updated"));

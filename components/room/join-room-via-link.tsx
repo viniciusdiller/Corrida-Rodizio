@@ -9,7 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/language-context";
 import { getFoodTypeLabel } from "@/lib/utils/food-type";
-import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
+import {
+  getLegacyParticipantStorageKey,
+  getParticipantStorageKey,
+} from "@/lib/utils/participant-storage";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 import { LogIn, User, Loader2 } from "lucide-react";
@@ -81,7 +84,7 @@ export function JoinRoomViaLink({
         .limit(1)
         .maybeSingle();
 
-      const storageKey = getParticipantStorageKey(roomCode);
+      const storageKey = getParticipantStorageKey(roomCode, null);
 
       if (existingByName) {
         const existingLogin = existingByName.login_code?.trim().toUpperCase();
@@ -133,7 +136,7 @@ export function JoinRoomViaLink({
       .eq("login_code", normalizedUsername)
       .maybeSingle();
 
-    const storageKey = getParticipantStorageKey(roomCode);
+    const storageKey = getParticipantStorageKey(roomCode, normalizedUsername);
 
     if (existingParticipant) {
       const { data: nameConflict } = await supabase
@@ -231,6 +234,7 @@ export function JoinRoomViaLink({
       }
 
       localStorage.setItem("rodizio-race-login", normalizedUsername);
+      localStorage.removeItem(getLegacyParticipantStorageKey(roomCode));
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("rodizio-login-updated"));
       }
@@ -270,6 +274,7 @@ export function JoinRoomViaLink({
       }
 
       localStorage.setItem("rodizio-race-login", normalizedUsername);
+      localStorage.removeItem(getLegacyParticipantStorageKey(roomCode));
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("rodizio-login-updated"));
       }
@@ -283,7 +288,7 @@ export function JoinRoomViaLink({
         .maybeSingle();
 
       if (existingParticipant) {
-        const storageKey = getParticipantStorageKey(roomCode);
+        const storageKey = getParticipantStorageKey(roomCode, normalizedUsername);
         localStorage.setItem(storageKey, existingParticipant.id);
         onJoin();
         return;
