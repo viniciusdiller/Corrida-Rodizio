@@ -38,6 +38,7 @@ interface AccountMenuLabels {
   updatingPassword: string;
   confirmPassword: string;
   premiumCreditsAvailable: string;
+  invitationCodeLabel: string;
 }
 
 interface RecoveryEmailState {
@@ -70,6 +71,7 @@ interface PasswordState {
 }
 
 interface AccountMenuOverlayProps {
+  invitationCode: string | null;
   canManageCodes: boolean;
   claim: ClaimState;
   labels: AccountMenuLabels;
@@ -103,6 +105,7 @@ export function AccountMenuOverlay({
   recoveryEmail,
   claim,
   password,
+  invitationCode,
 }: AccountMenuOverlayProps) {
   if (!open) return null;
 
@@ -117,6 +120,11 @@ export function AccountMenuOverlay({
           <div className="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300">
             {labels.premiumCreditsAvailable}
           </div>
+          {invitationCode && (
+            <div className="w-full rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-primary">
+              {labels.invitationCodeLabel}: {invitationCode}
+            </div>
+          )}
           <Button
             variant="outline"
             className="min-w-[140px] flex-1 gap-2"
