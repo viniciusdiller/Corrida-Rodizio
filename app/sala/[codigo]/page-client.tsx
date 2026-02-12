@@ -208,6 +208,18 @@ export default function RoomPage() {
       es: "Desbloquear avatar",
       fr: "Debloquer avatar",
     },
+    premium_credits_available: {
+      pt: "Créditos premium disponíveis: {count}",
+      en: "Premium credits available: {count}",
+      es: "Créditos premium disponibles: {count}",
+      fr: "Crédits premium disponibles : {count}",
+    },
+    invitation_code_label: {
+      pt: "Código de convite",
+      en: "Invitation code",
+      es: "Código de invitación",
+      fr: "Code d'invitation",
+    },
   } as const;
   const tx = <K extends keyof typeof uiText>(key: K) => uiText[key][language];
   const LOGIN_STORAGE_KEY = "rodizio-race-login";
@@ -2213,6 +2225,7 @@ export default function RoomPage() {
 
       {loggedUsername && (
         <AccountMenuOverlay
+          invitationCode={loggedUsername}
           open={showAccountOverlay}
           onClose={toggleAccountOverlay}
           labels={{
@@ -2235,6 +2248,8 @@ export default function RoomPage() {
             update: tx("update_btn"),
             updatePassword: t.account.update_password,
             updatingPassword: t.account.updating,
+            premiumCreditsAvailable: tx("premium_credits_available").replace("{count}", String(Math.max(premiumClaimCredits - premiumClaimedCount, 0))),
+            invitationCodeLabel: tx("invitation_code_label"),
           }}
           showPasswordForm={showPasswordForm}
           onTogglePasswordForm={() => {

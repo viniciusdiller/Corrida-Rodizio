@@ -184,6 +184,24 @@ export default function Home() {
       es: "Créditos premium disponibles: {count}",
       fr: "Crédits premium disponibles : {count}",
     },
+    referral_applied_success: {
+      pt: "Código de indicação aplicado! Ambos receberam +1 crédito premium.",
+      en: "Referral code applied! Both accounts received +1 premium credit.",
+      es: "¡Código de referencia aplicado! Ambas cuentas recibieron +1 crédito premium.",
+      fr: "Code de parrainage appliqué ! Les deux comptes ont reçu +1 crédit premium.",
+    },
+    referral_applied_error: {
+      pt: "Não foi possível aplicar o código de indicação.",
+      en: "Could not apply the referral code.",
+      es: "No se pudo aplicar el código de referencia.",
+      fr: "Impossible d'appliquer le code de parrainage.",
+    },
+    invitation_code_label: {
+      pt: "Código de convite",
+      en: "Invitation code",
+      es: "Código de invitación",
+      fr: "Code d'invitation",
+    },
   } as const;
   const tx = <K extends keyof typeof uiText>(key: K) => uiText[key][language];
 
@@ -211,6 +229,7 @@ export default function Home() {
   const [accountPassword, setAccountPassword] = useState("");
   const [accountConfirmPassword, setAccountConfirmPassword] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
+  const [accountReferralCode, setAccountReferralCode] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [loginCode, setLoginCode] = useState<string | null>(null);
@@ -654,14 +673,26 @@ export default function Home() {
       if (profileError) throw profileError;
 
       if (accountEmail.trim()) {
-        await fetch("/api/account/recovery-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            loginCode: data,
-            email: accountEmail.trim().toLowerCase(),
-          }),
+        const { data: savedRecoveryEmail } = await supabase.rpc("set_login_recovery_email", {
+          p_username: data,
+          p_email: accountEmail.trim().toLowerCase(),
         });
+
+        if (savedRecoveryEmail && accountReferralCode.trim()) {
+          const { data: referralApplied, error: referralError } = await supabase.rpc(
+            "apply_login_referral",
+            {
+              p_referred_login_code: data,
+              p_referral_code: accountReferralCode.trim().toUpperCase(),
+            },
+          );
+
+          if (referralError || !referralApplied) {
+            toast.error(tx("referral_applied_error"));
+          } else {
+            toast.success(tx("referral_applied_success"));
+          }
+        }
       }
 
       setHasAcceptedTerms(true);
@@ -676,6 +707,7 @@ export default function Home() {
       setAccountConfirmPassword("");
       setAccountCodeInput("");
       setAccountEmail("");
+      setAccountReferralCode("");
       setAcceptTerms(false);
       toast.success(tx("create_account_success"));
     } catch (error: any) {
@@ -1216,6 +1248,7 @@ export default function Home() {
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black px-6 pb-4 pt-0 md:px-12 md:pb-12 md:pt-8 transition-colors duration-500">
       {loginCode && (
         <AccountMenuOverlay
+          invitationCode={loginCode}
           open={showAccountOverlay}
           onClose={toggleAccountOverlay}
           labels={{
@@ -1235,6 +1268,7 @@ export default function Home() {
               "{count}",
               String(Math.max(0, availablePremiumCredits ?? 0)),
             ),
+            invitationCodeLabel: tx("invitation_code_label"),
             recoveryEmailLabel: tx("recovery_email_label"),
             recoveryEmailPlaceholder: tx("recovery_email_placeholder"),
             registerAvatar: t.account.register_avatar,
@@ -1318,6 +1352,7 @@ export default function Home() {
                   accountPassword={accountPassword}
                   accountConfirmPassword={accountConfirmPassword}
                   accountEmail={accountEmail}
+                  accountReferralCode={accountReferralCode}
                   acceptTerms={acceptTerms}
                   setAcceptTerms={setAcceptTerms}
                   myGroups={myGroups}
@@ -1336,6 +1371,7 @@ export default function Home() {
                   setAccountPassword={setAccountPassword}
                   setAccountConfirmPassword={setAccountConfirmPassword}
                   setAccountEmail={setAccountEmail}
+                  setAccountReferralCode={setAccountReferralCode}
                   onRequestPasswordReset={handleRequestPasswordReset}
                   onConfirmPasswordReset={handleConfirmPasswordReset}
                   passwordResetLoading={passwordResetLoading}

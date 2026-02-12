@@ -22,6 +22,7 @@ interface AccountSectionProps {
   accountPassword: string;
   accountConfirmPassword: string;
   accountEmail: string;
+  accountReferralCode: string;
   acceptTerms: boolean;
   setAcceptTerms: (val: boolean) => void;
   roomsWithPhotos: string[];
@@ -41,6 +42,7 @@ interface AccountSectionProps {
   setAccountPassword: (val: string) => void;
   setAccountConfirmPassword: (val: string) => void;
   setAccountEmail: (val: string) => void;
+  setAccountReferralCode: (val: string) => void;
   onRequestPasswordReset: (username: string, email: string) => void;
   onConfirmPasswordReset: (payload: {
     username: string;
@@ -62,6 +64,7 @@ export function AccountSection({
   accountPassword,
   accountConfirmPassword,
   accountEmail,
+  accountReferralCode,
   acceptTerms,
   setAcceptTerms,
   roomsWithPhotos,
@@ -79,6 +82,7 @@ export function AccountSection({
   setAccountPassword,
   setAccountConfirmPassword,
   setAccountEmail,
+  setAccountReferralCode,
   onRequestPasswordReset,
   onConfirmPasswordReset,
   passwordResetLoading,
@@ -410,6 +414,27 @@ export function AccountSection({
                   className="h-12"
                 />
               </div>
+              {accountEmail.trim() && (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="newReferralCode"
+                    className="text-xs uppercase font-bold text-muted-foreground"
+                  >
+                    {t.account.referral_code_optional_label}
+                  </Label>
+                  <Input
+                    id="newReferralCode"
+                    placeholder={t.account.referral_code_placeholder}
+                    value={accountReferralCode}
+                    onChange={(e) => setAccountReferralCode(sanitizeAlphanumeric(e.target.value))}
+                    maxLength={20}
+                    className="h-12"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    {t.account.referral_code_hint}
+                  </p>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label
                   htmlFor="newPassword"
