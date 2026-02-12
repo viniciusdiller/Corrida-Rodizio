@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -101,66 +101,6 @@ export default function Home() {
       es: "Error al entrar a la sala.",
       fr: "Impossible de rejoindre la salle.",
     },
-    recovery_email_reminder: {
-      pt: "Adicione um e-mail de recuperação para sua segurança. Clique na engrenagem para configurar.",
-      en: "Add a recovery email for your safety. Click the gear to set it up.",
-      es: "Agrega un correo de recuperación para tu seguridad. Haz clic en el engranaje para configurarlo.",
-      fr: "Ajoutez un e-mail de récupération pour votre sécurité. Cliquez sur l'engrenage pour le configurer.",
-    },
-    recovery_email_save_error: {
-      pt: "Não foi possível salvar o e-mail.",
-      en: "Could not save the email.",
-      es: "No se pudo guardar el correo.",
-      fr: "Impossible d'enregistrer l'e-mail.",
-    },
-    recovery_email_saved: {
-      pt: "E-mail de recuperação salvo.",
-      en: "Recovery email saved.",
-      es: "Correo de recuperación guardado.",
-      fr: "E-mail de récupération enregistré.",
-    },
-    reset_username_email_mismatch: {
-      pt: "Usuário e e-mail não conferem.",
-      en: "Username and email do not match.",
-      es: "El usuario y el correo no coinciden.",
-      fr: "Le nom d'utilisateur et l'e-mail ne correspondent pas.",
-    },
-    reset_request_start_error: {
-      pt: "Não foi possível iniciar a recuperação agora.",
-      en: "Could not start recovery right now.",
-      es: "No se pudo iniciar la recuperación ahora.",
-      fr: "Impossible de démarrer la récupération pour le moment.",
-    },
-    reset_request_sent: {
-      pt: "Se existir uma conta com esse usuário e e-mail, enviamos um código.",
-      en: "If an account exists with that username and email, we sent a code.",
-      es: "Si existe una cuenta con ese usuario y correo, enviamos un código.",
-      fr: "Si un compte existe avec ce nom d'utilisateur et cet e-mail, nous avons envoyé un code.",
-    },
-    recovery_email_label: {
-      pt: "E-mail de recuperação",
-      en: "Recovery email",
-      es: "Correo de recuperación",
-      fr: "E-mail de récupération",
-    },
-    recovery_email_placeholder: {
-      pt: "voce@email.com",
-      en: "you@email.com",
-      es: "tu@email.com",
-      fr: "vous@email.com",
-    },
-    update_btn: {
-      pt: "Atualizar",
-      en: "Update",
-      es: "Actualizar",
-      fr: "Mettre à jour",
-    },
-    save_btn: {
-      pt: "Salvar",
-      en: "Save",
-      es: "Guardar",
-      fr: "Enregistrer",
-    },
   } as const;
   const tx = <K extends keyof typeof uiText>(key: K) => uiText[key][language];
 
@@ -226,7 +166,6 @@ export default function Home() {
   const [recoveryEmailStatus, setRecoveryEmailStatus] = useState<string | null>(null);
   const [promoPermissions, setPromoPermissions] = useState<string[]>([]);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
-  const recoveryReminderShownForLoginRef = useRef<string | null>(null);
 
   const notifyLoginUpdated = () => {
     if (typeof window !== "undefined") {
@@ -369,17 +308,6 @@ export default function Home() {
     loadRecoveryEmail();
   }, [loginCode]);
 
-  useEffect(() => {
-    if (!loginCode || savedRecoveryEmail) return;
-    if (recoveryReminderShownForLoginRef.current === loginCode) return;
-
-    toast.info(tx("recovery_email_reminder"), {
-      position: "top-center",
-      duration: 7000,
-    });
-    recoveryReminderShownForLoginRef.current = loginCode;
-  }, [loginCode, savedRecoveryEmail]);
-
   const handleSaveRecoveryEmail = async () => {
     if (!loginCode || !recoveryEmailInput.trim()) {
       setRecoveryEmailStatus(tx("fill_all_fields"));
@@ -397,13 +325,13 @@ export default function Home() {
         }),
       });
       if (!response.ok) {
-        setRecoveryEmailStatus(tx("recovery_email_save_error"));
+        setRecoveryEmailStatus("Não foi possível salvar o e-mail.");
         return;
       }
       setSavedRecoveryEmail(recoveryEmailInput.trim().toLowerCase());
-      setRecoveryEmailStatus(tx("recovery_email_saved"));
+      setRecoveryEmailStatus("E-mail de recuperação salvo.");
     } catch {
-      setRecoveryEmailStatus(tx("recovery_email_save_error"));
+      setRecoveryEmailStatus("Não foi possível salvar o e-mail.");
     } finally {
       setIsSavingRecoveryEmail(false);
     }
@@ -605,7 +533,6 @@ export default function Home() {
       setHasAcceptedTerms(true);
 
       setLoginCode(data);
-      recoveryReminderShownForLoginRef.current = null;
       localStorage.setItem(LOGIN_STORAGE_KEY, data);
       notifyLoginUpdated();
       setAccountFlow(null);
@@ -662,7 +589,6 @@ export default function Home() {
       }
 
       setLoginCode(normalizedName);
-      recoveryReminderShownForLoginRef.current = null;
       localStorage.setItem(LOGIN_STORAGE_KEY, normalizedName);
       notifyLoginUpdated();
       setAccountFlow(null);
@@ -689,26 +615,14 @@ export default function Home() {
     setPasswordResetLoading(true);
     setPasswordResetStatus(null);
     try {
-      const response = await fetch("/api/account/password-reset/request", {
+      await fetch("/api/account/password-reset/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: normalizedName, email: normalizedEmail }),
       });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        if (data?.reason === "username_email_mismatch") {
-          toast.error(tx("reset_username_email_mismatch"), { position: "bottom-center" });
-          setPasswordResetStatus(tx("reset_username_email_mismatch"));
-          return;
-        }
-        setPasswordResetStatus(tx("reset_request_start_error"));
-        return;
-      }
-
-      setPasswordResetStatus(tx("reset_request_sent"));
+      setPasswordResetStatus("Se existir uma conta com esse usuário e e-mail, enviamos um código.");
     } catch {
-      setPasswordResetStatus(tx("reset_request_start_error"));
+      setPasswordResetStatus("Não foi possível iniciar a recuperação agora.");
     } finally {
       setPasswordResetLoading(false);
     }
@@ -853,7 +767,6 @@ export default function Home() {
   };
 
   const handleLogout = () => {
-    recoveryReminderShownForLoginRef.current = null;
     setLoginCode(null);
     setMyGroups([]);
     localStorage.removeItem(LOGIN_STORAGE_KEY);
@@ -1207,7 +1120,7 @@ export default function Home() {
             )}
             <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
               <Label className="text-xs uppercase font-bold text-muted-foreground">
-                {tx("recovery_email_label")}
+                E-mail de recuperação
               </Label>
               <div className="flex flex-col gap-2 md:flex-row">
                 <Input
@@ -1215,14 +1128,14 @@ export default function Home() {
                   value={recoveryEmailInput}
                   onChange={(e) => setRecoveryEmailInput(e.target.value)}
                   className="h-10"
-                  placeholder={tx("recovery_email_placeholder")}
+                  placeholder="voce@email.com"
                 />
                 <Button
                   className="h-10 md:w-40"
                   onClick={handleSaveRecoveryEmail}
                   disabled={isSavingRecoveryEmail}
                 >
-                  {isSavingRecoveryEmail ? "..." : savedRecoveryEmail ? tx("update_btn") : tx("save_btn")}
+                  {isSavingRecoveryEmail ? "..." : savedRecoveryEmail ? "Atualizar" : "Salvar"}
                 </Button>
               </div>
               {recoveryEmailStatus && (

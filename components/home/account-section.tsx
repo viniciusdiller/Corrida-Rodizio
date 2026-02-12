@@ -288,9 +288,6 @@ export function AccountSection({
         <div className="space-y-4 rounded-2xl border border-muted/60 bg-background/60 p-4">
           {accountFlow === "login" ? (
             <>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-red-500">*</span> {t.account.required_fields_hint}
-              </p>
               <div className="space-y-2">
                 <Label
                   htmlFor="accountCode"
@@ -342,7 +339,7 @@ export function AccountSection({
                   setAccountFlow("reset");
                 }}
               >
-                {t.account.forgot_password}
+                Esqueci minha senha
               </Button>
               <Button
                 variant="outline"
@@ -358,15 +355,12 @@ export function AccountSection({
             </>
           ) : accountFlow === "create" ? (
             <>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-red-500">*</span> {t.account.required_fields_hint}
-              </p>
               <div className="space-y-2">
                 <Label
                   htmlFor="newUsername"
                   className="text-xs uppercase font-bold text-muted-foreground"
                 >
-                  {t.account.create_username_label} <span className="text-red-500">*</span>
+                  {t.account.create_username_label}
                 </Label>
                 <Input
                   id="newUsername"
@@ -399,12 +393,12 @@ export function AccountSection({
                   htmlFor="newRecoveryEmail"
                   className="text-xs uppercase font-bold text-muted-foreground"
                 >
-                  {t.account.recovery_email_optional_label}
+                  E-mail de recuperação (opcional)
                 </Label>
                 <Input
                   id="newRecoveryEmail"
                   type="email"
-                  placeholder={t.account.recovery_email_placeholder}
+                  placeholder="voce@email.com"
                   value={accountEmail}
                   onChange={(e) => setAccountEmail(e.target.value)}
                   className="h-12"
@@ -415,7 +409,7 @@ export function AccountSection({
                   htmlFor="newPassword"
                   className="text-xs uppercase font-bold text-muted-foreground"
                 >
-                  {t.account.create_password_label} <span className="text-red-500">*</span>
+                  {t.account.create_password_label}
                 </Label>
                 <Input
                   id="newPassword"
@@ -431,7 +425,7 @@ export function AccountSection({
                   htmlFor="confirmNewPassword"
                   className="text-xs uppercase font-bold text-muted-foreground"
                 >
-                  {t.account.create_confirm_password_label} <span className="text-red-500">*</span>
+                  {t.account.create_confirm_password_label}
                 </Label>
                 <Input
                   id="confirmNewPassword"
@@ -451,7 +445,6 @@ export function AccountSection({
                   onChange={(e) => setAcceptTerms(e.target.checked)}
                 />
                 <label htmlFor="account-terms" className="leading-tight">
-                  <span className="text-red-500">*</span>{" "}
                   {t.common.terms_pre_link}
                   <a
                     href="/terms"
@@ -500,7 +493,7 @@ export function AccountSection({
             <>
               <div className="space-y-2">
                 <Label className="text-xs uppercase font-bold text-muted-foreground">
-                  {t.account.reset_username_label}
+                  Usuário
                 </Label>
                 <Input
                   placeholder={t.account.username_placeholder}
@@ -514,11 +507,11 @@ export function AccountSection({
               </div>
               <div className="space-y-2">
                 <Label className="text-xs uppercase font-bold text-muted-foreground">
-                  {t.account.recovery_email_label}
+                  E-mail de recuperação
                 </Label>
                 <Input
                   type="email"
-                  placeholder={t.account.recovery_email_placeholder}
+                  placeholder="voce@email.com"
                   value={accountEmail}
                   onChange={(e) => setAccountEmail(e.target.value)}
                   className="h-12"
@@ -532,14 +525,14 @@ export function AccountSection({
                 }}
                 disabled={passwordResetLoading}
               >
-                {passwordResetLoading ? t.common.loading : t.account.send_reset_code_btn}
+                {passwordResetLoading ? t.common.loading : "Enviar código"}
               </Button>
 
               {resetCodeSent && (
                 <>
                   <div className="space-y-2">
                     <Label className="text-xs uppercase font-bold text-muted-foreground">
-                      {t.account.reset_code_label}
+                      Código (6 caracteres)
                     </Label>
                     <Input
                       value={resetCode}
@@ -552,7 +545,7 @@ export function AccountSection({
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs uppercase font-bold text-muted-foreground">
-                      {t.account.reset_new_password_label}
+                      Nova senha
                     </Label>
                     <Input
                       type="password"
@@ -563,7 +556,7 @@ export function AccountSection({
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs uppercase font-bold text-muted-foreground">
-                      {t.account.reset_confirm_password_label}
+                      Confirmar nova senha
                     </Label>
                     <Input
                       type="password"
@@ -586,7 +579,7 @@ export function AccountSection({
                   >
                     {passwordResetLoading
                       ? t.common.loading
-                      : t.account.reset_password_btn}
+                      : "Redefinir senha"}
                   </Button>
                 </>
               )}
