@@ -673,10 +673,19 @@ export default function Home() {
       if (profileError) throw profileError;
 
       if (accountEmail.trim()) {
+        const normalizedEmail = accountEmail.trim().toLowerCase();
         const { data: savedRecoveryEmail } = await supabase.rpc("set_login_recovery_email", {
           p_username: data,
-          p_email: accountEmail.trim().toLowerCase(),
+          p_email: normalizedEmail,
         });
+
+        if (savedRecoveryEmail) {
+          await fetch("/api/account/welcome", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: data, email: normalizedEmail }),
+          }).catch(() => null);
+        }
 
         if (savedRecoveryEmail && accountReferralCode.trim()) {
           const { data: referralApplied, error: referralError } = await supabase.rpc(
