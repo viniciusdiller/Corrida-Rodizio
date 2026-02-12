@@ -156,19 +156,26 @@ do $$
 declare
   identity_col text;
   login_value text;
+  current_referral_code text;
   generated_code text;
   attempt int;
   was_updated int;
 begin
   identity_col := public._logins_identity_column();
 
-  for login_value in execute format(
-    'select %1$I from public.logins',
+  for login_value, current_referral_code in execute format(
+    'select %1$I, referral_code from public.logins',
     identity_col
   )
   loop
     for attempt in 1..50 loop
       generated_code := public._generate_referral_code(login_value);
+
+      if upper(generated_code) = upper(coalesce(current_referral_code, ''))
+         or upper(generated_code) = upper(coalesce(login_value, '')) then
+        continue;
+      end if;
+
       begin
         execute format(
           'update public.logins set referral_code = $1 where %1$I = $2',
