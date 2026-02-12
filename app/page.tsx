@@ -799,7 +799,10 @@ export default function Home() {
         },
       );
       if (participant)
-        localStorage.setItem(getParticipantStorageKey(code), participant.id);
+        localStorage.setItem(
+          getParticipantStorageKey(code, loginCode),
+          participant.id,
+        );
       router.push(`/sala/${code}`);
     } catch (e) {
       toast.error(tx("create_room_error"));
@@ -865,7 +868,7 @@ export default function Home() {
 
         // Se encontrar, re-associa o usuário ao registro antigo (mantém o status VIP se houver)
         localStorage.setItem(
-          getParticipantStorageKey(normalized),
+          getParticipantStorageKey(normalized, normalizedLoginCode),
           existingParticipant.id,
         );
         router.push(`/sala/${normalized}`);
@@ -892,7 +895,7 @@ export default function Home() {
       if (pError) throw pError;
       if (participant)
         localStorage.setItem(
-          getParticipantStorageKey(normalized),
+          getParticipantStorageKey(normalized, normalizedLoginCode),
           participant.id,
         );
 
