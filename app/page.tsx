@@ -233,6 +233,7 @@ export default function Home() {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [loginCode, setLoginCode] = useState<string | null>(null);
+  const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [accountLoading, setAccountLoading] = useState(false);
   const [passwordResetLoading, setPasswordResetLoading] = useState(false);
   const [passwordResetStatus, setPasswordResetStatus] = useState<string | null>(null);
@@ -323,7 +324,10 @@ export default function Home() {
 
   useEffect(() => {
     const storedLogin = localStorage.getItem(LOGIN_STORAGE_KEY);
-    if (storedLogin) setLoginCode(storedLogin);
+    if (storedLogin) {
+      setLoginCode(storedLogin);
+      setInvitationCode(storedLogin);
+    }
   }, []);
 
   useEffect(() => {
@@ -414,6 +418,29 @@ export default function Home() {
 
   useEffect(() => {
     loadAvailablePremiumCredits();
+  }, [loginCode]);
+
+  useEffect(() => {
+    const loadInvitationCode = async () => {
+      if (!loginCode) {
+        setInvitationCode(null);
+        return;
+      }
+
+      const normalized = loginCode.trim().toUpperCase();
+      try {
+        const response = await fetch(
+          `/api/account/referral-code?loginCode=${encodeURIComponent(normalized)}`
+        );
+        const data = await response.json().catch(() => ({}));
+        const referralCode = typeof data?.referralCode === "string" ? data.referralCode : null;
+        setInvitationCode(referralCode ?? normalized);
+      } catch {
+        setInvitationCode(normalized);
+      }
+    };
+
+    loadInvitationCode();
   }, [loginCode]);
 
   useEffect(() => {
@@ -964,6 +991,7 @@ export default function Home() {
     setRecoveryEmailInput("");
     setRecoveryEmailStatus(null);
     setLoginCode(null);
+    setInvitationCode(null);
     setMyGroups([]);
     localStorage.removeItem(LOGIN_STORAGE_KEY);
     setShowAccountOverlay(false);
@@ -1257,7 +1285,7 @@ export default function Home() {
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black px-6 pb-4 pt-0 md:px-12 md:pb-12 md:pt-8 transition-colors duration-500">
       {loginCode && (
         <AccountMenuOverlay
-          invitationCode={loginCode}
+          invitationCode={invitationCode}
           open={showAccountOverlay}
           onClose={toggleAccountOverlay}
           labels={{

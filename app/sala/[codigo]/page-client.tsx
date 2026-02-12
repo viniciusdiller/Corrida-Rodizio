@@ -266,6 +266,7 @@ export default function RoomPage() {
   const [pendingWelcomePremiumAvatar, setPendingWelcomePremiumAvatar] =
     useState<string | null>(null);
   const [loggedUsername, setLoggedUsername] = useState<string | null>(null);
+  const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [showAccountOverlay, setShowAccountOverlay] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -891,6 +892,7 @@ export default function RoomPage() {
       window.dispatchEvent(new Event("rodizio-login-updated"));
     }
     setLoggedUsername(null);
+    setInvitationCode(null);
     setCurrentParticipantId(null);
     setNeedsJoinPrompt(true);
     setShowAccountOverlay(false);
@@ -1302,6 +1304,29 @@ export default function RoomPage() {
 
   useEffect(() => {
     loadPromoPermissions();
+  }, [loggedUsername]);
+
+  useEffect(() => {
+    const loadInvitationCode = async () => {
+      if (!loggedUsername) {
+        setInvitationCode(null);
+        return;
+      }
+
+      const normalized = loggedUsername.trim().toUpperCase();
+      try {
+        const response = await fetch(
+          `/api/account/referral-code?loginCode=${encodeURIComponent(normalized)}`
+        );
+        const data = await response.json().catch(() => ({}));
+        const referralCode = typeof data?.referralCode === "string" ? data.referralCode : null;
+        setInvitationCode(referralCode ?? normalized);
+      } catch {
+        setInvitationCode(normalized);
+      }
+    };
+
+    loadInvitationCode();
   }, [loggedUsername]);
 
   useEffect(() => {
@@ -2225,7 +2250,7 @@ export default function RoomPage() {
 
       {loggedUsername && (
         <AccountMenuOverlay
-          invitationCode={loggedUsername}
+          invitationCode={invitationCode}
           open={showAccountOverlay}
           onClose={toggleAccountOverlay}
           labels={{
