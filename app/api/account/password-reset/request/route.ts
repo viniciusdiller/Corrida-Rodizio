@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const email = String(body?.email || "").trim().toLowerCase();
 
     if (!username || !email) {
-      return NextResponse.json({ success: false, reason: "missing_fields" }, { status: 400 });
+      return NextResponse.json({ success: true });
     }
 
     const code = generateCode();
@@ -29,14 +29,12 @@ export async function POST(request: Request) {
       p_code: code,
     });
 
-    if (!data) {
-      return NextResponse.json({ success: false, reason: "username_email_mismatch" }, { status: 400 });
+    if (data) {
+      await sendPasswordResetCodeEmail({ to: email, code, username });
     }
-
-    await sendPasswordResetCodeEmail({ to: email, code, username });
 
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ success: false, reason: "unexpected_error" }, { status: 500 });
+    return NextResponse.json({ success: true });
   }
 }
