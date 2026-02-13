@@ -196,6 +196,35 @@ export function AccountMenuOverlay({
           {showClaimForm ? labels.back : labels.registerAvatar}
         </Button>
 
+        {showClaimForm && (
+          <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
+            <Label className="text-xs font-bold uppercase text-muted-foreground">
+              {labels.claimPromptLabel}
+            </Label>
+            <div className="flex flex-col gap-2 md:flex-row">
+              <Input
+                value={claim.value}
+                onChange={(event) => claim.onChange(event.target.value)}
+                className="h-10"
+                placeholder={labels.claimPromptPlaceholder}
+              />
+              <Button
+                className="h-10 gap-2 md:w-40"
+                onClick={claim.onSubmit}
+                disabled={claim.isSubmitting}
+              >
+                <Check className="h-4 w-4" />
+                {claim.isSubmitting ? labels.loading : labels.claimSubmit}
+              </Button>
+            </div>
+            {claim.status && (
+              <p className="text-xs font-semibold text-muted-foreground">
+                {claim.status}
+              </p>
+            )}
+          </div>
+        )}
+
         {canManageCodes && (
           <Button
             variant="outline"
@@ -250,35 +279,6 @@ export function AccountMenuOverlay({
             </p>
           )}
         </div>
-
-        {showClaimForm && (
-          <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
-            <Label className="text-xs font-bold uppercase text-muted-foreground">
-              {labels.claimPromptLabel}
-            </Label>
-            <div className="flex flex-col gap-2 md:flex-row">
-              <Input
-                value={claim.value}
-                onChange={(event) => claim.onChange(event.target.value)}
-                className="h-10"
-                placeholder={labels.claimPromptPlaceholder}
-              />
-              <Button
-                className="h-10 gap-2 md:w-40"
-                onClick={claim.onSubmit}
-                disabled={claim.isSubmitting}
-              >
-                <Check className="h-4 w-4" />
-                {claim.isSubmitting ? labels.loading : labels.claimSubmit}
-              </Button>
-            </div>
-            {claim.status && (
-              <p className="text-xs font-semibold text-muted-foreground">
-                {claim.status}
-              </p>
-            )}
-          </div>
-        )}
 
         {showPasswordForm && (
           <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
