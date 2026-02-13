@@ -70,48 +70,17 @@ export function ShareStoryButton({
 
   const waitForImages = async (node: HTMLElement) => {
     const images = Array.from(node.querySelectorAll("img"));
-    const fallbackImageSrc = "/placeholder-user.jpg";
-
-    const ensureRenderableImage = (img: HTMLImageElement) => {
-      if (img.naturalWidth > 0) return;
-      img.src = fallbackImageSrc;
-    };
-
     await Promise.all(
       images.map(
         (img) =>
           new Promise<void>((resolve) => {
-            let settled = false;
-            let timeoutId: number | undefined;
-            const finish = () => {
-              if (settled) return;
-              settled = true;
-              if (timeoutId) {
-                window.clearTimeout(timeoutId);
-              }
+            if (img.complete && img.naturalWidth > 0) {
               resolve();
-            };
-
-            if (img.complete) {
-              ensureRenderableImage(img);
-              finish();
               return;
             }
-
+            const finish = () => resolve();
             img.addEventListener("load", finish, { once: true });
-            img.addEventListener(
-              "error",
-              () => {
-                ensureRenderableImage(img);
-                finish();
-              },
-              { once: true },
-            );
-
-            timeoutId = window.setTimeout(() => {
-              ensureRenderableImage(img);
-              finish();
-            }, 2500);
+            img.addEventListener("error", finish, { once: true });
           }),
       ),
     );
