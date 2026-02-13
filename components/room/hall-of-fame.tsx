@@ -1,6 +1,6 @@
 "use client";
 
-import { Trophy, Home, Grid2x2, Rows3 } from "lucide-react";
+import { Trophy, Instagram, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Race, Participant } from "@/types/database";
 import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
@@ -9,24 +9,22 @@ import { ShareStoryButton } from "./share-story-button";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 
-type HallOfFameViewMode = "big" | "compact";
-
 const TEAM_OPTIONS = [
-  { id: "AZUL", shortLabel: "Azul", nameClass: "text-blue-300" },
+  { id: "AZUL", shortLabel: "Azul", pillClass: "bg-blue-500/20 text-blue-300" },
   {
     id: "VERMELHA",
     shortLabel: "Vermelho",
-    nameClass: "text-red-300",
+    pillClass: "bg-red-500/20 text-red-300",
   },
   {
     id: "VERDE",
     shortLabel: "Verde",
-    nameClass: "text-emerald-300",
+    pillClass: "bg-emerald-500/20 text-emerald-300",
   },
   {
     id: "AMARELA",
     shortLabel: "Amarelo",
-    nameClass: "text-yellow-300",
+    pillClass: "bg-yellow-500/20 text-yellow-300",
   },
 ];
 
@@ -72,7 +70,6 @@ export function HallOfFame({
   const [isSharingPhoto, setIsSharingPhoto] = useState(false);
   const [showReopenConfirm, setShowReopenConfirm] = useState(false);
   const [isReopening, setIsReopening] = useState(false);
-  const [viewMode, setViewMode] = useState<HallOfFameViewMode>("big");
   const [loadingPhotos, setLoadingPhotos] = useState<Record<string, boolean>>(
     {},
   );
@@ -127,53 +124,16 @@ export function HallOfFame({
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6 flex flex-col items-center justify-center animate-in fade-in duration-1000">
-      <div className="w-full max-w-md space-y-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="inline-flex rounded-xl border border-border bg-card/80 p-1">
-            <button
-              type="button"
-              aria-label="Big view"
-              onClick={() => setViewMode("big")}
-              className={`rounded-lg p-2 transition-colors ${
-                viewMode === "big"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Grid2x2 className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              aria-label="Compact view"
-              onClick={() => setViewMode("compact")}
-              className={`rounded-lg p-2 transition-colors ${
-                viewMode === "compact"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Rows3 className="h-4 w-4" />
-            </button>
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center space-y-4">
+          <div className="inline-block p-3 bg-primary rounded-2xl rotate-3 shadow-2xl shadow-primary/20">
+            <Trophy className="h-10 w-10 text-primary-foreground" />
           </div>
-          <div className="inline-block rounded-2xl bg-primary p-2.5 shadow-2xl shadow-primary/20">
-            <Trophy
-              className={`text-primary-foreground ${
-                viewMode === "compact" ? "h-6 w-6" : "h-10 w-10"
-              }`}
-            />
-          </div>
-        </div>
-
-        <div className="text-center space-y-2">
           <p className="text-xs font-mono text-muted-foreground tracking-widest">
             rodiziorace.mechama.eu
           </p>
           <div className="space-y-1">
-            <h1
-              className={`font-black italic tracking-tighter uppercase ${
-                viewMode === "compact" ? "text-3xl" : "text-4xl"
-              }`}
-            >
+            <h1 className="text-4xl font-black italic tracking-tighter uppercase">
               {t.hall_of_fame.title}
             </h1>
             <p className="text-primary font-mono text-sm tracking-widest">
@@ -182,35 +142,26 @@ export function HallOfFame({
           </div>
         </div>
 
-        <div className={viewMode === "compact" ? "space-y-2" : "space-y-4"}>
+        <div className="space-y-4">
           {participants.map((p, i) => {
             const isWinner = p.items_eaten === maxScore && maxScore > 0;
             const team = TEAM_OPTIONS.find((t) => t.id === p.team);
-            const cardPadding = viewMode === "compact" ? "p-3" : "p-5";
             return (
               <div
                 key={p.id}
-                className={`relative overflow-hidden flex items-center justify-between ${cardPadding} rounded-3xl border-2 transition-all ${
+                className={`relative overflow-hidden flex items-center justify-between p-5 rounded-3xl border-2 transition-all ${
                   isWinner
-                    ? "border-primary bg-primary/10 shadow-[0_0_30px_rgba(249,115,22,0.2)]"
+                    ? "border-primary bg-primary/10 scale-105 shadow-[0_0_30px_rgba(249,115,22,0.2)]"
                     : "border-border bg-card/60"
                 }`}
               >
-                <div
-                  className={`z-10 flex items-center ${
-                    viewMode === "compact" ? "gap-2" : "gap-4"
-                  }`}
-                >
-                  <div className={viewMode === "compact" ? "text-xl" : "text-3xl"}>
-                    {p.avatar && isImageAvatar(p.avatar) ? (
+                <div className="flex items-center gap-4 z-10">
+                  <div className="text-3xl">
+                    {isImageAvatar(p.avatar) ? (
                       <img
                         src={getAvatarUrl(p.avatar)}
                         alt=""
-                        className={
-                          viewMode === "compact"
-                            ? "h-8 w-8 object-contain"
-                            : "h-10 w-10 object-contain"
-                        }
+                        className="h-10 w-10 object-contain"
                       />
                     ) : (
                       <span className="inline-block h-9 w-9 rounded-full bg-white/10" />
@@ -219,25 +170,22 @@ export function HallOfFame({
                   <span
                     className={`text-2xl font-black ${
                       isWinner ? "text-primary" : "text-foreground"
-                    } ${viewMode === "compact" ? "text-lg" : "text-2xl"}`}
+                    }`}
                   >
                     #{i + 1}
                   </span>
                   <div>
-                    <p
-                      className={`font-bold leading-tight ${
-                        viewMode === "compact" ? "text-base" : "text-xl"
-                      } ${
-                        race.is_team_mode && team ? team.nameClass : ""
-                      }`}
-                    >
+                    <p className="font-bold text-xl leading-tight flex items-center gap-2">
                       {p.name}
+                      {race.is_team_mode && team && (
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded ${team.pillClass}`}
+                        >
+                          {team.shortLabel}
+                        </span>
+                      )}
                     </p>
-                    <p
-                      className={`text-muted-foreground uppercase font-bold tracking-wider ${
-                        viewMode === "compact" ? "text-[9px]" : "text-[10px]"
-                      }`}
-                    >
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
                       {isWinner
                         ? t.hall_of_fame.legendary
                         : getMotivationalPhrase(p.id)}
@@ -245,18 +193,10 @@ export function HallOfFame({
                   </div>
                 </div>
                 <div className="text-right z-10">
-                  <p
-                    className={`font-black leading-none ${
-                      viewMode === "compact" ? "text-2xl" : "text-3xl"
-                    }`}
-                  >
+                  <p className="text-3xl font-black leading-none">
                     {p.items_eaten}
                   </p>
-                  <p
-                    className={`uppercase font-bold text-muted-foreground ${
-                      viewMode === "compact" ? "text-[9px] mt-0.5" : "text-[10px] mt-1"
-                    }`}
-                  >
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground mt-1">
                     {getItemLabel(p.items_eaten)}
                   </p>
                 </div>
@@ -363,7 +303,6 @@ export function HallOfFame({
             participants={participants}
             maxScore={maxScore}
             getItemLabel={getItemLabel}
-            viewMode={viewMode}
           />
           {currentParticipant?.is_vip && (
             <Button
