@@ -9,21 +9,18 @@ import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
 import { useLanguage } from "@/contexts/language-context";
 
 const TEAM_OPTIONS = [
-  { id: "AZUL", shortLabel: "Azul", pillClass: "bg-blue-500/20 text-blue-300" },
+  { id: "AZUL", nameClass: "text-blue-300" },
   {
     id: "VERMELHA",
-    shortLabel: "Vermelho",
-    pillClass: "bg-red-500/20 text-red-300",
+    nameClass: "text-red-300",
   },
   {
     id: "VERDE",
-    shortLabel: "Verde",
-    pillClass: "bg-emerald-500/20 text-emerald-300",
+    nameClass: "text-emerald-300",
   },
   {
     id: "AMARELA",
-    shortLabel: "Amarelo",
-    pillClass: "bg-yellow-500/20 text-yellow-300",
+    nameClass: "text-yellow-300",
   },
 ];
 
@@ -68,7 +65,7 @@ export function ShareStoryButton({
     loadLogo();
   }, []);
 
-  const displayParticipants = participants.slice(0, 8);
+  const displayParticipants = participants.slice(0, 12);
 
   const handleShare = async () => {
     if (!storyRef.current) return;
@@ -134,87 +131,80 @@ export function ShareStoryButton({
       <div className="fixed top-0 left-[-9999px] opacity-0 pointer-events-none">
         <div
           ref={storyRef}
-          className="w-[450px] min-h-[800px] bg-zinc-950 text-white p-6 flex flex-col items-center justify-between relative overflow-hidden font-sans"
+          className="w-[450px] h-[800px] bg-zinc-950 text-white px-4 py-3 flex flex-col items-center relative overflow-hidden font-sans"
         >
           {/* Fundo Decorativo */}
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(249,115,22,0.15),transparent_60%)] z-0" />
           <div className="absolute bottom-0 right-0 w-full h-1/2 bg-[radial-gradient(circle_at_100%_100%,rgba(59,130,246,0.1),transparent_50%)] z-0" />
 
           {/* CABEÇALHO: Compactado (pt-4, gap-2, logo w-36) */}
-          <div className="w-full flex flex-col items-center gap-2 z-10 pt-4">
+          <div className="w-full flex flex-col items-center gap-1 z-10 pt-1">
             {/* Usa o Base64 aqui */}
             <img
               src={logoBase64}
               alt="Rodízio Race"
-              className="w-36 object-contain drop-shadow-2xl"
+              className="w-28 object-contain drop-shadow-2xl"
               crossOrigin="anonymous"
             />
 
             <div className="text-center">
-              <h2 className="text-2xl font-black italic tracking-tighter uppercase text-white drop-shadow-md">
+              <h2 className="text-xl font-black italic tracking-tight uppercase text-white drop-shadow-md leading-none">
                 {t.hall_of_fame.title}
               </h2>
-              <div className="inline-block mt-1 px-4 py-0.5 bg-white/10 rounded-full border border-white/10 backdrop-blur-md">
-                <p className="text-orange-400 font-mono text-xs tracking-widest font-bold">
+              <div className="inline-block mt-1 px-3 py-0.5 bg-white/10 rounded-full border border-white/10 backdrop-blur-md">
+                <p className="text-orange-400 font-mono text-[10px] tracking-widest font-bold">
                   SALA: {race.room_code}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="w-full z-10 pb-4 flex flex-col items-center gap-2 mt-2">
-            <div className="bg-white text-black px-4 py-0.5 rounded-full font-black text-sm tracking-wide shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+          <div className="w-full z-10 pb-1 flex flex-col items-center mt-1">
+            <div className="bg-white text-black px-3 py-0.5 rounded-full font-black text-[10px] tracking-wide shadow-[0_0_20px_rgba(255,255,255,0.3)]">
               rodiziorace.mechama.eu
             </div>
           </div>
 
-          {/* LISTA: Compactado space-y e padding dos cards para caber 8 */}
-          <div className="w-full space-y-2 z-10 flex-1 flex flex-col justify-start pb-4">
+          <div className="w-full space-y-1 z-10 flex-1 flex flex-col justify-start pb-1">
             {displayParticipants.map((p, i) => {
               const isWinner = p.items_eaten === maxScore && maxScore > 0;
               const team = TEAM_OPTIONS.find((t) => t.id === p.team);
+              const nameClass = race.is_team_mode && team ? team.nameClass : "text-zinc-200";
 
               return (
                 <div
                   key={p.id}
-                  className={`relative overflow-hidden flex items-center justify-between p-2.5 rounded-xl border-2 shadow-lg ${
+                  className={`relative overflow-hidden flex items-center justify-between px-2 py-1.5 rounded-lg border shadow-lg ${
                     isWinner
-                      ? "border-orange-500 bg-gradient-to-r from-orange-500/20 to-orange-900/20 scale-105 z-20"
+                      ? "border-orange-500 bg-gradient-to-r from-orange-500/20 to-orange-900/20 z-20"
                       : "border-white/5 bg-zinc-900/80 backdrop-blur-sm"
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 z-10">
-                    <div className="text-2xl font-black italic w-6 text-center opacity-50">
+                  <div className="flex items-center gap-2 z-10 min-w-0">
+                    <div className="text-sm font-black italic w-5 text-center opacity-60 shrink-0">
                       #{i + 1}
                     </div>
 
                     <div className="relative">
                       {isImageAvatar(p.avatar) ? (
                         <img
-                          src={getAvatarUrl(p.avatar)}
+                          src={getAvatarUrl(p.avatar ?? "")}
                           alt=""
-                          className="h-9 w-9 object-contain drop-shadow-md"
+                          className="h-6 w-6 object-contain drop-shadow-md"
                           crossOrigin="anonymous"
                         />
                       ) : (
-                        <span className="inline-block h-9 w-9 rounded-full bg-white/10" />
+                        <span className="inline-block h-6 w-6 rounded-full bg-white/10" />
                       )}
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <p
-                        className={`font-bold text-base leading-tight flex items-center gap-2 ${isWinner ? "text-white" : "text-zinc-200"}`}
+                        className={`font-bold text-xs leading-tight truncate ${isWinner ? "text-white" : nameClass}`}
                       >
                         {p.name}
-                        {race.is_team_mode && team && (
-                          <span
-                            className={`text-[8px] px-1.5 py-0.5 rounded uppercase ${team.pillClass}`}
-                          >
-                            {team.shortLabel}
-                          </span>
-                        )}
                       </p>
-                      <p className="text-[8px] text-zinc-400 uppercase font-bold tracking-wider max-w-[220px] truncate">
+                      <p className="text-[7px] text-zinc-400 uppercase font-bold tracking-wider max-w-[220px] truncate">
                         {isWinner
                           ? "👑 " + t.hall_of_fame.legendary
                           : MOTIVATIONAL_PHRASES[
@@ -224,13 +214,13 @@ export function ShareStoryButton({
                     </div>
                   </div>
 
-                  <div className="text-right z-10 pl-2">
+                  <div className="text-right z-10 pl-2 shrink-0">
                     <p
-                      className={`text-xl font-black leading-none ${isWinner ? "text-orange-400" : "text-white"}`}
+                      className={`text-sm font-black leading-none ${isWinner ? "text-orange-400" : "text-white"}`}
                     >
                       {p.items_eaten}
                     </p>
-                    <p className="text-[7px] uppercase font-bold text-zinc-500 mt-0.5">
+                    <p className="text-[6px] uppercase font-bold text-zinc-500 mt-0.5">
                       {getItemLabel(p.items_eaten)}
                     </p>
                   </div>

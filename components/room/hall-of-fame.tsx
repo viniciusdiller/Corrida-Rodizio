@@ -1,6 +1,6 @@
 "use client";
 
-import { Trophy, Instagram, Home } from "lucide-react";
+import { Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Race, Participant } from "@/types/database";
 import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
@@ -10,21 +10,18 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 
 const TEAM_OPTIONS = [
-  { id: "AZUL", shortLabel: "Azul", pillClass: "bg-blue-500/20 text-blue-300" },
+  { id: "AZUL", nameClass: "text-blue-300" },
   {
     id: "VERMELHA",
-    shortLabel: "Vermelho",
-    pillClass: "bg-red-500/20 text-red-300",
+    nameClass: "text-red-300",
   },
   {
     id: "VERDE",
-    shortLabel: "Verde",
-    pillClass: "bg-emerald-500/20 text-emerald-300",
+    nameClass: "text-emerald-300",
   },
   {
     id: "AMARELA",
-    shortLabel: "Amarelo",
-    pillClass: "bg-yellow-500/20 text-yellow-300",
+    nameClass: "text-yellow-300",
   },
 ];
 
@@ -123,69 +120,60 @@ export function HallOfFame({
   }, [timeline]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-6 flex flex-col items-center justify-center animate-in fade-in duration-1000">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-4">
-          <div className="inline-block p-3 bg-primary rounded-2xl rotate-3 shadow-2xl shadow-primary/20">
-            <Trophy className="h-10 w-10 text-primary-foreground" />
-          </div>
+    <div className="min-h-screen bg-background text-foreground px-4 py-3 flex flex-col items-center animate-in fade-in duration-1000">
+      <div className="w-full max-w-lg space-y-3">
+        <div className="text-center space-y-1">
           <p className="text-xs font-mono text-muted-foreground tracking-widest">
             rodiziorace.mechama.eu
           </p>
-          <div className="space-y-1">
-            <h1 className="text-4xl font-black italic tracking-tighter uppercase">
+          <div>
+            <h1 className="text-2xl font-black italic tracking-tight uppercase leading-none">
               {t.hall_of_fame.title}
             </h1>
-            <p className="text-primary font-mono text-sm tracking-widest">
+            <p className="text-primary font-mono text-xs tracking-widest mt-0.5">
               {t.common.room}: {race.room_code}
             </p>
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-1.5">
           {participants.map((p, i) => {
             const isWinner = p.items_eaten === maxScore && maxScore > 0;
             const team = TEAM_OPTIONS.find((t) => t.id === p.team);
+            const nameClass = race.is_team_mode && team ? team.nameClass : "text-foreground";
             return (
               <div
                 key={p.id}
-                className={`relative overflow-hidden flex items-center justify-between p-5 rounded-3xl border-2 transition-all ${
+                className={`relative overflow-hidden flex items-center justify-between px-3 py-2 rounded-xl border transition-all ${
                   isWinner
-                    ? "border-primary bg-primary/10 scale-105 shadow-[0_0_30px_rgba(249,115,22,0.2)]"
+                    ? "border-primary bg-primary/10 shadow-[0_0_20px_rgba(249,115,22,0.18)]"
                     : "border-border bg-card/60"
                 }`}
               >
-                <div className="flex items-center gap-4 z-10">
-                  <div className="text-3xl">
-                    {isImageAvatar(p.avatar) ? (
-                      <img
-                        src={getAvatarUrl(p.avatar)}
-                        alt=""
-                        className="h-10 w-10 object-contain"
-                      />
-                    ) : (
-                      <span className="inline-block h-9 w-9 rounded-full bg-white/10" />
-                    )}
-                  </div>
+                <div className="flex items-center gap-2.5 z-10 min-w-0">
                   <span
-                    className={`text-2xl font-black ${
+                    className={`text-lg font-black w-7 text-center ${
                       isWinner ? "text-primary" : "text-foreground"
                     }`}
                   >
                     #{i + 1}
                   </span>
-                  <div>
-                    <p className="font-bold text-xl leading-tight flex items-center gap-2">
+                  <div className="text-3xl shrink-0">
+                    {isImageAvatar(p.avatar) ? (
+                      <img
+                        src={getAvatarUrl(p.avatar ?? "")}
+                        alt=""
+                        className="h-7 w-7 object-contain"
+                      />
+                    ) : (
+                      <span className="inline-block h-7 w-7 rounded-full bg-white/10" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`font-bold text-sm leading-tight truncate ${nameClass}`}>
                       {p.name}
-                      {race.is_team_mode && team && (
-                        <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded ${team.pillClass}`}
-                        >
-                          {team.shortLabel}
-                        </span>
-                      )}
                     </p>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                    <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider truncate max-w-[200px]">
                       {isWinner
                         ? t.hall_of_fame.legendary
                         : getMotivationalPhrase(p.id)}
@@ -193,10 +181,10 @@ export function HallOfFame({
                   </div>
                 </div>
                 <div className="text-right z-10">
-                  <p className="text-3xl font-black leading-none">
+                  <p className="text-xl font-black leading-none">
                     {p.items_eaten}
                   </p>
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground mt-1">
+                  <p className="text-[8px] uppercase font-bold text-muted-foreground mt-0.5">
                     {getItemLabel(p.items_eaten)}
                   </p>
                 </div>
