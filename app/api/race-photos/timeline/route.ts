@@ -3,27 +3,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
-/**
- * Returns the room photo timeline for authorized participants.
- *
- * We require `participantId` to belong to the room so timeline links cannot be
- * reused across rooms. Signed URLs are short-lived by design because the DB row
- * is the durable record while storage links are temporary access tokens.
- */
-
-const toTimelinePhoto = async (supabase: ReturnType<typeof createAdminClient>, row: any) => {
-  const { data } = await supabase.storage
-    .from("race-photos")
-    .createSignedUrl(row.image_path, 60);
-  return {
-    id: row.id,
-    createdAt: row.created_at,
-    itemNumber: row.item_number,
-    participantName: row.participants?.name ?? "",
-    signedUrl: data?.signedUrl ?? null,
-  };
-};
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const roomCode = searchParams.get("roomCode")?.trim().toUpperCase() ?? "";
@@ -71,7 +50,18 @@ export async function GET(request: Request) {
     }
 
     const photos = await Promise.all(
-      (rows ?? []).map((row: any) => toTimelinePhoto(supabase, row)),
+      (rows ?? []).map(async (row: any) => {
+        const { data } = await supabase.storage
+          .from("race-photos")
+          .createSignedUrl(row.image_path, 60);
+        return {
+          id: row.id,
+          createdAt: row.created_at,
+          itemNumber: row.item_number,
+          participantName: row.participants?.name ?? "",
+          signedUrl: data?.signedUrl ?? null,
+        };
+      })
     );
 
     return NextResponse.json({ photos });

@@ -1,6 +1,5 @@
 export type FoodType = "pizza" | "sushi" | "burger" | "drinks";
 
-/** Core race row mirrored from Supabase. */
 export interface Race {
   id: string;
   name: string;
@@ -14,10 +13,6 @@ export interface Race {
   photo_required?: boolean;
 }
 
-/**
- * Participant state used by room UI and realtime updates.
- * `items_eaten` is the authoritative score and should never be negative.
- */
 export interface Participant {
   id: string;
   race_id: string;
@@ -31,7 +26,6 @@ export interface Participant {
   updated_at: string;
 }
 
-/** Metadata for photo evidence attached to a participant increment. */
 export interface RacePhoto {
   id: string;
   race_id: string;

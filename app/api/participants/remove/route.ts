@@ -1,31 +1,18 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-/**
- * Removes a participant from a race when requested by a VIP in the same room.
- *
- * Invariants:
- * - requester and target must belong to the room race,
- * - only VIP requester can remove,
- * - race photo storage is cleaned before participant deletion.
- */
-
 type RemovePayload = {
   roomCode?: string;
   requesterId?: string;
   targetId?: string;
 };
 
-const normalizeRemovePayload = (body: RemovePayload) => ({
-  roomCode: String(body.roomCode ?? "").trim().toUpperCase(),
-  requesterId: String(body.requesterId ?? "").trim(),
-  targetId: String(body.targetId ?? "").trim(),
-});
-
 export async function POST(request: Request) {
   try {
     const body = (await request.json().catch(() => ({}))) as RemovePayload;
-    const { roomCode, requesterId, targetId } = normalizeRemovePayload(body);
+    const roomCode = String(body.roomCode ?? "").trim().toUpperCase();
+    const requesterId = String(body.requesterId ?? "").trim();
+    const targetId = String(body.targetId ?? "").trim();
 
     if (!roomCode || !requesterId || !targetId) {
       return NextResponse.json({ error: "invalid_payload" }, { status: 400 });

@@ -1,13 +1,5 @@
 "use client";
 
-/**
- * Team ranking view for team-mode races.
- *
- * Invariant: this component only renders when there is more than one participant
- * and the race is in team mode. Team totals are derived from the participant list
- * on each render to keep the UI aligned with realtime updates.
- */
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Sword, TrendingUp } from "lucide-react";
 import { Race, Participant } from "@/types/database";
@@ -33,13 +25,6 @@ export function RankingSection({
   if (!race.is_team_mode) return null;
 
   const totalScore = participants.reduce((acc, p) => acc + p.items_eaten, 0);
-  const getTeamMembers = (teamId: string) =>
-    participants
-      .filter((participant) => participant.team === teamId)
-      .sort((left, right) => right.items_eaten - left.items_eaten);
-
-  const getTeamTotal = (members: Participant[]) =>
-    members.reduce((acc, participant) => acc + participant.items_eaten, 0);
 
   const TEAM_CONFIG = {
     AZUL: {
@@ -82,7 +67,9 @@ export function RankingSection({
         </div>
         <div className="h-4 w-full flex rounded-full overflow-hidden bg-muted/20 border border-white/5 shadow-inner">
           {Object.entries(TEAM_CONFIG).map(([id, config]) => {
-            const teamPoints = getTeamTotal(getTeamMembers(id));
+            const teamPoints = participants
+              .filter((p) => p.team === id)
+              .reduce((acc, p) => acc + p.items_eaten, 0);
             const width = totalScore > 0 ? (teamPoints / totalScore) * 100 : 0;
             return width > 0 ? (
               <div
@@ -98,9 +85,11 @@ export function RankingSection({
       {/* CARTÕES DAS EQUIPAS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {Object.entries(TEAM_CONFIG).map(([id, config]) => {
-          const members = getTeamMembers(id);
+          const members = participants
+            .filter((p) => p.team === id)
+            .sort((a, b) => b.items_eaten - a.items_eaten);
           if (members.length === 0) return null;
-          const teamTotal = getTeamTotal(members);
+          const teamTotal = members.reduce((acc, p) => acc + p.items_eaten, 0);
           const average = (teamTotal / members.length).toFixed(1);
 
           return (
