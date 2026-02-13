@@ -74,13 +74,14 @@ export function ShareStoryButton({
       images.map(
         (img) =>
           new Promise<void>((resolve) => {
-            if (img.complete && img.naturalWidth > 0) {
+            if (img.complete) {
               resolve();
               return;
             }
             const finish = () => resolve();
             img.addEventListener("load", finish, { once: true });
             img.addEventListener("error", finish, { once: true });
+            window.setTimeout(finish, 2000);
           }),
       ),
     );
