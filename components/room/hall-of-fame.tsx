@@ -1,6 +1,6 @@
 "use client";
 
-import { Home } from "lucide-react";
+import { Grid2X2, Home, List, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Race, Participant } from "@/types/database";
 import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
@@ -70,6 +70,7 @@ export function HallOfFame({
   const [loadingPhotos, setLoadingPhotos] = useState<Record<string, boolean>>(
     {},
   );
+  const [displayMode, setDisplayMode] = useState<"big" | "compact">("big");
 
   // Função para pegar uma frase baseada no ID e Sala (Pseudo-aleatória e estável)
   const getMotivationalPhrase = (participantId: string) => {
@@ -122,21 +123,49 @@ export function HallOfFame({
   return (
     <div className="min-h-screen bg-background text-foreground px-4 py-3 flex flex-col items-center animate-in fade-in duration-1000">
       <div className="w-full max-w-lg space-y-3">
-        <div className="text-center space-y-1">
-          <p className="text-xs font-mono text-muted-foreground tracking-widest">
-            rodiziorace.mechama.eu
-          </p>
-          <div>
-            <h1 className="text-2xl font-black italic tracking-tight uppercase leading-none">
-              {t.hall_of_fame.title}
-            </h1>
-            <p className="text-primary font-mono text-xs tracking-widest mt-0.5">
-              {t.common.room}: {race.room_code}
+        <div className="space-y-2">
+          <div className="flex items-center justify-start gap-1">
+            <Button
+              type="button"
+              variant={displayMode === "big" ? "default" : "outline"}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setDisplayMode("big")}
+              aria-label="Big view"
+            >
+              <Grid2X2 className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant={displayMode === "compact" ? "default" : "outline"}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setDisplayMode("compact")}
+              aria-label="Compact view"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-xs font-mono text-muted-foreground tracking-widest">
+              rodiziorace.mechama.eu
             </p>
+            <div>
+              <h1
+                className={`font-black italic tracking-tight uppercase leading-none ${
+                  displayMode === "big" ? "text-2xl" : "text-xl"
+                }`}
+              >
+                {t.hall_of_fame.title}
+              </h1>
+              <p className="text-primary font-mono text-xs tracking-widest mt-0.5">
+                {t.common.room}: {race.room_code}
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className={displayMode === "big" ? "space-y-2" : "space-y-1"}>
           {participants.map((p, i) => {
             const isWinner = p.items_eaten === maxScore && maxScore > 0;
             const team = TEAM_OPTIONS.find((t) => t.id === p.team);
@@ -144,36 +173,65 @@ export function HallOfFame({
             return (
               <div
                 key={p.id}
-                className={`relative overflow-hidden flex items-center justify-between px-3 py-2 rounded-xl border transition-all ${
+                className={`relative overflow-hidden flex items-center justify-between rounded-xl border transition-all ${
                   isWinner
                     ? "border-primary bg-primary/10 shadow-[0_0_20px_rgba(249,115,22,0.18)]"
                     : "border-border bg-card/60"
-                }`}
+                } ${displayMode === "big" ? "px-3 py-2.5" : "px-2.5 py-1.5"}`}
               >
-                <div className="flex items-center gap-2.5 z-10 min-w-0">
+                <div
+                  className={`flex items-center z-10 min-w-0 ${
+                    displayMode === "big" ? "gap-2.5" : "gap-1.5"
+                  }`}
+                >
                   <span
-                    className={`text-lg font-black w-7 text-center ${
+                    className={`font-black text-center ${
+                      displayMode === "big" ? "text-lg w-7" : "text-sm w-5"
+                    } ${
                       isWinner ? "text-primary" : "text-foreground"
                     }`}
                   >
                     #{i + 1}
                   </span>
-                  <div className="text-3xl shrink-0">
+                  {isWinner && (
+                    <Trophy
+                      className={`${
+                        displayMode === "big" ? "h-5 w-5" : "h-3.5 w-3.5"
+                      } shrink-0 text-primary`}
+                    />
+                  )}
+                  <div className="shrink-0">
                     {isImageAvatar(p.avatar) ? (
                       <img
                         src={getAvatarUrl(p.avatar ?? "")}
                         alt=""
-                        className="h-7 w-7 object-contain"
+                        className={`${
+                          displayMode === "big" ? "h-7 w-7" : "h-5 w-5"
+                        } object-contain`}
                       />
                     ) : (
-                      <span className="inline-block h-7 w-7 rounded-full bg-white/10" />
+                      <span
+                        className={`inline-block rounded-full bg-white/10 ${
+                          displayMode === "big" ? "h-7 w-7" : "h-5 w-5"
+                        }`}
+                      />
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className={`font-bold text-sm leading-tight truncate ${nameClass}`}>
+                    <p
+                      className={`font-bold leading-tight truncate ${nameClass} ${
+                        displayMode === "big" ? "text-sm" : "text-xs"
+                      }`}
+                    >
                       {p.name}
                     </p>
-                    <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider truncate max-w-[200px]">
+                    <p
+                      className={`text-muted-foreground uppercase font-bold tracking-wider truncate ${
+                        displayMode === "big"
+                          ? "text-[9px] max-w-[200px]"
+                          : "text-[8px] max-w-[160px]"
+                      }`}
+                    >
                       {isWinner
                         ? t.hall_of_fame.legendary
                         : getMotivationalPhrase(p.id)}
@@ -181,10 +239,18 @@ export function HallOfFame({
                   </div>
                 </div>
                 <div className="text-right z-10">
-                  <p className="text-xl font-black leading-none">
+                  <p
+                    className={`font-black leading-none ${
+                      displayMode === "big" ? "text-xl" : "text-lg"
+                    }`}
+                  >
                     {p.items_eaten}
                   </p>
-                  <p className="text-[8px] uppercase font-bold text-muted-foreground mt-0.5">
+                  <p
+                    className={`uppercase font-bold text-muted-foreground mt-0.5 ${
+                      displayMode === "big" ? "text-[8px]" : "text-[7px]"
+                    }`}
+                  >
                     {getItemLabel(p.items_eaten)}
                   </p>
                 </div>
@@ -291,6 +357,7 @@ export function HallOfFame({
             participants={participants}
             maxScore={maxScore}
             getItemLabel={getItemLabel}
+            displayMode={displayMode}
           />
           {currentParticipant?.is_vip && (
             <Button
