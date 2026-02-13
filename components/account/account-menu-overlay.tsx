@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import {
   ArrowLeft,
   BadgeCheck,
   Check,
+  Copy,
   KeyRound,
   LogOut,
   Mail,
@@ -107,7 +109,17 @@ export function AccountMenuOverlay({
   password,
   invitationCode,
 }: AccountMenuOverlayProps) {
+  const [hasCopiedCode, setHasCopiedCode] = useState(false);
+
   if (!open) return null;
+
+  const handleCopyCode = () => {
+    if (invitationCode) {
+      navigator.clipboard.writeText(invitationCode);
+      setHasCopiedCode(true);
+      setTimeout(() => setHasCopiedCode(false), 2000);
+    }
+  };
 
   return (
     <>
@@ -116,15 +128,43 @@ export function AccountMenuOverlay({
         onClick={onClose}
       />
       <div className="fixed left-1/2 top-1/2 z-40 w-[calc(100%-2rem)] max-h-[85vh] max-w-md -translate-x-1/2 -translate-y-1/2 space-y-3 overflow-y-auto rounded-2xl border border-muted/60 bg-background/95 p-4 shadow-xl backdrop-blur">
+        <div className="flex items-center justify-start pb-1">
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            className="-ml-2 h-auto gap-2 px-2 py-1 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span className="font-semibold">{labels.back}</span>
+          </Button>
+        </div>
+
         <div className="flex flex-wrap gap-2">
           <div className="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300">
             {labels.premiumCreditsAvailable}
           </div>
+
           {invitationCode && (
-            <div className="w-full rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-primary">
-              {labels.invitationCodeLabel}: {invitationCode}
+            <div className="flex w-full items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/10 px-3 py-1 text-primary">
+              <span className="flex-1 text-center text-xs font-bold uppercase tracking-wide">
+                {labels.invitationCodeLabel}: {invitationCode}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 hover:bg-primary/20 hover:text-primary"
+                onClick={handleCopyCode}
+                title="Copiar código"
+              >
+                {hasCopiedCode ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+              </Button>
             </div>
           )}
+
           <Button
             variant="outline"
             className="min-w-[140px] flex-1 gap-2"
@@ -143,7 +183,11 @@ export function AccountMenuOverlay({
           </Button>
         </div>
 
-        <Button variant="outline" className="w-full gap-2" onClick={onToggleClaimForm}>
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          onClick={onToggleClaimForm}
+        >
           {showClaimForm ? (
             <ArrowLeft className="h-4 w-4" />
           ) : (
@@ -153,14 +197,22 @@ export function AccountMenuOverlay({
         </Button>
 
         {canManageCodes && (
-          <Button variant="outline" className="w-full gap-2" onClick={onManageCodes}>
+          <Button
+            variant="outline"
+            className="w-full gap-2"
+            onClick={onManageCodes}
+          >
             <Ticket className="h-4 w-4" />
             {labels.manageCodes}
           </Button>
         )}
 
         {showAddToHome && (
-          <Button variant="outline" className="w-full gap-2" onClick={onAddToHome}>
+          <Button
+            variant="outline"
+            className="w-full gap-2"
+            onClick={onAddToHome}
+          >
             <Smartphone className="h-4 w-4" />
             {labels.addToHome}
           </Button>
@@ -237,7 +289,9 @@ export function AccountMenuOverlay({
               <Input
                 type="password"
                 value={password.current}
-                onChange={(event) => password.onCurrentChange(event.target.value)}
+                onChange={(event) =>
+                  password.onCurrentChange(event.target.value)
+                }
                 className="h-10"
                 placeholder="***"
               />
@@ -261,7 +315,9 @@ export function AccountMenuOverlay({
               <Input
                 type="password"
                 value={password.confirm}
-                onChange={(event) => password.onConfirmChange(event.target.value)}
+                onChange={(event) =>
+                  password.onConfirmChange(event.target.value)
+                }
                 className="h-10"
                 placeholder="***"
               />
