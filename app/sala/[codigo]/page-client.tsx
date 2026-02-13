@@ -516,16 +516,37 @@ export default function RoomPage() {
           const normalizedLogin = loginCode?.trim().toUpperCase();
           const storageKey = getParticipantStorageKey(roomCode, normalizedLogin);
           const legacyStorageKey = getLegacyParticipantStorageKey(roomCode);
-          const storedId =
-            localStorage.getItem(storageKey) || localStorage.getItem(legacyStorageKey);
+          const scopedStoredId = localStorage.getItem(storageKey);
+          const legacyStoredId = localStorage.getItem(legacyStorageKey);
 
-          if (storedId) {
-            const isValid = participantsData.some((p) => p.id === storedId);
-            if (isValid) {
-              resolvedParticipantId = storedId;
-            } else {
-              clearParticipantSession(normalizedLogin);
+          const isStoredParticipantCompatible = (participantId: string) => {
+            const storedParticipant = participantsData.find(
+              (participant) => participant.id === participantId,
+            );
+            if (!storedParticipant) return false;
+
+            const storedLogin = storedParticipant.login_code?.trim().toUpperCase() ?? null;
+            if (normalizedLogin) {
+              return storedLogin === normalizedLogin;
             }
+
+            return !storedLogin;
+          };
+
+          if (scopedStoredId) {
+            if (isStoredParticipantCompatible(scopedStoredId)) {
+              resolvedParticipantId = scopedStoredId;
+            } else {
+              localStorage.removeItem(storageKey);
+            }
+          }
+
+          if (!resolvedParticipantId && legacyStoredId) {
+            if (isStoredParticipantCompatible(legacyStoredId)) {
+              resolvedParticipantId = legacyStoredId;
+              localStorage.setItem(storageKey, legacyStoredId);
+            }
+            localStorage.removeItem(legacyStorageKey);
           }
 
           if (!resolvedParticipantId) {
