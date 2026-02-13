@@ -70,6 +70,73 @@ export function ShareStoryButton({
 
   const displayParticipants = participants.slice(0, 8);
 
+  const normalizeBrokenImages = (root: HTMLElement) => {
+    const images = Array.from(root.querySelectorAll("img"));
+
+    images.forEach((img) => {
+      if (!img.complete || !img.naturalWidth) {
+        img.src = "/placeholder-user.jpg";
+      }
+    });
+  };
+
+  const waitForStoryImages = async (root: HTMLElement) => {
+    const images = Array.from(root.querySelectorAll("img"));
+
+    if (!images.length) return;
+
+    await Promise.all(
+      images.map(
+        (img) =>
+          new Promise<void>((resolve) => {
+            let settled = false;
+            let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+            const finish = () => {
+              if (settled) return;
+              settled = true;
+              if (timeoutId) clearTimeout(timeoutId);
+              resolve();
+            };
+
+            if (img.complete) {
+              finish();
+              return;
+            }
+
+            const onLoad = () => {
+              cleanup();
+              finish();
+            };
+
+            const onError = () => {
+              cleanup();
+              img.src = "/placeholder-user.jpg";
+              finish();
+            };
+
+            const cleanup = () => {
+              img.removeEventListener("load", onLoad);
+              img.removeEventListener("error", onError);
+            };
+
+            timeoutId = setTimeout(() => {
+              cleanup();
+              if (!img.complete || !img.naturalWidth) {
+                img.src = "/placeholder-user.jpg";
+              }
+              finish();
+            }, 4000);
+
+            img.addEventListener("load", onLoad, { once: true });
+            img.addEventListener("error", onError, { once: true });
+          })
+      )
+    );
+
+    normalizeBrokenImages(root);
+  };
+
   const handleShare = async () => {
     if (!storyRef.current) return;
     setLoading(true);
@@ -77,6 +144,8 @@ export function ShareStoryButton({
     try {
       // Pequeno delay para garantir que o DOM esteja estável
       await new Promise((resolve) => setTimeout(resolve, 100));
+
+      await waitForStoryImages(storyRef.current);
 
       const blob = await toBlob(storyRef.current, {
         cacheBust: true,
