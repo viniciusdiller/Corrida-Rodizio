@@ -1,5 +1,16 @@
 ﻿"use client";
 
+/**
+ * Room client coordinates the live race screen for one room code.
+ *
+ * Data flow:
+ * - Load race + participants from Supabase, then reconcile the current participant from local storage.
+ * - Realtime subscriptions trigger reloads; DB stays the source of truth for counters and race status.
+ * - Score increments are guarded by local cooldown and optional photo upload requirements.
+ *
+ * Invariant: the active participant id in local storage must belong to the current room and login context.
+ */
+
 import {
   useEffect,
   useRef,
@@ -335,25 +346,61 @@ export default function RoomPage() {
   const isPhotoModeEnabled = !!race?.photo_mode;
   const isPhotoRequired = !!race?.photo_mode && !!race?.photo_required;
 
+  const normalizeLoginCode = (value: string | null | undefined) =>
+    value?.trim().toUpperCase() ?? null;
+
+  const isParticipantCompatibleWithLogin = (
+    participantList: Participant[],
+    participantId: string,
+    normalizedLogin: string | null,
+  ) => {
+    const participant = participantList.find((item) => item.id === participantId);
+    if (!participant) return false;
+
+    const participantLogin = normalizeLoginCode(participant.login_code);
+    return normalizedLogin
+      ? participantLogin === normalizedLogin
+      : !participantLogin;
+  };
+
+  const findParticipantByLogin = (
+    participantList: Participant[],
+    normalizedLogin: string,
+  ) =>
+    participantList.find((participant) => {
+      const loginMatch = normalizeLoginCode(participant.login_code);
+      const nameMatch = normalizeLoginCode(participant.name);
+      return loginMatch === normalizedLogin || nameMatch === normalizedLogin;
+    });
+
+  const loadPhotoTimelineAvailability = async (
+    targetRoomCode: string,
+    participantId: string,
+  ) => {
+    const response = await fetch(
+      `/api/race-photos/timeline?roomCode=${encodeURIComponent(
+        targetRoomCode,
+      )}&participantId=${encodeURIComponent(participantId)}`,
+    );
+
+    const data =
+      response.status === 403
+        ? { photos: [] }
+        : await response.json().catch(() => ({ photos: [] }));
+    const photos = Array.isArray(data?.photos) ? data.photos : [];
+    return photos.length > 0;
+  };
+
   useEffect(() => {
     if (!isPhotoModeEnabled || !race?.room_code || !currentParticipantId) {
       setHasPhotoTimeline(false);
       return;
     }
     let ignore = false;
-    fetch(
-      `/api/race-photos/timeline?roomCode=${encodeURIComponent(
-        race.room_code,
-      )}&participantId=${encodeURIComponent(currentParticipantId)}`,
-    )
-      .then((response) => {
-        if (response.status === 403) return { photos: [] };
-        return response.json().catch(() => ({ photos: [] }));
-      })
-      .then((data) => {
+    loadPhotoTimelineAvailability(race.room_code, currentParticipantId)
+      .then((hasPhotos) => {
         if (ignore) return;
-        const photos = Array.isArray(data?.photos) ? data.photos : [];
-        setHasPhotoTimeline(photos.length > 0);
+        setHasPhotoTimeline(hasPhotos);
       })
       .catch(() => {
         if (!ignore) setHasPhotoTimeline(false);
@@ -512,29 +559,25 @@ export default function RoomPage() {
         setParticipants(participantsData);
         let resolvedParticipantId: string | null = null;
         if (!isSpectator) {
-          const loginCode = localStorage.getItem(LOGIN_STORAGE_KEY);
-          const normalizedLogin = loginCode?.trim().toUpperCase();
+          const normalizedLogin = normalizeLoginCode(
+            localStorage.getItem(LOGIN_STORAGE_KEY),
+          );
           const storageKey = getParticipantStorageKey(roomCode, normalizedLogin);
           const legacyStorageKey = getLegacyParticipantStorageKey(roomCode);
           const scopedStoredId = localStorage.getItem(storageKey);
           const legacyStoredId = localStorage.getItem(legacyStorageKey);
 
-          const isStoredParticipantCompatible = (participantId: string) => {
-            const storedParticipant = participantsData.find(
-              (participant) => participant.id === participantId,
-            );
-            if (!storedParticipant) return false;
-
-            const storedLogin = storedParticipant.login_code?.trim().toUpperCase() ?? null;
-            if (normalizedLogin) {
-              return storedLogin === normalizedLogin;
-            }
-
-            return !storedLogin;
-          };
+          // Keep participant identity scoped by room + login to avoid reusing stale IDs
+          // after account switches on shared devices.
 
           if (scopedStoredId) {
-            if (isStoredParticipantCompatible(scopedStoredId)) {
+            if (
+              isParticipantCompatibleWithLogin(
+                participantsData,
+                scopedStoredId,
+                normalizedLogin,
+              )
+            ) {
               resolvedParticipantId = scopedStoredId;
             } else {
               localStorage.removeItem(storageKey);
@@ -542,7 +585,13 @@ export default function RoomPage() {
           }
 
           if (!resolvedParticipantId && legacyStoredId) {
-            if (isStoredParticipantCompatible(legacyStoredId)) {
+            if (
+              isParticipantCompatibleWithLogin(
+                participantsData,
+                legacyStoredId,
+                normalizedLogin,
+              )
+            ) {
               resolvedParticipantId = legacyStoredId;
               localStorage.setItem(storageKey, legacyStoredId);
             }
@@ -551,14 +600,10 @@ export default function RoomPage() {
 
           if (!resolvedParticipantId) {
             if (normalizedLogin) {
-              const match = participantsData.find((participant) => {
-                const loginMatch = participant.login_code?.trim().toUpperCase();
-                const nameMatch = participant.name?.trim().toUpperCase();
-                return (
-                  loginMatch === normalizedLogin ||
-                  nameMatch === normalizedLogin
-                );
-              });
+              const match = findParticipantByLogin(
+                participantsData,
+                normalizedLogin,
+              );
               if (match) {
                 resolvedParticipantId = match.id;
                 localStorage.setItem(storageKey, match.id);
@@ -576,17 +621,12 @@ export default function RoomPage() {
           resolvedParticipantId
         ) {
           try {
-            const response = await fetch(
-              `/api/race-photos/timeline?roomCode=${encodeURIComponent(
+            setHasPhotoTimeline(
+              await loadPhotoTimelineAvailability(
                 raceData.room_code,
-              )}&participantId=${encodeURIComponent(resolvedParticipantId)}`,
+                resolvedParticipantId,
+              ),
             );
-            const data =
-              response.status === 403
-                ? { photos: [] }
-                : await response.json().catch(() => ({ photos: [] }));
-            const photos = Array.isArray(data?.photos) ? data.photos : [];
-            setHasPhotoTimeline(photos.length > 0);
           } catch (error) {
             console.error(error);
             setHasPhotoTimeline(false);
@@ -604,10 +644,12 @@ export default function RoomPage() {
 
   const updateCount = async (participantId: string, change: number) => {
     if (participantId !== currentParticipantId || !race?.is_active) return;
-    const p = participants.find((item) => item.id === participantId);
-    if (!p) return;
+    const participantToUpdate = participants.find(
+      (item) => item.id === participantId,
+    );
+    if (!participantToUpdate) return;
 
-    const newCount = Math.max(0, p.items_eaten + change);
+    const newCount = Math.max(0, participantToUpdate.items_eaten + change);
     await createClient()
       .from("participants")
       .update({ items_eaten: newCount })
@@ -637,6 +679,8 @@ export default function RoomPage() {
     const lastAddAt = lastAddAtRef.current ?? 0;
     const remaining = addCooldownMs - (now - lastAddAt);
     if (remaining > 0) {
+      // Cooldown is a client-side rate limit for UX; database writes are still
+      // authoritative and may arrive later via realtime sync.
       showCooldownMessage(event);
       return false;
     }
