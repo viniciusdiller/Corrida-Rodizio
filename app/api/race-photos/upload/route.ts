@@ -3,35 +3,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
-/**
- * Receives a photo proof for a score increment.
- *
- * Important invariants:
- * - room must have photo mode enabled,
- * - participant must belong to that room,
- * - login code in request must match participant login code.
- *
- * The image upload and DB insert are intentionally split; when insert fails,
- * we best-effort delete the uploaded file to avoid orphaned storage objects.
- */
-
-const parseUploadPayload = async (request: Request) => {
-  const formData = await request.formData();
-  const roomCode = String(formData.get("roomCode") ?? "").trim().toUpperCase();
-  const participantId = String(formData.get("participantId") ?? "").trim();
-  const itemNumber = Number(formData.get("itemNumber"));
-  const loginCode = String(formData.get("loginCode") ?? "")
-    .trim()
-    .toUpperCase();
-  const file = formData.get("file");
-
-  return { roomCode, participantId, itemNumber, loginCode, file };
-};
-
 export async function POST(request: Request) {
   try {
-    const { roomCode, participantId, itemNumber, loginCode, file } =
-      await parseUploadPayload(request);
+    const formData = await request.formData();
+    const roomCode = String(formData.get("roomCode") ?? "").trim().toUpperCase();
+    const participantId = String(formData.get("participantId") ?? "").trim();
+    const itemNumber = Number(formData.get("itemNumber"));
+    const loginCode = String(formData.get("loginCode") ?? "")
+      .trim()
+      .toUpperCase();
+    const file = formData.get("file");
 
     if (!roomCode || !participantId || !loginCode || !file) {
       return NextResponse.json({ ok: false }, { status: 400 });
