@@ -1044,16 +1044,12 @@ export default function Home() {
       });
       const data = await response.json().catch(() => ({}));
       const status = String(data?.status || "");
-      if (status === "claimed" || status === "already_claimed") {
+      if (status === "claimed") {
         setClaimStatus(tx("claim_registered_success"));
         setClaimCode("");
         return;
       }
-      if (status === "invalid") {
-        setClaimStatus(tx("claim_register_error"));
-        return;
-      }
-      setClaimStatus(tx("claim_register_unavailable"));
+      setClaimStatus(tx("claim_register_error"));
     } catch {
       setClaimStatus(tx("claim_register_unavailable"));
     } finally {

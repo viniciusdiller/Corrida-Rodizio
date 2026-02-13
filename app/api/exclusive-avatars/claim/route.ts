@@ -22,40 +22,14 @@ export async function POST(request: Request) {
       p_code: trimmedCode,
     });
 
-    if (error) {
+    if (error || !Array.isArray(data) || data.length === 0) {
       return NextResponse.json(
         { status: "invalid", avatar: null },
         { status: 400 }
       );
     }
 
-    const normalizedData = Array.isArray(data) ? data[0] : data;
-
-    if (!normalizedData) {
-      return NextResponse.json(
-        { status: "invalid", avatar: null },
-        { status: 400 }
-      );
-    }
-
-    if (typeof normalizedData === "string") {
-      return NextResponse.json({ status: normalizedData, avatar: null });
-    }
-
-    if (typeof normalizedData === "object") {
-      const status =
-        typeof (normalizedData as { status?: unknown }).status === "string"
-          ? (normalizedData as { status: string }).status
-          : "claimed";
-      const avatar =
-        typeof (normalizedData as { avatar?: unknown }).avatar === "string"
-          ? (normalizedData as { avatar: string }).avatar
-          : null;
-
-      return NextResponse.json({ status, avatar });
-    }
-
-    return NextResponse.json({ status: "invalid", avatar: null }, { status: 400 });
+    return NextResponse.json(data[0]);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ status: "invalid", avatar: null }, { status: 500 });
