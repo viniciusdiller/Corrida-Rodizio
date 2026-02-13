@@ -1041,7 +1041,7 @@ export const translations = {
       accept_terms: "J’accepte les conditions",
       accept_terms_required: "Vous devez accepter les conditions.",
       logged_user_label: "Nom d’utilisateur",
-      change_password: "Changer le mot de passe",
+      change_password: "Changer le mdp",
       logout: "Se déconnecter",
       view_history: "Voir l’historique des compétitions",
       hide_history: "Masquer l’historique",
