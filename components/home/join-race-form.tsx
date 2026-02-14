@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Hash, ArrowRight, Loader2 } from "lucide-react";
+import { Hash, Loader2, Swords } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 
 interface JoinRaceFormProps {
@@ -143,12 +143,13 @@ export function JoinRaceForm({
         >
           {loading ? (
             <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               {t.home.locating}
+              <Loader2 className="ml-2 h-5 w-5 animate-spin" />
             </>
           ) : (
             <>
-              {t.home.enter_arena} <ArrowRight className="ml-2 h-5 w-5" />
+              {t.home.enter_arena}
+              <Swords className="ml-2 h-5 w-5" />
             </>
           )}
         </Button>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users2, ArrowRight, Loader2, Camera, Image, User } from "lucide-react";
+import { Users2, Loader2, Camera, Image, User, Rocket } from "lucide-react";
 import { FoodType } from "@/types/database";
 import { useLanguage } from "@/contexts/language-context";
 
@@ -233,12 +233,13 @@ export function CreateRaceForm({
         >
           {loading ? (
             <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               {t.home.preparing}
+              <Loader2 className="ml-2 h-5 w-5 animate-spin" />
             </>
           ) : (
             <>
-              {t.home.create_title} <ArrowRight className="ml-2 h-5 w-5" />
+              {t.home.create_title}
+              <Rocket className="ml-2 h-5 w-5" />
             </>
           )}
         </Button>

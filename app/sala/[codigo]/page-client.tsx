@@ -12,11 +12,14 @@ import { createClient } from "@/lib/supabase/client";
 import {
   Plus,
   ArrowLeft,
+  ChevronLeft,
   Settings,
   Check,
   Copy,
   UserPlus,
   Camera,
+  Menu,
+  CircleX,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
@@ -1701,6 +1704,7 @@ export default function RoomPage() {
                 onClick={() => setShowManageMenu((prev) => !prev)}
               >
                 {t.room.manage_players ?? "Gerenciar jogadores"}
+                <Menu className="ml-2 h-4 w-4" />
               </Button>
               <Button
                 variant="destructive"
@@ -1709,6 +1713,7 @@ export default function RoomPage() {
                 disabled={isEnding}
               >
                 {isEnding ? t.room.ending : t.room.end_race}
+                <CircleX className="ml-2 h-4 w-4" />
               </Button>
               {showManageMenu && (
                 <>
@@ -2391,6 +2396,7 @@ export default function RoomPage() {
                 onClick={() => setShowEndRaceToast(false)}
                 disabled={isEnding}
               >
+                <ChevronLeft className="mr-2 h-4 w-4" />
                 {t.room.cancel}
               </Button>
               <Button
@@ -2399,6 +2405,7 @@ export default function RoomPage() {
                 disabled={isEnding}
               >
                 {isEnding ? t.room.ending : t.room.confirm}
+                <CircleX className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>

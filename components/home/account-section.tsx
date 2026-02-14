@@ -10,6 +10,8 @@ import {
   ChevronRight,
   Calendar,
   Camera,
+  Clock,
+  Loader2,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 import { sanitizeAlphanumeric } from "@/lib/utils/username-validation";
@@ -175,11 +177,22 @@ export function AccountSection({
             }}
             disabled={isLoadingGroups}
           >
-            {isLoadingGroups
-              ? t.common.loading
-              : isHistoryView
-                ? t.common.back
-                : t.account.view_history}
+            {isLoadingGroups ? (
+              <>
+                {t.common.loading}
+                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+              </>
+            ) : isHistoryView ? (
+              <>
+                {t.common.back}
+                <ChevronLeft className="ml-2 h-4 w-4" />
+              </>
+            ) : (
+              <>
+                {t.account.view_history}
+                <Clock className="ml-2 h-4 w-4" />
+              </>
+            )}
           </Button>
 
           {groupsError && (

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { Rocket, Swords } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 
 interface StartActionsProps {
@@ -17,7 +17,7 @@ export function StartActions({ onSetFlow }: StartActionsProps) {
         onClick={() => onSetFlow("create")}
       >
         {t.home.create_race}
-        <ArrowRight className="ml-2 h-5 w-5" />
+        <Rocket className="ml-2 h-5 w-5" />
       </Button>
       <Button
         variant="outline"
@@ -25,6 +25,7 @@ export function StartActions({ onSetFlow }: StartActionsProps) {
         onClick={() => onSetFlow("join")}
       >
         {t.home.join_race}
+        <Swords className="ml-2 h-5 w-5" />
       </Button>
     </div>
   );
