@@ -1,6 +1,21 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Copy,
+  Home,
+  LogIn,
+  LogOut,
+  Pencil,
+  Plus,
+  Share2,
+  Trash2,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -36,24 +51,56 @@ const buttonVariants = cva(
   },
 );
 
+const textIconMatchers: Array<{ regex: RegExp; icon: LucideIcon }> = [
+  { regex: /(voltar|back|retornar)/i, icon: ArrowLeft },
+  { regex: /(copiar|copy)/i, icon: Copy },
+  { regex: /(compartilhar|share)/i, icon: Share2 },
+  { regex: /(entrar|login|acessar)/i, icon: LogIn },
+  { regex: /(sair|logout)/i, icon: LogOut },
+  { regex: /(cancelar|fechar|close)/i, icon: X },
+  { regex: /(salvar|save|confirmar|concluir|finalizar|ok)/i, icon: Check },
+  { regex: /(excluir|deletar|apagar|remover|delete|remove)/i, icon: Trash2 },
+  { regex: /(editar|edit)/i, icon: Pencil },
+  { regex: /(criar|novo|nova|adicionar|add)/i, icon: Plus },
+  { regex: /(início|inicio|home)/i, icon: Home },
+  { regex: /(continuar|próximo|proximo|next|avançar|avancar|ir)/i, icon: ArrowRight },
+];
+
+function inferButtonIcon(buttonText: string): LucideIcon {
+  const matched = textIconMatchers.find(({ regex }) => regex.test(buttonText));
+  return matched?.icon ?? ArrowRight;
+}
+
 function Button({
   className,
   variant,
   size,
   asChild = false,
+  children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
   }) {
   const Comp = asChild ? Slot : "button";
+  const childrenArray = React.Children.toArray(children);
+  const textOnlyChildren =
+    childrenArray.length > 0 &&
+    childrenArray.every((child) => typeof child === "string" || typeof child === "number");
+  const shouldRenderDefaultIcon =
+    size !== "icon" && size !== "icon-sm" && size !== "icon-lg" && textOnlyChildren;
+  const buttonText = textOnlyChildren ? childrenArray.join(" ") : "";
+  const Icon = inferButtonIcon(buttonText);
 
   return (
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
-    />
+    >
+      {children}
+      {shouldRenderDefaultIcon ? <Icon aria-hidden="true" /> : null}
+    </Comp>
   );
 }
 
