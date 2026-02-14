@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-import { ArrowRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -42,30 +41,19 @@ function Button({
   variant,
   size,
   asChild = false,
-  children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
   }) {
   const Comp = asChild ? Slot : "button";
-  const childrenArray = React.Children.toArray(children);
-  const shouldRenderDefaultIcon =
-    size !== "icon" &&
-    size !== "icon-sm" &&
-    size !== "icon-lg" &&
-    childrenArray.length > 0 &&
-    childrenArray.every((child) => typeof child === "string" || typeof child === "number");
 
   return (
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
-    >
-      {children}
-      {shouldRenderDefaultIcon ? <ArrowRight aria-hidden="true" /> : null}
-    </Comp>
+    />
   );
 }
 
