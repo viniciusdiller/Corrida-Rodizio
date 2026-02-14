@@ -22,6 +22,26 @@ type AdminUser = {
   premiumAvatarClaimCredits: number;
 };
 
+type AdminStats = {
+  raceCount: number;
+  playersWithAccountCount: number;
+  playersWithoutAccountCount: number;
+  accountCount: number;
+  totalItemsCount: number;
+  photoCount: number;
+  lastActivityAt: string | null;
+};
+
+const EMPTY_STATS: AdminStats = {
+  raceCount: 0,
+  playersWithAccountCount: 0,
+  playersWithoutAccountCount: 0,
+  accountCount: 0,
+  totalItemsCount: 0,
+  photoCount: 0,
+  lastActivityAt: null,
+};
+
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
@@ -29,9 +49,12 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const [searchInput, setSearchInput] = useState("");
+  const [allUsernames, setAllUsernames] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [user, setUser] = useState<AdminUser | null>(null);
   const [userError, setUserError] = useState<string | null>(null);
+  const [stats, setStats] = useState<AdminStats>(EMPTY_STATS);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -81,6 +104,154 @@ export default function AdminPage() {
 
     loadSession();
   }, []);
+
+  useEffect(() => {
+    const loadUsernames = async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("logins")
+        .select("username")
+        .order("username", { ascending: true });
+
+      setAllUsernames(
+        Array.isArray(data)
+          ? data
+              .map((row) => row.username)
+              .filter((name): name is string => Boolean(name))
+          : []
+      );
+    };
+
+    if (isAuthenticated) {
+      loadUsernames();
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      setIsLoadingStats(true);
+      const supabase = createClient();
+
+      if (!user?.username) {
+        const [
+          racesCountResult,
+          playersWithAccountCountResult,
+          playersWithoutAccountCountResult,
+          accountCountResult,
+          participantsResult,
+          photosCountResult,
+        ] = await Promise.all([
+          supabase.from("races").select("id", { count: "exact", head: true }),
+          supabase
+            .from("participants")
+            .select("id", { count: "exact", head: true })
+            .not("login_code", "is", null),
+          supabase
+            .from("participants")
+            .select("id", { count: "exact", head: true })
+            .is("login_code", null),
+          supabase.from("logins").select("id", { count: "exact", head: true }),
+          supabase.from("participants").select("items_eaten,updated_at"),
+          supabase
+            .from("race_photos")
+            .select("id", { count: "exact", head: true }),
+        ]);
+
+        const participants = Array.isArray(participantsResult.data)
+          ? participantsResult.data
+          : [];
+        const totalItemsCount = participants.reduce(
+          (total, participant) => total + Math.max(0, Number(participant.items_eaten ?? 0)),
+          0
+        );
+
+        const lastActivityAt = participants.reduce<string | null>((latest, participant) => {
+          if (!participant.updated_at) {
+            return latest;
+          }
+          if (!latest) {
+            return participant.updated_at;
+          }
+          return new Date(participant.updated_at) > new Date(latest)
+            ? participant.updated_at
+            : latest;
+        }, null);
+
+        setStats({
+          raceCount: racesCountResult.count ?? 0,
+          playersWithAccountCount: playersWithAccountCountResult.count ?? 0,
+          playersWithoutAccountCount: playersWithoutAccountCountResult.count ?? 0,
+          accountCount: accountCountResult.count ?? 0,
+          totalItemsCount,
+          photoCount: photosCountResult.count ?? 0,
+          lastActivityAt,
+        });
+        setIsLoadingStats(false);
+        return;
+      }
+
+      const normalizedUsername = user.username.toUpperCase();
+
+      const [participantResult, accountResult] = await Promise.all([
+        supabase
+          .from("participants")
+          .select("id,race_id,items_eaten,updated_at")
+          .eq("login_code", normalizedUsername),
+        supabase
+          .from("logins")
+          .select("id", { count: "exact", head: true })
+          .eq("username", normalizedUsername),
+      ]);
+
+      const participantRows = Array.isArray(participantResult.data)
+        ? participantResult.data
+        : [];
+      const raceIds = new Set(participantRows.map((participant) => participant.race_id));
+      const participantIds = participantRows.map((participant) => participant.id);
+      const totalItemsCount = participantRows.reduce(
+        (total, participant) => total + Math.max(0, Number(participant.items_eaten ?? 0)),
+        0
+      );
+      const lastActivityAt = participantRows.reduce<string | null>((latest, participant) => {
+        if (!participant.updated_at) {
+          return latest;
+        }
+        if (!latest) {
+          return participant.updated_at;
+        }
+        return new Date(participant.updated_at) > new Date(latest)
+          ? participant.updated_at
+          : latest;
+      }, null);
+
+      let photoCount = 0;
+      if (participantIds.length > 0) {
+        const { count } = await supabase
+          .from("race_photos")
+          .select("id", { count: "exact", head: true })
+          .in("participant_id", participantIds);
+        photoCount = count ?? 0;
+      }
+
+      setStats({
+        raceCount: raceIds.size,
+        playersWithAccountCount: participantRows.length,
+        playersWithoutAccountCount: 0,
+        accountCount: accountResult.count ?? 0,
+        totalItemsCount,
+        photoCount,
+        lastActivityAt,
+      });
+      setIsLoadingStats(false);
+    };
+
+    if (isAuthenticated) {
+      loadStats();
+      return;
+    }
+
+    setStats(EMPTY_STATS);
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
     const loadAvatars = async () => {
@@ -141,7 +312,7 @@ export default function AdminPage() {
   };
 
   const loadUser = async () => {
-    const trimmed = searchInput.trim();
+    const trimmed = searchInput.trim().toUpperCase();
     if (!trimmed) return;
     setIsSearching(true);
     setUserError(null);
@@ -209,9 +380,23 @@ export default function AdminPage() {
             : 1,
         ),
       );
+      setSearchInput(loginData.username);
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const formatLastActivity = (value: string | null) => {
+    if (!value) {
+      return "No activity yet";
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return "No activity yet";
+    }
+
+    return date.toLocaleString();
   };
 
   const updatePremium = async (value: boolean) => {
@@ -487,21 +672,101 @@ export default function AdminPage() {
             <Card className="border-none shadow-2xl shadow-black/5 bg-card/80 backdrop-blur-md">
               <CardContent className="pt-6 space-y-4">
                 <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">
+                      {user ? `Statistics (${user.username})` : "Global Statistics"}
+                    </Label>
+                    {isLoadingStats && (
+                      <span className="text-xs text-muted-foreground">Loading...</span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                    <div className="rounded-md border border-muted px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                        Races
+                      </p>
+                      <p className="text-lg font-black">{stats.raceCount}</p>
+                    </div>
+                    <div className="rounded-md border border-muted px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                        Players (with account)
+                      </p>
+                      <p className="text-lg font-black">{stats.playersWithAccountCount}</p>
+                    </div>
+                    <div className="rounded-md border border-muted px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                        Players (without account)
+                      </p>
+                      <p className="text-lg font-black">{stats.playersWithoutAccountCount}</p>
+                    </div>
+                    <div className="rounded-md border border-muted px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                        Accounts
+                      </p>
+                      <p className="text-lg font-black">{stats.accountCount}</p>
+                    </div>
+                    <div className="rounded-md border border-muted px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                        Slices / parts total
+                      </p>
+                      <p className="text-lg font-black">{stats.totalItemsCount}</p>
+                    </div>
+                    <div className="rounded-md border border-muted px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                        Photos taken
+                      </p>
+                      <p className="text-lg font-black">{stats.photoCount}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Last activity: {formatLastActivity(stats.lastActivityAt)}
+                  </p>
+
                   <Label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">
                     Search User
                   </Label>
+                  <div className="flex flex-col gap-2">
+                    <select
+                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      value={searchInput}
+                      onChange={(event) => setSearchInput(event.target.value)}
+                    >
+                      <option value="">Select a user...</option>
+                      {allUsernames.map((username) => (
+                        <option key={username} value={username}>
+                          {username}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="flex flex-col gap-2 md:flex-row">
                     <Input
                       value={searchInput}
                       onChange={(event) => setSearchInput(event.target.value)}
                       placeholder="USERNAME"
+                      list="admin-usernames"
                     />
+                    <datalist id="admin-usernames">
+                      {allUsernames.map((username) => (
+                        <option key={username} value={username} />
+                      ))}
+                    </datalist>
                     <Button
                       onClick={loadUser}
                       disabled={isSearching}
                       className="md:w-32"
                     >
                       {isSearching ? "Searching..." : "Search"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setUser(null);
+                        setSearchInput("");
+                        setUserError(null);
+                      }}
+                    >
+                      Clear
                     </Button>
                   </div>
                 </div>
