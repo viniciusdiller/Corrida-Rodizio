@@ -24,7 +24,7 @@ type AdminUser = {
 
 type AdminStats = {
   raceCount: number;
-  playersWithAccountCount: number;
+  activeRacesCount: number;
   playersWithoutAccountCount: number;
   accountCount: number;
   totalItemsCount: number;
@@ -34,7 +34,7 @@ type AdminStats = {
 
 const EMPTY_STATS: AdminStats = {
   raceCount: 0,
-  playersWithAccountCount: 0,
+  activeRacesCount: 0,
   playersWithoutAccountCount: 0,
   accountCount: 0,
   totalItemsCount: 0,
@@ -130,119 +130,35 @@ export default function AdminPage() {
   useEffect(() => {
     const loadStats = async () => {
       setIsLoadingStats(true);
-      const supabase = createClient();
 
-      if (!user?.username) {
-        const [
-          racesCountResult,
-          playersWithAccountCountResult,
-          playersWithoutAccountCountResult,
-          accountCountResult,
-          participantsResult,
-          photosCountResult,
-        ] = await Promise.all([
-          supabase.from("races").select("id", { count: "exact", head: true }),
-          supabase
-            .from("participants")
-            .select("id", { count: "exact", head: true })
-            .not("login_code", "is", null),
-          supabase
-            .from("participants")
-            .select("id", { count: "exact", head: true })
-            .is("login_code", null),
-          supabase.from("logins").select("id", { count: "exact", head: true }),
-          supabase.from("participants").select("items_eaten,updated_at"),
-          supabase
-            .from("race_photos")
-            .select("id", { count: "exact", head: true }),
-        ]);
+      try {
+        const params = new URLSearchParams();
+        if (user?.username) {
+          params.set("username", user.username);
+        }
 
-        const participants = Array.isArray(participantsResult.data)
-          ? participantsResult.data
-          : [];
-        const totalItemsCount = participants.reduce(
-          (total, participant) => total + Math.max(0, Number(participant.items_eaten ?? 0)),
-          0
-        );
+        const response = await fetch(`/api/admin/stats?${params.toString()}`);
+        if (!response.ok) {
+          setStats(EMPTY_STATS);
+          return;
+        }
 
-        const lastActivityAt = participants.reduce<string | null>((latest, participant) => {
-          if (!participant.updated_at) {
-            return latest;
-          }
-          if (!latest) {
-            return participant.updated_at;
-          }
-          return new Date(participant.updated_at) > new Date(latest)
-            ? participant.updated_at
-            : latest;
-        }, null);
-
+        const data = await response.json().catch(() => ({}));
         setStats({
-          raceCount: racesCountResult.count ?? 0,
-          playersWithAccountCount: playersWithAccountCountResult.count ?? 0,
-          playersWithoutAccountCount: playersWithoutAccountCountResult.count ?? 0,
-          accountCount: accountCountResult.count ?? 0,
-          totalItemsCount,
-          photoCount: photosCountResult.count ?? 0,
-          lastActivityAt,
+          raceCount: Number(data?.raceCount ?? 0),
+          activeRacesCount: Number(data?.activeRacesCount ?? 0),
+          playersWithoutAccountCount: Number(data?.playersWithoutAccountCount ?? 0),
+          accountCount: Number(data?.accountCount ?? 0),
+          totalItemsCount: Number(data?.totalItemsCount ?? 0),
+          photoCount: Number(data?.photoCount ?? 0),
+          lastActivityAt:
+            typeof data?.lastActivityAt === "string" || data?.lastActivityAt === null
+              ? data.lastActivityAt
+              : null,
         });
+      } finally {
         setIsLoadingStats(false);
-        return;
       }
-
-      const normalizedUsername = user.username.toUpperCase();
-
-      const [participantResult, accountResult] = await Promise.all([
-        supabase
-          .from("participants")
-          .select("id,race_id,items_eaten,updated_at")
-          .eq("login_code", normalizedUsername),
-        supabase
-          .from("logins")
-          .select("id", { count: "exact", head: true })
-          .eq("username", normalizedUsername),
-      ]);
-
-      const participantRows = Array.isArray(participantResult.data)
-        ? participantResult.data
-        : [];
-      const raceIds = new Set(participantRows.map((participant) => participant.race_id));
-      const participantIds = participantRows.map((participant) => participant.id);
-      const totalItemsCount = participantRows.reduce(
-        (total, participant) => total + Math.max(0, Number(participant.items_eaten ?? 0)),
-        0
-      );
-      const lastActivityAt = participantRows.reduce<string | null>((latest, participant) => {
-        if (!participant.updated_at) {
-          return latest;
-        }
-        if (!latest) {
-          return participant.updated_at;
-        }
-        return new Date(participant.updated_at) > new Date(latest)
-          ? participant.updated_at
-          : latest;
-      }, null);
-
-      let photoCount = 0;
-      if (participantIds.length > 0) {
-        const { count } = await supabase
-          .from("race_photos")
-          .select("id", { count: "exact", head: true })
-          .in("participant_id", participantIds);
-        photoCount = count ?? 0;
-      }
-
-      setStats({
-        raceCount: raceIds.size,
-        playersWithAccountCount: participantRows.length,
-        playersWithoutAccountCount: 0,
-        accountCount: accountResult.count ?? 0,
-        totalItemsCount,
-        photoCount,
-        lastActivityAt,
-      });
-      setIsLoadingStats(false);
     };
 
     if (isAuthenticated) {
@@ -590,12 +506,12 @@ export default function AdminPage() {
       ),
     });
   };
-  const updatePremiumClaimCredits = async () => {
+  const addPremiumClaimCredits = async () => {
     if (!user) return;
 
     const parsedValue = Number.parseInt(premiumClaimCreditInput, 10);
-    if (!Number.isFinite(parsedValue) || parsedValue < 0) {
-      setPremiumStatus("Claim credits must be 0 or greater");
+    if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+      setPremiumStatus("Claim credits to add must be greater than 0");
       return;
     }
 
@@ -606,21 +522,22 @@ export default function AdminPage() {
       .upsert(
         {
           login_code: user.username,
-          premium_avatar_claim_credits: parsedValue,
+          premium_avatar_claim_credits: user.premiumAvatarClaimCredits + parsedValue,
         },
         { onConflict: "login_code" },
       );
 
     if (error) {
-      setPremiumStatus("Failed to update claim credits");
+      setPremiumStatus("Failed to add claim credits");
       return;
     }
 
     setUser({
       ...user,
-      premiumAvatarClaimCredits: parsedValue,
+      premiumAvatarClaimCredits: user.premiumAvatarClaimCredits + parsedValue,
     });
-    setPremiumStatus("Claim credits updated");
+    setPremiumStatus(`Added ${parsedValue} claim credit${parsedValue === 1 ? "" : "s"}`);
+    setPremiumClaimCreditInput("1");
   };
 
 
@@ -689,9 +606,9 @@ export default function AdminPage() {
                     </div>
                     <div className="rounded-md border border-muted px-3 py-2">
                       <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                        Players (with account)
+                        Active races
                       </p>
-                      <p className="text-lg font-black">{stats.playersWithAccountCount}</p>
+                      <p className="text-lg font-black">{stats.activeRacesCount}</p>
                     </div>
                     <div className="rounded-md border border-muted px-3 py-2">
                       <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -970,15 +887,15 @@ export default function AdminPage() {
                         onChange={(event) =>
                           setPremiumClaimCreditInput(event.target.value)
                         }
-                        placeholder="Claim credits"
+                        placeholder="Credits to add"
                         inputMode="numeric"
                       />
                       <Button
                         variant="outline"
-                        onClick={updatePremiumClaimCredits}
+                        onClick={addPremiumClaimCredits}
                         className="md:w-40"
                       >
-                        Update credits
+                        Add credits
                       </Button>
                     </div>
                     <div className="flex flex-col gap-2 md:flex-row">
