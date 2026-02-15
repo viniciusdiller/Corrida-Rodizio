@@ -1653,7 +1653,7 @@ export default function RoomPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-orange-100/50 via-background to-background dark:from-purple-950/50 dark:via-black dark:to-black p-4 md:p-8 text-[15px] md:text-base">
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-background to-orange-100 dark:from-black dark:via-zinc-950 dark:to-[#12061a] p-4 md:p-8 text-[15px] md:text-base">
       <div className="mx-auto max-w-2xl space-y-6">
         <RoomHeader
           onExit={() => router.push("/")}

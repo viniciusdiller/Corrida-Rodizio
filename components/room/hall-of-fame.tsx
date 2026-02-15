@@ -1,32 +1,76 @@
 "use client";
 
-import { Trophy, Instagram, Home } from "lucide-react";
+import { ArrowLeft, Home, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Race, Participant } from "@/types/database";
-import { getAvatarUrl, isImageAvatar } from "@/lib/utils/avatars";
+import { getAvatarUrl, isGifAvatar, isImageAvatar } from "@/lib/utils/avatars";
 import { useLanguage } from "@/contexts/language-context";
 import { ShareStoryButton } from "./share-story-button";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Card } from "@/components/ui/card";
 
 const TEAM_OPTIONS = [
-  { id: "AZUL", shortLabel: "Azul", pillClass: "bg-blue-500/20 text-blue-300" },
+  { id: "AZUL", borderClass: "border-blue-500/90 dark:border-blue-400/90" },
   {
     id: "VERMELHA",
-    shortLabel: "Vermelho",
-    pillClass: "bg-red-500/20 text-red-300",
+    borderClass: "border-red-500/90 dark:border-red-400/90",
   },
   {
     id: "VERDE",
-    shortLabel: "Verde",
-    pillClass: "bg-emerald-500/20 text-emerald-300",
+    borderClass: "border-emerald-500/90 dark:border-emerald-400/90",
   },
   {
     id: "AMARELA",
-    shortLabel: "Amarelo",
-    pillClass: "bg-yellow-500/20 text-yellow-300",
+    borderClass: "border-yellow-500/90 dark:border-yellow-400/90",
   },
 ];
+
+const getNameFontSize = (name: string) => {
+  const length = name.trim().length;
+  if (length >= 24) return 6;
+  if (length >= 20) return 7;
+  if (length >= 16) return 8;
+  if (length >= 12) return 9;
+  if (length >= 8) return 10;
+  return 12;
+};
+
+const stripEmojis = (value: string) =>
+  value.replace(/\p{Extended_Pictographic}/gu, "").trim();
+
+function HallOfFameAvatar({
+  avatar,
+  className,
+}: {
+  avatar: string;
+  className: string;
+}) {
+  const isGif = isGifAvatar(avatar);
+  const [staticGifFrame, setStaticGifFrame] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isGif || staticGifFrame) return;
+
+    const image = new Image();
+    image.src = getAvatarUrl(avatar);
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(image, 0, 0);
+      setStaticGifFrame(canvas.toDataURL("image/png"));
+    };
+  }, [avatar, isGif, staticGifFrame]);
+
+  if (isGif && !staticGifFrame) {
+    return <span className="block h-8 w-8 bg-muted" />;
+  }
+
+  return <img src={staticGifFrame ?? getAvatarUrl(avatar)} alt="" className={className} />;
+}
 
 interface HallOfFameProps {
   race: Race;
@@ -101,7 +145,12 @@ export function HallOfFame({
         }
         const data = await response.json().catch(() => ({}));
         const photos = Array.isArray(data?.photos) ? data.photos : [];
-        setTimeline(photos);
+        const sortedPhotos = [...photos].sort((a, b) => {
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        });
+        setTimeline(sortedPhotos);
       } catch {
         setTimelineError(true);
       } finally {
@@ -122,88 +171,262 @@ export function HallOfFame({
     setLoadingPhotos(nextLoading);
   }, [timeline]);
 
+  useEffect(() => {
+    if (!activePhoto) return;
+
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevBodyTouchAction = document.body.style.touchAction;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevHtmlTouchAction = document.documentElement.style.touchAction;
+
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+    document.documentElement.style.overflow = "hidden";
+    document.documentElement.style.touchAction = "none";
+
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.body.style.touchAction = prevBodyTouchAction;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.documentElement.style.touchAction = prevHtmlTouchAction;
+    };
+  }, [activePhoto]);
+
+  const rankedParticipants = [...participants]
+    .sort((a, b) => {
+      if (b.items_eaten !== a.items_eaten) {
+        return b.items_eaten - a.items_eaten;
+      }
+
+      // Tie-breaker: latest eater/drinker wins.
+      const updatedDiff =
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      if (updatedDiff !== 0) {
+        return updatedDiff;
+      }
+
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    })
+    .map((participant, index) => ({
+      participant,
+      position: index + 1,
+    }));
+  const topParticipant = rankedParticipants[0];
+  const remainingParticipants = rankedParticipants.slice(1);
+  const leftColumnParticipants = remainingParticipants.filter(
+    ({ position }) => position % 2 === 1,
+  );
+  const rightColumnParticipants = remainingParticipants.filter(
+    ({ position }) => position % 2 === 0,
+  );
+  const tileClass =
+    "relative size-28 shrink-0 sm:size-32 rounded-[1.6rem] border border-white/70 bg-white/80 px-2.5 py-2.5 text-center flex flex-col items-center gap-1 overflow-hidden shadow-[0_12px_26px_rgba(0,0,0,0.10)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.05] dark:shadow-[0_14px_30px_rgba(0,0,0,0.35)]";
+  const rankBadgeClass =
+    "pointer-events-none absolute left-1 top-1 z-30 inline-block px-1 text-2xl sm:text-3xl font-black italic leading-none text-orange-500 drop-shadow-[0_2px_4px_rgba(0,0,0,0.18)] dark:text-purple-300";
+  const winnerTileClass =
+    "border-orange-400/80 bg-gradient-to-b from-orange-100/95 to-orange-50/85 ring-2 ring-orange-300/60 dark:border-purple-400/70 dark:bg-gradient-to-b dark:from-purple-900/60 dark:to-zinc-900/80 dark:ring-purple-500/40";
+  const winnerAccentClass = "text-orange-600 dark:text-purple-300";
+  const phraseClass =
+    "w-[4.5rem] sm:w-[6rem] text-[11px] sm:text-sm font-medium leading-tight text-foreground/75";
+  const phraseRightClass = "text-right";
+  const phraseLeftClass = "text-left";
+
   return (
-    <div className="min-h-screen bg-background text-foreground p-6 flex flex-col items-center justify-center animate-in fade-in duration-1000">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-4">
-          <div className="inline-block p-3 bg-primary rounded-2xl rotate-3 shadow-2xl shadow-primary/20">
-            <Trophy className="h-10 w-10 text-primary-foreground" />
-          </div>
-          <p className="text-xs font-mono text-muted-foreground tracking-widest">
-            rodiziorace.mechama.eu
-          </p>
-          <div className="space-y-1">
-            <h1 className="text-4xl font-black italic tracking-tighter uppercase">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-orange-50 via-background to-orange-100 text-foreground p-2 sm:p-6 flex flex-col items-center justify-center animate-in fade-in duration-1000 dark:from-black dark:via-zinc-950 dark:to-[#12061a]">
+      <div className="pointer-events-none absolute -left-16 -top-24 h-64 w-64 rounded-full bg-orange-300/30 blur-3xl dark:bg-purple-500/20" />
+      <div className="pointer-events-none absolute -right-20 top-1/3 h-72 w-72 rounded-full bg-amber-300/25 blur-3xl dark:bg-violet-500/20" />
+      <div className="pointer-events-none absolute -bottom-24 left-1/3 h-72 w-72 rounded-full bg-orange-200/35 blur-3xl dark:bg-purple-700/25" />
+
+      <div className="relative w-full max-w-xl space-y-8">
+        <div className="mx-auto flex w-full max-w-lg items-center justify-center gap-3 sm:gap-5">
+          <div className="space-y-2 text-left">
+            <h1 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tight text-orange-600 dark:text-purple-300">
               {t.hall_of_fame.title}
             </h1>
-            <p className="text-primary font-mono text-sm tracking-widest">
-              {t.common.room}: {race.room_code}
+            <p className="inline-flex rounded-full border border-border/70 bg-background/75 px-4 py-1.5 text-xs sm:text-sm font-semibold tracking-[0.14em] text-muted-foreground backdrop-blur">
+              rodiziorace.mechama.eu
             </p>
+          </div>
+          <div className="shrink-0">
+            <img
+              src="/logo-big-light.png"
+              alt="Rodizio Race"
+              className="block h-16 w-auto dark:hidden sm:h-20"
+            />
+            <img
+              src="/logo-big-dark.png"
+              alt="Rodizio Race"
+              className="hidden h-16 w-auto dark:block sm:h-20"
+            />
           </div>
         </div>
 
-        <div className="space-y-4">
-          {participants.map((p, i) => {
-            const isWinner = p.items_eaten === maxScore && maxScore > 0;
-            const team = TEAM_OPTIONS.find((t) => t.id === p.team);
+        <div className="space-y-5">
+          {topParticipant && (() => {
+            const p = topParticipant.participant;
+            const team = TEAM_OPTIONS.find(
+              (teamOption) => teamOption.id === p.team,
+            );
+            const teamTileBorderClass =
+              race.is_team_mode && team ? team.borderClass : "";
+            const avatar = p.avatar ?? "";
+            const hasImageAvatar = isImageAvatar(avatar);
+            const isLegendary = maxScore > 0;
+            const topPhrase = isLegendary
+              ? stripEmojis(t.hall_of_fame.legendary).toUpperCase()
+              : getMotivationalPhrase(p.id);
+
             return (
-              <div
-                key={p.id}
-                className={`relative overflow-hidden flex items-center justify-between p-5 rounded-3xl border-2 transition-all ${
-                  isWinner
-                    ? "border-primary bg-primary/10 scale-105 shadow-[0_0_30px_rgba(249,115,22,0.2)]"
-                    : "border-border bg-card/60"
-                }`}
-              >
-                <div className="flex items-center gap-4 z-10">
-                  <div className="text-3xl">
-                    {isImageAvatar(p.avatar) ? (
-                      <img
-                        src={getAvatarUrl(p.avatar)}
-                        alt=""
-                        className="h-10 w-10 object-contain"
-                      />
-                    ) : (
-                      <span className="inline-block h-9 w-9 rounded-full bg-white/10" />
-                    )}
-                  </div>
-                  <span
-                    className={`text-2xl font-black ${
-                      isWinner ? "text-primary" : "text-foreground"
-                    }`}
-                  >
-                    #{i + 1}
-                  </span>
-                  <div>
-                    <p className="font-bold text-xl leading-tight flex items-center gap-2">
-                      {p.name}
-                      {race.is_team_mode && team && (
-                        <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded ${team.pillClass}`}
-                        >
-                          {team.shortLabel}
-                        </span>
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center">
+                <p
+                  className={`${phraseClass} ${phraseRightClass} justify-self-end pr-1 sm:pr-2 ${
+                    isLegendary
+                      ? "text-sm sm:text-base font-black uppercase tracking-[0.1em]"
+                      : ""
+                  }`}
+                >
+                  {topPhrase}
+                </p>
+                <div className="relative inline-block">
+                  <span className={rankBadgeClass}>#{topParticipant.position}</span>
+                  <div className={`${tileClass} ${winnerTileClass} ${teamTileBorderClass}`}>
+                    <div className="mt-0.5 flex h-10 w-full items-center justify-center">
+                      {hasImageAvatar ? (
+                        <HallOfFameAvatar
+                          avatar={avatar}
+                          className="h-8 w-auto max-h-8 max-w-full object-contain"
+                        />
+                      ) : (
+                        <span className="block h-8 w-8 bg-muted" />
                       )}
+                    </div>
+                    <p
+                      className="flex h-5 sm:h-6 w-full items-center justify-center px-1 text-center font-black uppercase leading-none whitespace-nowrap overflow-hidden"
+                      style={{ fontSize: `${getNameFontSize(p.name)}px` }}
+                    >
+                      {p.name}
                     </p>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                      {isWinner
-                        ? t.hall_of_fame.legendary
-                        : getMotivationalPhrase(p.id)}
-                    </p>
+                    <div className="mt-auto leading-none">
+                      <p className={`text-xl sm:text-2xl font-black tracking-tight ${winnerAccentClass}`}>
+                        {p.items_eaten}
+                      </p>
+                      <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground sm:text-[10px]">
+                        {getItemLabel(p.items_eaten)}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="text-right z-10">
-                  <p className="text-3xl font-black leading-none">
-                    {p.items_eaten}
-                  </p>
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground mt-1">
-                    {getItemLabel(p.items_eaten)}
-                  </p>
+                <div className="justify-self-start -ml-1 pt-2 sm:-ml-2 sm:pt-3">
+                  <div className="inline-flex h-16 w-14 rotate-[8deg] flex-col items-center justify-center rounded-2xl border border-white/70 bg-white/75 shadow-[0_12px_20px_rgba(0,0,0,0.14)] backdrop-blur dark:border-white/10 dark:bg-white/[0.06]">
+                    <Trophy className="h-5 w-5 text-orange-500 dark:text-purple-300" />
+                    <span className="mt-0.5 text-[9px] font-black uppercase tracking-wide text-orange-600 dark:text-purple-300">
+                      MVP
+                    </span>
+                  </div>
                 </div>
               </div>
             );
-          })}
+          })()}
+
+          <div className="grid grid-cols-2 gap-x-2 sm:gap-x-3">
+            <div className="space-y-3.5 pt-12">
+              {leftColumnParticipants.map(({ participant: p, position }) => {
+                const team = TEAM_OPTIONS.find(
+                  (teamOption) => teamOption.id === p.team,
+                );
+                const teamTileBorderClass =
+                  race.is_team_mode && team ? team.borderClass : "";
+                const avatar = p.avatar ?? "";
+                const hasImageAvatar = isImageAvatar(avatar);
+                const phrase = getMotivationalPhrase(p.id);
+
+                return (
+                  <div key={p.id} className="flex items-center justify-end gap-1 sm:gap-2">
+                    <p className={`${phraseClass} ${phraseRightClass}`}>
+                      {phrase}
+                    </p>
+                    <div className="relative inline-block">
+                      <span className={rankBadgeClass}>#{position}</span>
+                      <div className={`${tileClass} ${teamTileBorderClass}`}>
+                        <div className="mt-0.5 flex h-10 w-full items-center justify-center">
+                          {hasImageAvatar ? (
+                            <HallOfFameAvatar
+                              avatar={avatar}
+                              className="h-8 w-auto max-h-8 max-w-full object-contain"
+                            />
+                          ) : (
+                            <span className="block h-8 w-8 bg-muted" />
+                          )}
+                        </div>
+                        <p
+                          className="flex h-5 sm:h-6 w-full items-center justify-center px-1 text-center font-black uppercase leading-none whitespace-nowrap overflow-hidden"
+                          style={{ fontSize: `${getNameFontSize(p.name)}px` }}
+                        >
+                          {p.name}
+                        </p>
+                        <div className="mt-auto leading-none">
+                          <p className="text-xl sm:text-2xl font-black tracking-tight">{p.items_eaten}</p>
+                          <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground sm:text-[10px]">
+                            {getItemLabel(p.items_eaten)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="space-y-3.5">
+              {rightColumnParticipants.map(({ participant: p, position }) => {
+                const team = TEAM_OPTIONS.find(
+                  (teamOption) => teamOption.id === p.team,
+                );
+                const teamTileBorderClass =
+                  race.is_team_mode && team ? team.borderClass : "";
+                const avatar = p.avatar ?? "";
+                const hasImageAvatar = isImageAvatar(avatar);
+                const phrase = getMotivationalPhrase(p.id);
+
+                return (
+                  <div key={p.id} className="flex items-center justify-start gap-1 sm:gap-2">
+                    <div className="relative inline-block">
+                      <span className={rankBadgeClass}>#{position}</span>
+                      <div className={`${tileClass} ${teamTileBorderClass}`}>
+                        <div className="mt-0.5 flex h-10 w-full items-center justify-center">
+                          {hasImageAvatar ? (
+                            <HallOfFameAvatar
+                              avatar={avatar}
+                              className="h-8 w-auto max-h-8 max-w-full object-contain"
+                            />
+                          ) : (
+                            <span className="block h-8 w-8 bg-muted" />
+                          )}
+                        </div>
+                        <p
+                          className="flex h-5 sm:h-6 w-full items-center justify-center px-1 text-center font-black uppercase leading-none whitespace-nowrap overflow-hidden"
+                          style={{ fontSize: `${getNameFontSize(p.name)}px` }}
+                        >
+                          {p.name}
+                        </p>
+                        <div className="mt-auto leading-none">
+                          <p className="text-xl sm:text-2xl font-black tracking-tight">{p.items_eaten}</p>
+                          <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground sm:text-[10px]">
+                            {getItemLabel(p.items_eaten)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <p className={`${phraseClass} ${phraseLeftClass}`}>
+                      {phrase}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
+
         <div className="flex flex-col items-center gap-4 pt-4 w-full">
           {race.photo_mode && currentParticipantId && (
             <div className="w-full space-y-3">
@@ -385,55 +608,76 @@ export function HallOfFame({
           </div>
         </>
       )}
-      {activePhoto && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
-            onClick={() => setActivePhoto(null)}
-          />
-          <div className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-card p-3">
-            <img
-              src={activePhoto}
-              alt=""
-              className="w-full rounded-xl object-contain"
+      {activePhoto &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+              onClick={() => setActivePhoto(null)}
             />
-            <div className="mt-3 flex justify-center">
-              <Button
-                variant="outline"
-                className="border-border"
-                disabled={isSharingPhoto}
-                onClick={async () => {
-                  if (!activePhoto) return;
-                  setIsSharingPhoto(true);
-                  try {
-                    const response = await fetch(activePhoto);
-                    const blob = await response.blob();
-                    const file = new File([blob], "photo.jpg", {
-                      type: blob.type || "image/jpeg",
-                    });
-                    if (navigator.canShare?.({ files: [file] })) {
-                      await navigator.share({ files: [file] });
-                    } else {
-                      const url = URL.createObjectURL(blob);
-                      const link = document.createElement("a");
-                      link.href = url;
-                      link.download = "photo.jpg";
-                      link.click();
-                      URL.revokeObjectURL(url);
-                    }
-                  } catch {
-                    return;
-                  } finally {
-                    setIsSharingPhoto(false);
-                  }
-                }}
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              onClick={() => setActivePhoto(null)}
+            >
+              <div
+                className="w-full max-w-xl rounded-2xl border border-border bg-card p-3"
+                onClick={(event) => event.stopPropagation()}
               >
-                {isSharingPhoto ? "..." : t.hall_of_fame.share_photo}
-              </Button>
+                <div className="mb-2 flex justify-start">
+                  <Button
+                    variant="ghost"
+                    className="h-8 px-2 text-xs"
+                    onClick={() => setActivePhoto(null)}
+                  >
+                    <ArrowLeft className="mr-1 h-3.5 w-3.5" />
+                    Back
+                  </Button>
+                </div>
+                <img
+                  src={activePhoto}
+                  alt=""
+                  className="mx-auto max-h-[70vh] w-full rounded-xl object-contain"
+                />
+                <div className="mt-3 flex justify-center">
+                  <Button
+                    variant="outline"
+                    className="border-border"
+                    disabled={isSharingPhoto}
+                    onClick={async () => {
+                      if (!activePhoto) return;
+                      setIsSharingPhoto(true);
+                      try {
+                        const response = await fetch(activePhoto);
+                        const blob = await response.blob();
+                        const file = new File([blob], "photo.jpg", {
+                          type: blob.type || "image/jpeg",
+                        });
+                        if (navigator.canShare?.({ files: [file] })) {
+                          await navigator.share({ files: [file] });
+                        } else {
+                          const url = URL.createObjectURL(blob);
+                          const link = document.createElement("a");
+                          link.href = url;
+                          link.download = "photo.jpg";
+                          link.click();
+                          URL.revokeObjectURL(url);
+                        }
+                      } catch {
+                        return;
+                      } finally {
+                        setIsSharingPhoto(false);
+                      }
+                    }}
+                  >
+                    {isSharingPhoto ? "..." : t.hall_of_fame.share_photo}
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          </>,
+          document.body,
+        )}
     </div>
   );
 }
