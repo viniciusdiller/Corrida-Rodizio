@@ -71,6 +71,10 @@ function inferButtonIcon(buttonText: string): LucideIcon {
   return matched?.icon ?? ChevronRight;
 }
 
+function isBackIcon(icon: LucideIcon): boolean {
+  return icon === ChevronLeft;
+}
+
 function Button({
   className,
   variant,
@@ -91,6 +95,8 @@ function Button({
     size !== "icon" && size !== "icon-sm" && size !== "icon-lg" && textOnlyChildren;
   const buttonText = textOnlyChildren ? childrenArray.join(" ") : "";
   const Icon = inferButtonIcon(buttonText);
+  const shouldRenderLeadingIcon = shouldRenderDefaultIcon && isBackIcon(Icon);
+  const shouldRenderTrailingIcon = shouldRenderDefaultIcon && !shouldRenderLeadingIcon;
 
   return (
     <Comp
@@ -98,8 +104,9 @@ function Button({
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     >
+      {shouldRenderLeadingIcon ? <Icon aria-hidden="true" /> : null}
       {children}
-      {shouldRenderDefaultIcon ? <Icon aria-hidden="true" /> : null}
+      {shouldRenderTrailingIcon ? <Icon aria-hidden="true" /> : null}
     </Comp>
   );
 }
