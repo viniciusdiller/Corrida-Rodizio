@@ -4,7 +4,7 @@ import { useLanguage } from "@/contexts/language-context";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function TermsPage() {
@@ -21,7 +21,7 @@ export default function TermsPage() {
             onClick={() => router.push("/")}
             className="rounded-xl font-semibold gap-2 shadow-sm bg-background/90 backdrop-blur"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
             {t.common.exit}
           </Button>
           <div className="flex w-full justify-end space-between gap-2">

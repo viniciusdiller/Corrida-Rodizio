@@ -11,7 +11,6 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   Plus,
-  ArrowLeft,
   ChevronLeft,
   Settings,
   Check,
@@ -2039,7 +2038,7 @@ export default function RoomPage() {
           onClick={handleExit}
           className="rounded-xl font-semibold gap-2 shadow-sm bg-background/90 backdrop-blur"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4" />
           {t.common.exit}
         </Button>
       </div>
