@@ -2,9 +2,9 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import {
-  ArrowLeft,
-  ArrowRight,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Home,
   LogIn,
@@ -52,7 +52,7 @@ const buttonVariants = cva(
 );
 
 const textIconMatchers: Array<{ regex: RegExp; icon: LucideIcon }> = [
-  { regex: /(voltar|back|retornar)/i, icon: ArrowLeft },
+  { regex: /(voltar|back|retornar)/i, icon: ChevronLeft },
   { regex: /(copiar|copy)/i, icon: Copy },
   { regex: /(compartilhar|share)/i, icon: Share2 },
   { regex: /(entrar|login|acessar)/i, icon: LogIn },
@@ -63,12 +63,12 @@ const textIconMatchers: Array<{ regex: RegExp; icon: LucideIcon }> = [
   { regex: /(editar|edit)/i, icon: Pencil },
   { regex: /(criar|novo|nova|adicionar|add)/i, icon: Plus },
   { regex: /(início|inicio|home)/i, icon: Home },
-  { regex: /(continuar|próximo|proximo|next|avançar|avancar|ir)/i, icon: ArrowRight },
+  { regex: /(continuar|próximo|proximo|next|avançar|avancar|ir)/i, icon: ChevronRight },
 ];
 
 function inferButtonIcon(buttonText: string): LucideIcon {
   const matched = textIconMatchers.find(({ regex }) => regex.test(buttonText));
-  return matched?.icon ?? ArrowRight;
+  return matched?.icon ?? ChevronRight;
 }
 
 function Button({

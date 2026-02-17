@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import {
-  ArrowLeft,
+  ChevronLeft,
   BadgeCheck,
   Check,
   Copy,
@@ -134,7 +134,7 @@ export function AccountMenuOverlay({
             onClick={onClose}
             className="-ml-2 h-auto gap-2 px-2 py-1 text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ChevronLeft className="h-5 w-5" />
             <span className="font-semibold">{labels.back}</span>
           </Button>
         </div>
@@ -189,7 +189,7 @@ export function AccountMenuOverlay({
           onClick={onToggleClaimForm}
         >
           {showClaimForm ? (
-            <ArrowLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
           ) : (
             <BadgeCheck className="h-4 w-4" />
           )}

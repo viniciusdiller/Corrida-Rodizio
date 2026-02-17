@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Home, Trophy } from "lucide-react";
+import { ChevronLeft, Home, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Race, Participant } from "@/types/database";
 import { getAvatarUrl, isGifAvatar, isImageAvatar } from "@/lib/utils/avatars";
@@ -630,7 +630,7 @@ export function HallOfFame({
                     className="h-8 px-2 text-xs"
                     onClick={() => setActivePhoto(null)}
                   >
-                    <ArrowLeft className="mr-1 h-3.5 w-3.5" />
+                    <ChevronLeft className="mr-1 h-3.5 w-3.5" />
                     Back
                   </Button>
                 </div>
