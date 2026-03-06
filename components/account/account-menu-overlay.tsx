@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ChevronLeft,
   BadgeCheck,
@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Smartphone,
   Ticket,
+  ChevronDown,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -110,8 +111,13 @@ export function AccountMenuOverlay({
   invitationCode,
 }: AccountMenuOverlayProps) {
   const [hasCopiedCode, setHasCopiedCode] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (open) setMounted(true);
+  }, [open]);
+
+  if (!open && !mounted) return null;
 
   const handleCopyCode = () => {
     if (invitationCode) {
@@ -122,224 +128,311 @@ export function AccountMenuOverlay({
   };
 
   return (
-    <>
+    <div
+      className={`fixed inset-0 z-50 flex items-end justify-center sm:items-center ${open ? "pointer-events-auto" : "pointer-events-none"}`}
+    >
+      {/* Overlay com fade e blur */}
       <div
-        className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm"
+        className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0"}`}
         onClick={onClose}
       />
-      <div className="fixed left-1/2 top-1/2 z-40 w-[calc(100%-2rem)] max-h-[85vh] max-w-md -translate-x-1/2 -translate-y-1/2 space-y-3 overflow-y-auto rounded-2xl border border-muted/60 bg-background/95 p-4 shadow-xl backdrop-blur">
-        <div className="flex items-center justify-start pb-1">
+
+      {/* Modal / Bottom Sheet */}
+      <div
+        className={`relative z-50 flex w-full flex-col overflow-hidden bg-background shadow-2xl transition-transform duration-300 ease-out 
+          max-h-[85dvh] sm:max-h-[85dvh]
+          sm:max-w-md sm:rounded-2xl sm:border sm:border-muted/60
+          rounded-t-[2rem] border-t border-muted/50
+          ${open ? "translate-y-0 sm:scale-100" : "translate-y-full sm:translate-y-0 sm:scale-95 sm:opacity-0"}
+        `}
+      >
+        {/* Puxador (Drag Handle) apenas no mobile - FIXO */}
+        <div className="shrink-0 flex w-full justify-center pt-3 pb-1 sm:hidden">
+          <div className="h-1.5 w-12 rounded-full bg-muted/60" />
+        </div>
+
+        {/* Header Fixo */}
+        <div className="shrink-0 flex items-center justify-between px-4 pb-2 pt-1 sm:pt-4">
           <Button
             variant="ghost"
             onClick={onClose}
-            className="-ml-2 h-auto gap-2 px-2 py-1 text-muted-foreground hover:text-foreground"
+            className="-ml-2 h-10 gap-2 px-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           >
             <ChevronLeft className="h-5 w-5" />
-            <span className="font-semibold">{labels.back}</span>
+            <span className="font-semibold text-base">{labels.back}</span>
           </Button>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <div className="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300">
-            {labels.premiumCreditsAvailable}
-          </div>
-
-          {invitationCode && (
-            <div className="flex w-full items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/10 px-3 py-1 text-primary">
-              <span className="flex-1 text-center text-xs font-bold uppercase tracking-wide">
-                {labels.invitationCodeLabel}: {invitationCode}
+        {/* Conteúdo COM SCROLL flex-1 overflow-y-auto */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-12 sm:pb-6 space-y-5 custom-scrollbar">
+          {/* Status e Infos da Conta */}
+          <div className="space-y-3">
+            <div className="w-full rounded-2xl border border-amber-500/20 bg-gradient-to-r from-amber-500/10 to-orange-500/10 p-3 flex items-center justify-center shadow-inner">
+              <span className="flex items-center gap-2 text-center text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                <BadgeCheck className="h-4 w-4" />
+                {labels.premiumCreditsAvailable}
               </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 hover:bg-primary/20 hover:text-primary"
-                onClick={handleCopyCode}
-                title="Copiar código"
-              >
-                {hasCopiedCode ? (
-                  <Check className="h-3.5 w-3.5" />
-                ) : (
-                  <Copy className="h-3.5 w-3.5" />
-                )}
-              </Button>
             </div>
-          )}
 
-          <Button
-            variant="outline"
-            className="min-w-[140px] flex-1 gap-2"
-            onClick={onTogglePasswordForm}
-          >
-            <KeyRound className="h-4 w-4" />
-            {labels.changePassword}
-          </Button>
-          <Button
-            variant="ghost"
-            className="min-w-[120px] flex-1 gap-2"
-            onClick={onLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            {labels.logout}
-          </Button>
-        </div>
-
-        <Button
-          variant="outline"
-          className="w-full gap-2"
-          onClick={onToggleClaimForm}
-        >
-          {showClaimForm ? (
-            <ChevronLeft className="h-4 w-4" />
-          ) : (
-            <BadgeCheck className="h-4 w-4" />
-          )}
-          {showClaimForm ? labels.back : labels.registerAvatar}
-        </Button>
-
-        {showClaimForm && (
-          <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
-            <Label className="text-xs font-bold uppercase text-muted-foreground">
-              {labels.claimPromptLabel}
-            </Label>
-            <div className="flex flex-col gap-2 md:flex-row">
-              <Input
-                value={claim.value}
-                onChange={(event) => claim.onChange(event.target.value)}
-                className="h-10"
-                placeholder={labels.claimPromptPlaceholder}
-              />
-              <Button
-                className="h-10 gap-2 md:w-40"
-                onClick={claim.onSubmit}
-                disabled={claim.isSubmitting}
-              >
-                <Check className="h-4 w-4" />
-                {claim.isSubmitting ? labels.loading : labels.claimSubmit}
-              </Button>
-            </div>
-            {claim.status && (
-              <p className="text-xs font-semibold text-muted-foreground">
-                {claim.status}
-              </p>
+            {invitationCode && (
+              <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-2 pl-4 shadow-sm">
+                <span className="flex-1 text-sm font-semibold tracking-wide text-primary">
+                  {labels.invitationCodeLabel}:{" "}
+                  <span className="font-bold">{invitationCode}</span>
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`h-9 w-9 shrink-0 rounded-xl transition-all ${
+                    hasCopiedCode
+                      ? "bg-green-500/10 text-green-600 hover:text-green-600 hover:bg-green-500/20"
+                      : "bg-primary/10 text-primary hover:bg-primary/20"
+                  }`}
+                  onClick={handleCopyCode}
+                  title="Copiar código"
+                >
+                  {hasCopiedCode ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             )}
           </div>
-        )}
 
-        {canManageCodes && (
-          <Button
-            variant="outline"
-            className="w-full gap-2"
-            onClick={onManageCodes}
-          >
-            <Ticket className="h-4 w-4" />
-            {labels.manageCodes}
-          </Button>
-        )}
+          <div className="h-px w-full bg-border/50" />
 
-        {showAddToHome && (
-          <Button
-            variant="outline"
-            className="w-full gap-2"
-            onClick={onAddToHome}
-          >
-            <Smartphone className="h-4 w-4" />
-            {labels.addToHome}
-          </Button>
-        )}
+          {/* Seções Primárias */}
+          <div className="space-y-3">
+            {/* Email de Recuperação */}
+            <div className="space-y-3 rounded-2xl border border-muted bg-muted/20 p-4 transition-all focus-within:border-primary/50 focus-within:bg-muted/40 hover:bg-muted/30">
+              <Label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <Mail className="h-3.5 w-3.5" />
+                {labels.recoveryEmailLabel}
+              </Label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  type="email"
+                  value={recoveryEmail.value}
+                  onChange={(event) =>
+                    recoveryEmail.onChange(event.target.value)
+                  }
+                  className="h-11 rounded-xl bg-background shadow-sm"
+                  placeholder={labels.recoveryEmailPlaceholder}
+                />
+                <Button
+                  className="h-11 min-w-[120px] gap-2 rounded-xl sm:w-auto font-semibold"
+                  onClick={recoveryEmail.onSave}
+                  disabled={recoveryEmail.isSaving}
+                  variant={recoveryEmail.hasSaved ? "secondary" : "default"}
+                >
+                  <Save className="h-4 w-4" />
+                  {recoveryEmail.isSaving
+                    ? labels.loading
+                    : recoveryEmail.hasSaved
+                      ? labels.update
+                      : labels.save}
+                </Button>
+              </div>
+              {recoveryEmail.status && (
+                <p
+                  className={`text-xs font-medium ${recoveryEmail.hasSaved ? "text-green-500" : "text-muted-foreground"}`}
+                >
+                  {recoveryEmail.status}
+                </p>
+              )}
+            </div>
 
-        <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
-          <Label className="text-xs font-bold uppercase text-muted-foreground">
-            {labels.recoveryEmailLabel}
-          </Label>
-          <div className="flex flex-col gap-2 md:flex-row">
-            <Input
-              type="email"
-              value={recoveryEmail.value}
-              onChange={(event) => recoveryEmail.onChange(event.target.value)}
-              className="h-10"
-              placeholder={labels.recoveryEmailPlaceholder}
-            />
-            <Button
-              className="h-10 gap-2 md:w-40"
-              onClick={recoveryEmail.onSave}
-              disabled={recoveryEmail.isSaving}
+            {/* Accordion: Alterar Senha */}
+            <div
+              className={`rounded-2xl border transition-all duration-300 overflow-hidden ${showPasswordForm ? "border-primary/30 bg-primary/5" : "border-muted bg-background hover:bg-muted/30"}`}
             >
-              <Mail className="h-4 w-4" />
-              <Save className="h-4 w-4" />
-              {recoveryEmail.isSaving
-                ? labels.loading
-                : recoveryEmail.hasSaved
-                  ? labels.update
-                  : labels.save}
-            </Button>
-          </div>
-          {recoveryEmail.status && (
-            <p className="text-xs font-semibold text-muted-foreground">
-              {recoveryEmail.status}
-            </p>
-          )}
-        </div>
+              <button
+                onClick={onTogglePasswordForm}
+                className="flex w-full items-center justify-between p-4 focus:outline-none"
+              >
+                <div className="flex items-center gap-3 font-semibold text-sm">
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${showPasswordForm ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}
+                  >
+                    <KeyRound className="h-4 w-4" />
+                  </div>
+                  {labels.changePassword}
+                </div>
+                <ChevronDown
+                  className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ${showPasswordForm ? "rotate-180 text-primary" : ""}`}
+                />
+              </button>
 
-        {showPasswordForm && (
-          <div className="space-y-2 rounded-xl border border-muted/60 bg-background/70 p-3">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-muted-foreground">
-                {labels.currentPassword}
-              </Label>
-              <Input
-                type="password"
-                value={password.current}
-                onChange={(event) =>
-                  password.onCurrentChange(event.target.value)
-                }
-                className="h-10"
-                placeholder="***"
-              />
+              <div
+                className={`grid transition-all duration-300 ease-in-out ${showPasswordForm ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+              >
+                <div className="overflow-hidden">
+                  <div className="p-4 pt-0 space-y-3">
+                    <div className="h-px w-full bg-border/50 mb-4" />
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-muted-foreground ml-1">
+                        {labels.currentPassword}
+                      </Label>
+                      <Input
+                        type="password"
+                        value={password.current}
+                        onChange={(e) =>
+                          password.onCurrentChange(e.target.value)
+                        }
+                        className="h-11 rounded-xl bg-background"
+                        placeholder="***"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-muted-foreground ml-1">
+                        {labels.newPassword}
+                      </Label>
+                      <Input
+                        type="password"
+                        value={password.newPassword}
+                        onChange={(e) => password.onNewChange(e.target.value)}
+                        className="h-11 rounded-xl bg-background"
+                        placeholder="***"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-muted-foreground ml-1">
+                        {labels.confirmPassword}
+                      </Label>
+                      <Input
+                        type="password"
+                        value={password.confirm}
+                        onChange={(e) =>
+                          password.onConfirmChange(e.target.value)
+                        }
+                        className="h-11 rounded-xl bg-background"
+                        placeholder="***"
+                      />
+                    </div>
+                    {password.status && (
+                      <p className="text-xs font-medium text-muted-foreground pt-1">
+                        {password.status}
+                      </p>
+                    )}
+                    <Button
+                      className="h-11 w-full gap-2 rounded-xl mt-4 font-bold"
+                      onClick={password.onSubmit}
+                      disabled={password.isSubmitting}
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                      {password.isSubmitting
+                        ? labels.updatingPassword
+                        : labels.updatePassword}
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-muted-foreground">
-                {labels.newPassword}
-              </Label>
-              <Input
-                type="password"
-                value={password.newPassword}
-                onChange={(event) => password.onNewChange(event.target.value)}
-                className="h-10"
-                placeholder="***"
-              />
+
+            {/* Accordion: Resgatar Avatar */}
+            <div
+              className={`rounded-2xl border transition-all duration-300 overflow-hidden ${showClaimForm ? "border-primary/30 bg-primary/5" : "border-muted bg-background hover:bg-muted/30"}`}
+            >
+              <button
+                onClick={onToggleClaimForm}
+                className="flex w-full items-center justify-between p-4 focus:outline-none"
+              >
+                <div className="flex items-center gap-3 font-semibold text-sm">
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${showClaimForm ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"}`}
+                  >
+                    <BadgeCheck className="h-4 w-4" />
+                  </div>
+                  {labels.registerAvatar}
+                </div>
+                <ChevronDown
+                  className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ${showClaimForm ? "rotate-180 text-primary" : ""}`}
+                />
+              </button>
+
+              <div
+                className={`grid transition-all duration-300 ease-in-out ${showClaimForm ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+              >
+                <div className="overflow-hidden">
+                  <div className="p-4 pt-0 space-y-3">
+                    <div className="h-px w-full bg-border/50 mb-4" />
+                    <Label className="text-xs font-semibold text-muted-foreground ml-1">
+                      {labels.claimPromptLabel}
+                    </Label>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <Input
+                        value={claim.value}
+                        onChange={(e) => claim.onChange(e.target.value)}
+                        className="h-11 rounded-xl bg-background"
+                        placeholder={labels.claimPromptPlaceholder}
+                      />
+                      <Button
+                        className="h-11 gap-2 rounded-xl sm:w-auto font-semibold"
+                        onClick={claim.onSubmit}
+                        disabled={claim.isSubmitting}
+                      >
+                        <Check className="h-4 w-4" />
+                        {claim.isSubmitting
+                          ? labels.loading
+                          : labels.claimSubmit}
+                      </Button>
+                    </div>
+                    {claim.status && (
+                      <p className="text-xs font-medium text-muted-foreground pt-1">
+                        {claim.status}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-muted-foreground">
-                {labels.confirmPassword}
-              </Label>
-              <Input
-                type="password"
-                value={password.confirm}
-                onChange={(event) =>
-                  password.onConfirmChange(event.target.value)
-                }
-                className="h-10"
-                placeholder="***"
-              />
-            </div>
-            {password.status && (
-              <p className="text-xs font-semibold text-muted-foreground">
-                {password.status}
-              </p>
+          </div>
+
+          <div className="h-px w-full bg-border/50 my-2" />
+
+          {/* Outras Ações */}
+          <div className="space-y-2">
+            {canManageCodes && (
+              <Button
+                variant="outline"
+                className="h-12 w-full justify-start gap-3 rounded-xl border-muted/60 bg-background hover:bg-muted/50 font-medium text-sm"
+                onClick={onManageCodes}
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded bg-muted/50 text-foreground">
+                  <Ticket className="h-4 w-4" />
+                </div>
+                {labels.manageCodes}
+              </Button>
             )}
+
+            {showAddToHome && (
+              <Button
+                variant="outline"
+                className="h-12 w-full justify-start gap-3 rounded-xl border-muted/60 bg-background hover:bg-muted/50 font-medium text-sm"
+                onClick={onAddToHome}
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded bg-muted/50 text-foreground">
+                  <Smartphone className="h-4 w-4" />
+                </div>
+                {labels.addToHome}
+              </Button>
+            )}
+
             <Button
-              className="h-10 w-full gap-2 rounded-xl font-bold"
-              onClick={password.onSubmit}
-              disabled={password.isSubmitting}
+              variant="ghost"
+              className="h-12 w-full justify-start gap-3 rounded-xl text-red-500 hover:bg-red-500/10 hover:text-red-600 font-medium text-sm"
+              onClick={onLogout}
             >
-              <ShieldCheck className="h-4 w-4" />
-              {password.isSubmitting
-                ? labels.updatingPassword
-                : labels.updatePassword}
+              <div className="flex h-7 w-7 items-center justify-center rounded bg-red-500/10">
+                <LogOut className="h-4 w-4" />
+              </div>
+              {labels.logout}
             </Button>
           </div>
-        )}
+        </div>
       </div>
-    </>
+    </div>
   );
 }
