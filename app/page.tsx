@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -1504,7 +1505,27 @@ export default function Home() {
           </Card>
         </div>
       </div>
-      <footer className="mt-8 mb-4 text-center text-[10px] text-muted-foreground/60 uppercase font-medium tracking-widest">
+      <footer className="mt-8 mb-4 space-y-3 text-center text-[10px] text-muted-foreground/60 uppercase font-medium tracking-widest">
+        <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          <Link
+            href="/terms"
+            className="transition hover:text-foreground/80"
+          >
+            {t.footer.terms}
+          </Link>
+          <Link
+            href="/privacy"
+            className="transition hover:text-foreground/80"
+          >
+            {t.footer.privacy}
+          </Link>
+          <Link
+            href="/quem-somos"
+            className="transition hover:text-foreground/80"
+          >
+            {t.footer.about}
+          </Link>
+        </nav>
         <p>
           {t.footer.copyright.replace(
             "{{year}}",

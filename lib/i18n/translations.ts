@@ -476,8 +476,46 @@ export const translations = {
         },
       ],
     },
+    about_page: {
+      header_label: "ℹ️ Quem somos nós",
+      title: "Quem somos nós",
+      last_update: "Última atualização: 8 de abril de 2026",
+      intro:
+        "O Rodízio Race foi criado para transformar encontros em rodízios em uma competição divertida, simples de acompanhar e fácil de compartilhar com os amigos.",
+      sections: [
+        {
+          title: "Nossa proposta",
+          content: [
+            "Queremos deixar o rodízio mais interativo, com placar em tempo real, ranking entre participantes e uma experiência leve direto no navegador.",
+          ],
+        },
+        {
+          title: "Como pensamos o produto",
+          content: [
+            "O foco do projeto é combinar diversão, praticidade e acesso rápido em celular ou desktop, sem exigir instalação complexa.",
+            "Também buscamos manter a experiência flexível para diferentes tipos de disputa, como pizza, sushi, burger e bebidas.",
+          ],
+        },
+        {
+          title: "Compromisso com a experiência",
+          content: [
+            "Trabalhamos para manter o Rodízio Race estável, acessível e em evolução contínua, com melhorias em usabilidade, desempenho e recursos sociais.",
+          ],
+        },
+        {
+          title: "Contato",
+          content: [
+            "Se quiser falar com a equipe do projeto, enviar sugestões ou reportar algum problema, use o e-mail abaixo:",
+          ],
+          footer: "contato@mechama.eu",
+        },
+      ],
+    },
     footer: {
       copyright: "© {{year}} Passa Raiva. Todos os direitos reservados.",
+      terms: "Termos",
+      privacy: "Política",
+      about: "Quem somos nós",
     },
   },
   en: {
@@ -950,8 +988,46 @@ export const translations = {
         },
       ],
     },
+    about_page: {
+      header_label: "ℹ️ Who we are",
+      title: "Who we are",
+      last_update: "Last updated: April 8, 2026",
+      intro:
+        "Rodízio Race was created to turn all-you-can-eat meetups into a fun competition that is simple to follow and easy to share with friends.",
+      sections: [
+        {
+          title: "What we aim to do",
+          content: [
+            "We want to make the all-you-can-eat experience more interactive with live scoring, participant rankings, and a lightweight experience directly in the browser.",
+          ],
+        },
+        {
+          title: "How we think about the product",
+          content: [
+            "The project focuses on combining fun, practicality, and fast access on mobile or desktop without requiring a complex installation process.",
+            "We also aim to keep the experience flexible for different competition types such as pizza, sushi, burgers, and drinks.",
+          ],
+        },
+        {
+          title: "Experience commitment",
+          content: [
+            "We work to keep Rodízio Race stable, accessible, and continuously improving in usability, performance, and social features.",
+          ],
+        },
+        {
+          title: "Contact",
+          content: [
+            "If you want to talk to the project team, send suggestions, or report a problem, use the email below:",
+          ],
+          footer: "contato@mechama.eu",
+        },
+      ],
+    },
     footer: {
       copyright: "© {{year}} Passa Raiva. All rights reserved.",
+      terms: "Terms",
+      privacy: "Privacy",
+      about: "Who we are",
     },
   },
   fr: {
@@ -1427,8 +1503,46 @@ export const translations = {
         },
       ],
     },
+    about_page: {
+      header_label: "ℹ️ Qui sommes-nous",
+      title: "Qui sommes-nous",
+      last_update: "Dernière mise à jour : 8 avril 2026",
+      intro:
+        "Rodízio Race a été créé pour transformer les sorties en rodízio en une compétition amusante, simple à suivre et facile à partager avec des amis.",
+      sections: [
+        {
+          title: "Notre proposition",
+          content: [
+            "Nous voulons rendre l’expérience du rodízio plus interactive avec un score en temps réel, un classement des participants et une expérience légère directement dans le navigateur.",
+          ],
+        },
+        {
+          title: "Notre vision du produit",
+          content: [
+            "Le projet vise à combiner amusement, praticité et accès rapide sur mobile ou ordinateur, sans installation complexe.",
+            "Nous cherchons aussi à garder une expérience flexible pour différents types de compétition, comme la pizza, le sushi, le burger et les boissons.",
+          ],
+        },
+        {
+          title: "Engagement sur l’expérience",
+          content: [
+            "Nous travaillons pour garder Rodízio Race stable, accessible et en amélioration continue sur l’ergonomie, les performances et les fonctionnalités sociales.",
+          ],
+        },
+        {
+          title: "Contact",
+          content: [
+            "Si vous souhaitez contacter l’équipe du projet, envoyer des suggestions ou signaler un problème, utilisez l’e-mail ci-dessous :",
+          ],
+          footer: "contato@mechama.eu",
+        },
+      ],
+    },
     footer: {
       copyright: "© {{year}} Passa Raiva. Tous droits réservés.",
+      terms: "Conditions",
+      privacy: "Confidentialité",
+      about: "Qui sommes-nous",
     },
   },
   es: {
@@ -1752,6 +1866,9 @@ export const translations = {
     },
     footer: {
       copyright: "© {{year}} Passa Raiva. Todos los derechos reservados.",
+      terms: "Términos",
+      privacy: "Política",
+      about: "Quiénes somos",
     },
     join_room_via_link: {
       join_room_error: "Error al entrar a la sala. Inténtalo de nuevo.",
@@ -1903,6 +2020,41 @@ export const translations = {
           title: "Contacto",
           content: [
             "Si tienes dudas sobre esta Política de Privacidad, contáctanos por correo electrónico:",
+          ],
+          footer: "contato@mechama.eu",
+        },
+      ],
+    },
+    about_page: {
+      header_label: "ℹ️ Quiénes somos",
+      title: "Quiénes somos",
+      last_update: "Última actualización: 8 de abril de 2026",
+      intro:
+        "Rodízio Race fue creado para convertir los encuentros en rodizio en una competición divertida, fácil de seguir y simple de compartir con amigos.",
+      sections: [
+        {
+          title: "Nuestra propuesta",
+          content: [
+            "Queremos hacer la experiencia del rodizio más interactiva con marcador en tiempo real, ranking entre participantes y una experiencia ligera directamente en el navegador.",
+          ],
+        },
+        {
+          title: "Cómo pensamos el producto",
+          content: [
+            "El proyecto se centra en combinar diversión, practicidad y acceso rápido en móvil o escritorio sin exigir una instalación compleja.",
+            "También buscamos mantener la experiencia flexible para distintos tipos de competición, como pizza, sushi, burger y bebidas.",
+          ],
+        },
+        {
+          title: "Compromiso con la experiencia",
+          content: [
+            "Trabajamos para mantener Rodízio Race estable, accesible y en mejora continua en usabilidad, rendimiento y funciones sociales.",
+          ],
+        },
+        {
+          title: "Contacto",
+          content: [
+            "Si quieres hablar con el equipo del proyecto, enviar sugerencias o reportar algún problema, usa el correo abajo:",
           ],
           footer: "contato@mechama.eu",
         },
