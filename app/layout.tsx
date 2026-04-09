@@ -164,6 +164,12 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
+        <Script
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "f4d52f5f10eb4e6da08483ab75f82e17"}'
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
