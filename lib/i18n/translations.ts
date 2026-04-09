@@ -94,7 +94,7 @@ export const translations = {
       logout: "Desconectar",
       view_history: "Ver histórico de Competições",
       hide_history: "Ocultar histórico",
-      register_avatar: "Registrar avatar exclusivo",
+      register_avatar: "Resgatar avatar exclusivo",
       manage_codes: "Gerenciar códigos promocionais",
       history_empty: "Nenhuma competição encontrada.",
       page_of: "Página {current} de {total}",
