@@ -92,6 +92,12 @@ export async function sendPushToSubscriptions(
             : null;
         if (statusCode === 404 || statusCode === 410) {
           invalidIds.push(subscription.id);
+        } else {
+          console.error("[web-push:send]", {
+            endpoint: subscription.endpoint,
+            statusCode,
+            error,
+          });
         }
       }
     }),

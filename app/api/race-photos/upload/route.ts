@@ -86,11 +86,15 @@ export async function POST(request: Request) {
         ?.map((row) => row.login_code)
         .filter((value): value is string => !!value) ?? [];
 
-    await notifyLogins(loginCodes, {
-      type: "photo-added",
-      roomCode,
-      actorName: participant.name ?? loginCode,
-    });
+    try {
+      await notifyLogins(loginCodes, {
+        type: "photo-added",
+        roomCode,
+        actorName: participant.name ?? loginCode,
+      });
+    } catch (error) {
+      console.error("[notifications:photo-added]", error);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

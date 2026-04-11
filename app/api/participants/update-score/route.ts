@@ -26,6 +26,17 @@ function getLeaderIds(
 
 export const runtime = "nodejs";
 
+async function tryNotify(
+  action: string,
+  runner: () => Promise<unknown>,
+) {
+  try {
+    await runner();
+  } catch (error) {
+    console.error(`[notifications:${action}]`, error);
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json().catch(() => ({}))) as UpdateScorePayload;
@@ -99,14 +110,18 @@ export async function POST(request: Request) {
       .filter((value): value is string => !!value);
 
     await Promise.all([
-      notifyLogins(gainedLeaderLogins, {
-        type: "lead-gained",
-        roomCode: race.room_code,
-      }),
-      notifyLogins(lostLeaderLogins, {
-        type: "lead-lost",
-        roomCode: race.room_code,
-      }),
+      tryNotify("lead-gained", () =>
+        notifyLogins(gainedLeaderLogins, {
+          type: "lead-gained",
+          roomCode: race.room_code,
+        }),
+      ),
+      tryNotify("lead-lost", () =>
+        notifyLogins(lostLeaderLogins, {
+          type: "lead-lost",
+          roomCode: race.room_code,
+        }),
+      ),
     ]);
 
     return NextResponse.json({ ok: true, itemsEaten: nextCount });

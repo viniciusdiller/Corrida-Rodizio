@@ -9,6 +9,17 @@ type EndPayload = {
 
 export const runtime = "nodejs";
 
+async function tryNotify(
+  action: string,
+  runner: () => Promise<unknown>,
+) {
+  try {
+    await runner();
+  } catch (error) {
+    console.error(`[notifications:${action}]`, error);
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json().catch(() => ({}))) as EndPayload;
@@ -63,10 +74,12 @@ export async function POST(request: Request) {
         ?.map((participant) => participant.login_code)
         .filter((value): value is string => !!value) ?? [];
 
-    await notifyLogins(loginCodes, {
-      type: "race-ended",
-      roomCode: race.room_code,
-    });
+    await tryNotify("race-ended", () =>
+      notifyLogins(loginCodes, {
+        type: "race-ended",
+        roomCode: race.room_code,
+      }),
+    );
 
     return NextResponse.json({ ok: true });
   } catch (error) {

@@ -61,10 +61,14 @@ export async function POST(request: Request) {
         ?.map((participant) => participant.login_code)
         .filter((value): value is string => !!value) ?? [];
 
-    await notifyLogins(loginCodes, {
-      type: "race-reopened",
-      roomCode,
-    });
+    try {
+      await notifyLogins(loginCodes, {
+        type: "race-reopened",
+        roomCode,
+      });
+    } catch (error) {
+      console.error("[notifications:race-reopened]", error);
+    }
 
     return NextResponse.json({ ok: true });
   } catch {
