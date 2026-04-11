@@ -26,6 +26,9 @@ import { AppTour } from "@/components/tour/app-tour";
 import { toast } from "sonner";
 
 const LOGIN_STORAGE_KEY = "rodizio-race-login";
+const buildBranch = process.env.NEXT_PUBLIC_GIT_BRANCH?.trim() || "";
+const buildSha = process.env.NEXT_PUBLIC_GIT_SHA?.trim() || "";
+const buildTime = process.env.NEXT_PUBLIC_BUILD_TIME?.trim() || "";
 
 export default function Home() {
   const router = useRouter();
@@ -1544,6 +1547,9 @@ export default function Home() {
             "{{year}}",
             new Date().getFullYear().toString(),
           )}
+          {[buildBranch, buildSha, buildTime].filter(Boolean).length > 0
+            ? ` · ${[buildBranch, buildSha, buildTime].filter(Boolean).join(" · ")}`
+            : ""}
         </p>
       </footer>
     </div>
