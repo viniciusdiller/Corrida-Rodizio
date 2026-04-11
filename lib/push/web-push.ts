@@ -8,11 +8,26 @@ const vapidPublicKey =
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? fallbackKeys?.publicKey ?? "";
 const vapidPrivateKey =
   process.env.VAPID_PRIVATE_KEY ?? fallbackKeys?.privateKey ?? "";
-const vapidSubject =
+
+function normalizeVapidSubject(value?: string) {
+  const trimmed = value?.trim() ?? "";
+  if (!trimmed) return "";
+  if (trimmed.startsWith("mailto:")) return trimmed;
+  if (trimmed.startsWith("https://") || trimmed.startsWith("http://")) {
+    return trimmed;
+  }
+  if (trimmed.includes("@")) {
+    return `mailto:${trimmed}`;
+  }
+  return trimmed;
+}
+
+const vapidSubject = normalizeVapidSubject(
   process.env.VAPID_SUBJECT ??
-  (process.env.NODE_ENV === "production"
-    ? ""
-    : "mailto:dev@rodiziorace.local");
+    (process.env.NODE_ENV === "production"
+      ? ""
+      : "mailto:dev@rodiziorace.local"),
+);
 
 let isConfigured = false;
 

@@ -514,18 +514,11 @@ export function AppTour({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!loginCode) {
-      setShowButton(true);
-      return;
-    }
-
-    const seen = window.localStorage.getItem(TOUR_STORAGE_KEY);
-    if (seen) {
+    if (loginCode) {
       setShowButton(false);
       return;
     }
-    const timer = window.setTimeout(() => setShowButton(true), 700);
-    return () => window.clearTimeout(timer);
+    setShowButton(true);
   }, [loginCode]);
 
   useEffect(() => {

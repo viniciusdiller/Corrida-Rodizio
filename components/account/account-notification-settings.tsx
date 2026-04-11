@@ -16,62 +16,46 @@ type SupportState = "checking" | "ready" | "unsupported" | "unavailable";
 const copy = {
   pt: {
     title: "Notificacoes",
-    body: "Receba avisos globais quando uma corrida terminar, quando surgir foto nova na timeline e quando voce ganhar ou perder a lideranca.",
     enable: "Ativar notificacoes",
     disable: "Desativar notificacoes",
-    test: "Testar",
-    active: "Notificacoes ativas neste aparelho",
+    active: "Ativas",
     blocked: "A permissao de notificacao esta bloqueada no navegador.",
     unavailable: "Notificacoes indisponiveis neste ambiente.",
     enabledToast: "Notificacoes ativadas.",
     disabledToast: "Notificacoes desativadas.",
-    testSentToast: "Notificacao de teste enviada.",
-    testErrorToast: "Nao foi possivel enviar a notificacao de teste.",
     checking: "Preparando notificacoes...",
   },
   en: {
     title: "Notifications",
-    body: "Get global alerts when a race ends, when a new timeline photo appears, and when you gain or lose the lead.",
     enable: "Enable notifications",
     disable: "Disable notifications",
-    test: "Test",
-    active: "Notifications are active on this device",
+    active: "Active",
     blocked: "Notification permission is blocked in the browser.",
     unavailable: "Notifications are unavailable in this environment.",
     enabledToast: "Notifications enabled.",
     disabledToast: "Notifications disabled.",
-    testSentToast: "Test notification sent.",
-    testErrorToast: "Unable to send test notification.",
     checking: "Preparing notifications...",
   },
   es: {
     title: "Notificaciones",
-    body: "Recibe avisos globales cuando termine una carrera, cuando llegue una foto nueva a la timeline y cuando ganes o pierdas la delantera.",
     enable: "Activar notificaciones",
     disable: "Desactivar notificaciones",
-    test: "Probar",
-    active: "Las notificaciones estan activas en este dispositivo",
+    active: "Activas",
     blocked: "El permiso de notificaciones esta bloqueado en el navegador.",
     unavailable: "Las notificaciones no estan disponibles en este entorno.",
     enabledToast: "Notificaciones activadas.",
     disabledToast: "Notificaciones desactivadas.",
-    testSentToast: "Notificacion de prueba enviada.",
-    testErrorToast: "No fue posible enviar la notificacion de prueba.",
     checking: "Preparando notificaciones...",
   },
   fr: {
     title: "Notifications",
-    body: "Recevez des alertes globales quand une course se termine, quand une nouvelle photo arrive dans la timeline et quand vous prenez ou perdez la tete.",
     enable: "Activer les notifications",
     disable: "Desactiver les notifications",
-    test: "Tester",
-    active: "Les notifications sont actives sur cet appareil",
+    active: "Actives",
     blocked: "L'autorisation de notification est bloquee dans le navigateur.",
     unavailable: "Les notifications ne sont pas disponibles dans cet environnement.",
     enabledToast: "Notifications activees.",
     disabledToast: "Notifications desactivees.",
-    testSentToast: "Notification de test envoyee.",
-    testErrorToast: "Impossible d'envoyer la notification de test.",
     checking: "Preparation des notifications...",
   },
 } as const;
@@ -93,7 +77,6 @@ export function AccountNotificationSettings({
   const [publicKey, setPublicKey] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
 
   const canUsePush = useMemo(() => {
     if (typeof window === "undefined") return false;
@@ -237,42 +220,50 @@ export function AccountNotificationSettings({
     }
   };
 
-  const handleTest = async () => {
-    setIsTesting(true);
-    try {
-      const response = await fetch("/api/notifications/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ loginCode }),
-      });
-
-      if (!response.ok) {
-        throw new Error("test_failed");
-      }
-
-      toast.success(ui.testSentToast);
-    } catch (error) {
-      console.error(error);
-      toast.error(ui.testErrorToast);
-    } finally {
-      setIsTesting(false);
-    }
-  };
-
   return (
-    <div className="space-y-3 rounded-2xl border border-muted bg-muted/20 p-4 transition-all hover:bg-muted/30">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            {ui.title}
-          </p>
+    <div className="rounded-2xl border border-muted bg-muted/20 p-3 transition-all hover:bg-muted/30">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-background text-foreground shadow-sm">
+            <Smartphone className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              {ui.title}
+            </p>
+            {isSubscribed && supportState === "ready" ? (
+              <p className="text-xs font-semibold text-green-600">{ui.active}</p>
+            ) : null}
+          </div>
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-background text-foreground shadow-sm">
-          <Smartphone className="h-4 w-4" />
-        </div>
+
+        {supportState === "ready" && permission !== "denied" ? (
+          isSubscribed ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 shrink-0 rounded-xl px-3 text-xs font-semibold"
+              onClick={handleDisable}
+              disabled={isBusy}
+            >
+              <BellOff className="h-4 w-4" />
+              {ui.disable}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              className="h-9 shrink-0 rounded-xl px-3 text-xs font-semibold"
+              onClick={handleEnable}
+              disabled={isBusy}
+            >
+              <Bell className="h-4 w-4" />
+              {ui.enable}
+            </Button>
+          )
+        ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="mt-2 min-h-4">
         {supportState === "checking" ? (
           <span className="text-xs font-medium text-muted-foreground">
             {ui.checking}
@@ -285,42 +276,8 @@ export function AccountNotificationSettings({
           <span className="text-xs font-medium text-muted-foreground">
             {ui.blocked}
           </span>
-        ) : isSubscribed ? (
-          <>
-            <div className="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs font-bold text-green-600">
-              <Bell className="h-3.5 w-3.5" />
-              {ui.active}
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-10 rounded-xl font-semibold"
-              onClick={handleDisable}
-              disabled={isBusy || isTesting}
-            >
-              <BellOff className="h-4 w-4" />
-              {ui.disable}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-10 rounded-xl font-semibold"
-              onClick={handleTest}
-              disabled={isBusy || isTesting}
-            >
-              {ui.test}
-            </Button>
-          </>
         ) : (
-          <Button
-            type="button"
-            className="h-10 rounded-xl font-semibold"
-            onClick={handleEnable}
-            disabled={isBusy}
-          >
-            <Bell className="h-4 w-4" />
-            {ui.enable}
-          </Button>
+          <span className="sr-only">{ui.title}</span>
         )}
       </div>
     </div>
