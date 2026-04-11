@@ -14,6 +14,7 @@ import { DEFAULT_AVATAR } from "@/lib/utils/avatars";
 import { useLanguage } from "@/contexts/language-context";
 import { isAlphanumericOnly } from "@/lib/utils/username-validation";
 import { AccountMenuOverlay } from "@/components/account/account-menu-overlay";
+import { AccountNotificationSettings } from "@/components/account/account-notification-settings";
 
 // Componentes refatorados
 import { HomeHeader } from "@/components/home/home-header";
@@ -1338,6 +1339,9 @@ export default function Home() {
           }}
           showAddToHome={isIosDevice && !isStandalone}
           onAddToHome={() => setShowAddToHomeHelp(true)}
+          notificationSection={
+            loginCode ? <AccountNotificationSettings loginCode={loginCode} /> : null
+          }
           recoveryEmail={{
             value: recoveryEmailInput,
             onChange: setRecoveryEmailInput,

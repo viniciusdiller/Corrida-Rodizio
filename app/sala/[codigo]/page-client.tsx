@@ -47,6 +47,7 @@ import { TeamSelection } from "@/components/room/team-selection";
 import { useLanguage } from "@/contexts/language-context";
 import { getFoodTypeUnit } from "@/lib/utils/food-type";
 import { AccountMenuOverlay } from "@/components/account/account-menu-overlay";
+import { AccountNotificationSettings } from "@/components/account/account-notification-settings";
 import {
   isAlphanumericOnly,
   sanitizeAlphanumeric,
@@ -95,6 +96,18 @@ export default function RoomPage() {
       en: "Unable to send the photo.",
       es: "No fue posible enviar la foto.",
       fr: "Impossible d'envoyer la photo.",
+    },
+    score_update_error: {
+      pt: "Nao foi possivel atualizar o placar.",
+      en: "Unable to update the score.",
+      es: "No fue posible actualizar el marcador.",
+      fr: "Impossible de mettre a jour le score.",
+    },
+    end_race_error: {
+      pt: "Nao foi possivel encerrar a corrida.",
+      en: "Unable to end the race.",
+      es: "No fue posible terminar la carrera.",
+      fr: "Impossible de terminer la course.",
     },
     claim_enter_code: {
       pt: "Digite o codigo.",
@@ -627,11 +640,19 @@ export default function RoomPage() {
     const p = participants.find((item) => item.id === participantId);
     if (!p) return;
 
-    const newCount = Math.max(0, p.items_eaten + change);
-    await createClient()
-      .from("participants")
-      .update({ items_eaten: newCount })
-      .eq("id", participantId);
+    const response = await fetch("/api/participants/update-score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        roomCode,
+        participantId,
+        change,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("score_update_failed");
+    }
   };
 
   const showCooldownMessage = (event?: MouseEvent<HTMLButtonElement>) => {
@@ -721,7 +742,11 @@ export default function RoomPage() {
       return;
     }
 
-    await updateCount(participantId, change);
+    try {
+      await updateCount(participantId, change);
+    } catch {
+      toast.error(tx("score_update_error"));
+    }
   };
 
   const handlePhotoSelected = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -804,7 +829,13 @@ export default function RoomPage() {
         return;
       }
 
-      await updateCount(photoTarget.participantId, 1);
+      try {
+        await updateCount(photoTarget.participantId, 1);
+      } catch {
+        toast.error(tx("score_update_error"));
+        setPhotoSendStatus("error");
+        return;
+      }
       setPhotoSendStatus("success");
     } catch {
       toast.error(tx("photo_send_error"));
@@ -852,14 +883,23 @@ export default function RoomPage() {
     if (!race) return;
     setIsEnding(true);
     try {
-      const supabase = createClient();
-      await supabase
-        .from("races")
-        .update({ is_active: false, ended_at: new Date().toISOString() })
-        .eq("id", race.id);
+      const response = await fetch("/api/races/end", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roomCode,
+          requesterId: currentParticipantId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("end_race_failed");
+      }
 
       confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
       await loadRoomData();
+    } catch {
+      toast.error(tx("end_race_error"));
     } finally {
       setIsEnding(false);
     }
@@ -2364,6 +2404,11 @@ export default function RoomPage() {
           }}
           showAddToHome={isIosDevice && !isStandalone}
           onAddToHome={() => setShowAddToHomeHelp(true)}
+          notificationSection={
+            loggedUsername ? (
+              <AccountNotificationSettings loginCode={loggedUsername} />
+            ) : null
+          }
           recoveryEmail={{
             value: recoveryEmailInput,
             onChange: setRecoveryEmailInput,

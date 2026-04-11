@@ -2,14 +2,16 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyLogins } from "@/lib/push/account-notifications";
 
-type ReopenPayload = {
+type EndPayload = {
   roomCode?: string;
   requesterId?: string;
 };
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   try {
-    const body = (await request.json().catch(() => ({}))) as ReopenPayload;
+    const body = (await request.json().catch(() => ({}))) as EndPayload;
     const roomCode = String(body.roomCode ?? "").trim().toUpperCase();
     const requesterId = String(body.requesterId ?? "").trim();
 
@@ -20,7 +22,7 @@ export async function POST(request: Request) {
     const supabase = createAdminClient();
     const { data: race, error: raceError } = await supabase
       .from("races")
-      .select("id, is_active")
+      .select("id, room_code, is_active")
       .eq("room_code", roomCode)
       .maybeSingle();
 
@@ -38,13 +40,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
 
-    if (race.is_active) {
+    if (!race.is_active) {
       return NextResponse.json({ ok: true });
     }
 
     const { error: updateError } = await supabase
       .from("races")
-      .update({ is_active: true, ended_at: null })
+      .update({ is_active: false, ended_at: new Date().toISOString() })
       .eq("id", race.id);
 
     if (updateError) {
@@ -62,12 +64,13 @@ export async function POST(request: Request) {
         .filter((value): value is string => !!value) ?? [];
 
     await notifyLogins(loginCodes, {
-      type: "race-reopened",
-      roomCode,
+      type: "race-ended",
+      roomCode: race.room_code,
     });
 
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (error) {
+    console.error(error);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
 }

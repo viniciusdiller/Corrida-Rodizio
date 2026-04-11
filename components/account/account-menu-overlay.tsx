@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import {
   ChevronLeft,
   BadgeCheck,
@@ -78,6 +78,7 @@ interface AccountMenuOverlayProps {
   canManageCodes: boolean;
   claim: ClaimState;
   labels: AccountMenuLabels;
+  notificationSection?: ReactNode;
   onAddToHome: () => void;
   onClose: () => void;
   onLogout: () => void;
@@ -96,6 +97,7 @@ export function AccountMenuOverlay({
   open,
   onClose,
   labels,
+  notificationSection,
   showPasswordForm,
   onTogglePasswordForm,
   showClaimForm,
@@ -199,6 +201,8 @@ export function AccountMenuOverlay({
                 </Button>
               </div>
             )}
+
+            {notificationSection}
           </div>
 
           <div className="h-px w-full bg-border/50" />

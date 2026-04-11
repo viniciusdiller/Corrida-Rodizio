@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyLogins } from "@/lib/push/account-notifications";
 
 export const runtime = "nodejs";
 
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
 
     const { data: participant, error: participantError } = await supabase
       .from("participants")
-      .select("id, race_id, login_code")
+      .select("id, race_id, login_code, name")
       .eq("id", participantId)
       .maybeSingle();
 
@@ -74,6 +75,22 @@ export async function POST(request: Request) {
       await supabase.storage.from("race-photos").remove([imagePath]);
       return NextResponse.json({ ok: false }, { status: 500 });
     }
+
+    const { data: participants } = await supabase
+      .from("participants")
+      .select("login_code")
+      .eq("race_id", race.id);
+
+    const loginCodes =
+      participants
+        ?.map((row) => row.login_code)
+        .filter((value): value is string => !!value) ?? [];
+
+    await notifyLogins(loginCodes, {
+      type: "photo-added",
+      roomCode,
+      actorName: participant.name ?? loginCode,
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

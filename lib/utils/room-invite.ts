@@ -7,13 +7,19 @@ export function normalizeInviteLanguage(language?: string | null) {
   return "pt";
 }
 
+export function buildRoomInvitePath(roomCode: string, language?: string | null) {
+  const params = new URLSearchParams({
+    lang: normalizeInviteLanguage(language),
+  });
+  return `/sala/${roomCode.toUpperCase()}?${params.toString()}`;
+}
+
 export function buildRoomInviteUrl(
   origin: string,
   roomCode: string,
   language?: string | null,
 ) {
-  const url = new URL(`/sala/${roomCode.toUpperCase()}`, origin);
-  url.searchParams.set("lang", normalizeInviteLanguage(language));
+  const url = new URL(buildRoomInvitePath(roomCode, language), origin);
   return url.toString();
 }
 
