@@ -55,7 +55,10 @@ export function CreateRaceForm({
   }, [requireTerms]);
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
+    <div
+      data-tour="home-create-form"
+      className="space-y-6 animate-in fade-in slide-in-from-right-4"
+    >
       <div className="space-y-3">
         <Label
           htmlFor="playerName"

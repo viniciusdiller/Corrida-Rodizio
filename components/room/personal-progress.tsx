@@ -44,6 +44,8 @@ interface PersonalProgressProps {
   isPremium: boolean;
   unlockedPremiumAvatars: string[];
   exclusiveAvatars: string[];
+  avatarTourId?: string;
+  cameraTourId?: string;
 }
 
 export function PersonalProgress({
@@ -66,6 +68,8 @@ export function PersonalProgress({
   isPremium,
   unlockedPremiumAvatars,
   exclusiveAvatars,
+  avatarTourId,
+  cameraTourId,
 }: PersonalProgressProps) {
   const { t } = useLanguage();
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
@@ -177,6 +181,7 @@ export function PersonalProgress({
         <CardContent className="px-3 py-0 space-y-2">
           <div className="flex items-center gap-3">
             <button
+              data-tour={avatarTourId}
               type="button"
               onClick={() => setShowAvatarPicker((prev) => !prev)}
               disabled={isUpdatingAvatar}
@@ -245,6 +250,7 @@ export function PersonalProgress({
               {photoModeEnabled && (
                 <div className="flex flex-1 items-center justify-center rounded-2xl border border-amber-400/40 bg-amber-200/20 p-1 shadow-sm dark:bg-amber-900/20">
                   <Button
+                    data-tour={cameraTourId}
                     variant="ghost"
                     className={`relative h-7 rounded-full px-2 text-[10px] font-black uppercase tracking-wide text-amber-700 transition-all duration-200 hover:bg-amber-200/40 hover:text-amber-800 dark:text-amber-200 dark:hover:text-amber-100 ${
                       isAddCooldown || isUploadingPhoto || !isLoggedIn

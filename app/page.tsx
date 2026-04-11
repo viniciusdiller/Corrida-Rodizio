@@ -21,6 +21,7 @@ import { AccountSection } from "@/components/home/account-section";
 import { CreateRaceForm } from "@/components/home/create-race-form";
 import { JoinRaceForm } from "@/components/home/join-race-form";
 import { StartActions } from "@/components/home/start-actions";
+import { AppTour } from "@/components/tour/app-tour";
 import { toast } from "sonner";
 
 const LOGIN_STORAGE_KEY = "rodizio-race-login";
@@ -1372,6 +1373,7 @@ export default function Home() {
             accountPill={
               loginCode ? (
                 <button
+                  data-tour="home-account-pill"
                   type="button"
                   onClick={toggleAccountOverlay}
                   className="inline-flex h-9 items-center gap-2 rounded-xl border border-border bg-background/90 px-3 text-xs font-bold text-foreground shadow-sm backdrop-blur transition hover:bg-accent/30 whitespace-nowrap"
@@ -1505,6 +1507,13 @@ export default function Home() {
           </Card>
         </div>
       </div>
+      <AppTour
+        flow={flow}
+        setFlow={setFlow}
+        accountFlow={accountFlow}
+        setAccountFlow={setAccountFlow}
+        loginCode={loginCode}
+      />
       <footer className="mt-8 mb-4 space-y-3 text-center text-[10px] text-muted-foreground/60 uppercase font-medium tracking-widest">
         <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           <Link

@@ -35,7 +35,10 @@ export function JoinRaceForm({
   const hasName = isSpectator || !!playerName.trim();
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-left-4">
+    <div
+      data-tour="home-join-form"
+      className="space-y-6 animate-in fade-in slide-in-from-left-4"
+    >
       <button
         type="button"
         onClick={() => setIsSpectator(!isSpectator)}

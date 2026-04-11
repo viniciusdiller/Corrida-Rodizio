@@ -158,7 +158,16 @@ export function AccountSection({
   const currentItems = myGroups.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
-    <div className="space-y-4">
+    <div
+      data-tour={
+        loginCode
+          ? "home-account-logged"
+          : accountFlow === "create"
+            ? "home-account-create"
+            : "home-account"
+      }
+      className="space-y-4"
+    >
       {loginCode ? (
         /* SESSÃO: USUÁRIO LOGADO */
         <div className="space-y-3 rounded-2xl border border-muted/60 bg-background/60 p-4">

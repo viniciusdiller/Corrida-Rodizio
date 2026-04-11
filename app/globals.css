@@ -143,3 +143,9 @@
   transform-origin: left;
   animation: cooldown-fill var(--cooldown-duration, 2s) linear forwards;
 }
+
+body[data-tour-running="true"] *:not(.tour-allow-motion):not(.tour-allow-motion *) {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}

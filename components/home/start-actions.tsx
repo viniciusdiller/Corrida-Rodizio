@@ -10,7 +10,10 @@ export function StartActions({ onSetFlow }: StartActionsProps) {
   const { t } = useLanguage();
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
+    <div
+      data-tour="home-start-actions"
+      className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500"
+    >
       <Button
         size="lg"
         className="w-full h-14 rounded-xl font-bold text-lg shadow-xl shadow-primary/20 transition-all hover:translate-y-0.5px active:scale-95"

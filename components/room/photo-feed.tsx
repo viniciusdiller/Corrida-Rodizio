@@ -21,11 +21,18 @@ type PhotoTimelineItem = {
 type PhotoFeedProps = {
   race: Race;
   currentParticipantId: string | null;
+  initialTimeline?: PhotoTimelineItem[];
 };
 
-export function PhotoFeed({ race, currentParticipantId }: PhotoFeedProps) {
+export function PhotoFeed({
+  race,
+  currentParticipantId,
+  initialTimeline,
+}: PhotoFeedProps) {
   const { t, language } = useLanguage();
-  const [timeline, setTimeline] = useState<PhotoTimelineItem[]>([]);
+  const [timeline, setTimeline] = useState<PhotoTimelineItem[]>(
+    initialTimeline ?? [],
+  );
   const [isLoadingTimeline, setIsLoadingTimeline] = useState(false);
   const [timelineError, setTimelineError] = useState(false);
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
@@ -35,6 +42,13 @@ export function PhotoFeed({ race, currentParticipantId }: PhotoFeedProps) {
   );
 
   useEffect(() => {
+    if (initialTimeline) {
+      setTimeline(initialTimeline);
+      setTimelineError(false);
+      setIsLoadingTimeline(false);
+      return;
+    }
+
     const loadTimeline = async () => {
       if (!race.photo_mode || !currentParticipantId) return;
       setIsLoadingTimeline(true);
@@ -60,7 +74,7 @@ export function PhotoFeed({ race, currentParticipantId }: PhotoFeedProps) {
     };
 
     loadTimeline();
-  }, [race.photo_mode, race.room_code, currentParticipantId]);
+  }, [race.photo_mode, race.room_code, currentParticipantId, initialTimeline]);
 
   useEffect(() => {
     const nextLoading: Record<string, boolean> = {};

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Users, Utensils } from "lucide-react";
+import { Check, Copy, QrCode, Users, Utensils } from "lucide-react";
 import { FoodIcon } from "@/components/food-icon";
 import { Button } from "@/components/ui/button";
 import { Race } from "@/types/database";
@@ -14,6 +14,7 @@ interface RoomInfoProps {
   roomCode: string;
   copied: boolean;
   onCopyCode: () => void;
+  onOpenQrCode?: () => void;
 }
 
 export function RoomInfo({
@@ -23,9 +24,18 @@ export function RoomInfo({
   roomCode,
   copied,
   onCopyCode,
+  onOpenQrCode,
 }: RoomInfoProps) {
   const { t, language } = useLanguage();
   const foodTypeLabel = getFoodTypeLabel(race.food_type, language);
+  const qrLabel =
+    language === "en"
+      ? "Open room QR code"
+      : language === "es"
+        ? "Abrir QR de la sala"
+        : language === "fr"
+          ? "Ouvrir le QR de la salle"
+          : "Abrir QR da sala";
 
   return (
     <div className="space-y-2 py-2 sm:space-y-3 sm:py-3">
@@ -67,6 +77,18 @@ export function RoomInfo({
               <Copy className="h-4 w-4" />
             )}
           </Button>
+          {onOpenQrCode ? (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={onOpenQrCode}
+              className="h-9 w-9 rounded-xl border border-muted/50 bg-background/80 hover:cursor-pointer"
+              aria-label={qrLabel}
+              title={qrLabel}
+            >
+              <QrCode className="h-4 w-4" />
+            </Button>
+          ) : null}
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground sm:gap-3 sm:text-xs">

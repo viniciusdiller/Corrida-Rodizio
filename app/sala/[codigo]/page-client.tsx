@@ -15,6 +15,7 @@ import {
   Settings,
   Check,
   Copy,
+  QrCode,
   UserPlus,
   Camera,
   Menu,
@@ -50,6 +51,11 @@ import {
   isAlphanumericOnly,
   sanitizeAlphanumeric,
 } from "@/lib/utils/username-validation";
+import {
+  buildRoomInviteUrl,
+  buildRoomQrPagePath,
+  normalizeInviteLanguage,
+} from "@/lib/utils/room-invite";
 
 export default function RoomPage() {
   const { t, language } = useLanguage();
@@ -372,12 +378,20 @@ export default function RoomPage() {
   }, [hasPhotoTimeline, raceView]);
 
   const handleCopyCode = () => {
-    const lang = language ?? localStorage.getItem("rodizio-lang") ?? "pt";
-    const url = new URL(window.location.href);
-    url.searchParams.set("lang", lang);
-    navigator.clipboard.writeText(url.toString());
+    const lang = normalizeInviteLanguage(
+      language ?? localStorage.getItem("rodizio-lang"),
+    );
+    const inviteUrl = buildRoomInviteUrl(window.location.origin, roomCode, lang);
+    navigator.clipboard.writeText(inviteUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleOpenQrPage = () => {
+    const lang = normalizeInviteLanguage(
+      language ?? localStorage.getItem("rodizio-lang"),
+    );
+    router.push(buildRoomQrPagePath(roomCode, lang));
   };
 
   const handleExit = () => {
@@ -1691,6 +1705,7 @@ export default function RoomPage() {
           roomCode={roomCode}
           copied={copied}
           onCopyCode={handleCopyCode}
+          onOpenQrCode={handleOpenQrPage}
         />
 
         {/* Bot??o de Encerrar (Apenas VIP) */}
@@ -1959,6 +1974,32 @@ export default function RoomPage() {
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleOpenQrPage}
+                    className="h-9 w-9 rounded-xl border border-muted/50 bg-background/80 hover:cursor-pointer"
+                    aria-label={
+                      language === "en"
+                        ? "Open room QR code"
+                        : language === "es"
+                          ? "Abrir QR de la sala"
+                          : language === "fr"
+                            ? "Ouvrir le QR de la salle"
+                            : "Abrir QR da sala"
+                    }
+                    title={
+                      language === "en"
+                        ? "Open room QR code"
+                        : language === "es"
+                          ? "Abrir QR de la sala"
+                          : language === "fr"
+                            ? "Ouvrir le QR de la salle"
+                            : "Abrir QR da sala"
+                    }
+                  >
+                    <QrCode className="h-4 w-4" />
                   </Button>
                 </div>
                 <div className="space-y-1">
