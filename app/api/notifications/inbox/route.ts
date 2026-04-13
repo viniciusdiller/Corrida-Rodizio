@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     const supabase = createAdminClient();
     const { data, error } = await supabase
       .from("user_notifications")
-      .select("id, kind, title, body, href, is_read, created_at")
+      .select("id, kind, title, body, href, is_read, created_at, metadata")
       .eq("login_code", loginCode)
       .order("created_at", { ascending: false })
       .limit(50);

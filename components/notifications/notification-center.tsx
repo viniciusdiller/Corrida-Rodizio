@@ -4,9 +4,26 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bell,
+  BookOpen,
+  CalendarDays,
+  CircleAlert,
+  Crown,
+  Flame,
+  Flag,
+  Gift,
+  HeartHandshake,
   Megaphone,
+  Mail,
   MailWarning,
+  Medal,
+  MessageCircle,
+  PartyPopper,
+  Pizza,
+  Rocket,
   Sparkles,
+  Star,
+  Trophy,
+  Users,
   Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -62,6 +79,33 @@ function formatTimestamp(value: string) {
 }
 
 function getNotificationIcon(kind: string) {
+  const iconByName = {
+    bell: Bell,
+    "book-open": BookOpen,
+    "calendar-days": CalendarDays,
+    "circle-alert": CircleAlert,
+    crown: Crown,
+    flame: Flame,
+    flag: Flag,
+    gift: Gift,
+    "heart-handshake": HeartHandshake,
+    mail: Mail,
+    medal: Medal,
+    megaphone: Megaphone,
+    "message-circle": MessageCircle,
+    "party-popper": PartyPopper,
+    pizza: Pizza,
+    rocket: Rocket,
+    sparkles: Sparkles,
+    star: Star,
+    trophy: Trophy,
+    users: Users,
+  } as const;
+  const namedIcon = iconByName[kind as keyof typeof iconByName];
+  if (namedIcon) {
+    const Icon = namedIcon;
+    return <Icon className="h-4 w-4" />;
+  }
   if (kind === "promo") {
     return <Megaphone className="h-4 w-4" />;
   }
@@ -164,7 +208,7 @@ export function NotificationCenter({
                       : "bg-primary text-primary-foreground"
                   }`}
                 >
-                  {getNotificationIcon(notification.kind)}
+                  {getNotificationIcon(notification.iconName || notification.kind)}
                 </div>
 
                 <div className="min-w-0 flex-1">

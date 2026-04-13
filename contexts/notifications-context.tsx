@@ -24,6 +24,7 @@ export type InboxNotification = {
   createdAt: string;
   href: string | null;
   id: string;
+  iconName?: string | null;
   isRead: boolean;
   kind: string;
   scope: string;
@@ -37,6 +38,7 @@ type UpsertNotificationInput = {
   createdAt?: string;
   href?: string | null;
   id: string;
+  iconName?: string | null;
   kind: string;
   loginCode?: string | null;
   title: string;
@@ -180,6 +182,12 @@ export function NotificationsProvider({
           createdAt: String(item?.created_at ?? new Date().toISOString()),
           href: typeof item?.href === "string" ? item.href : null,
           id: String(item?.id ?? ""),
+          iconName:
+            item?.metadata &&
+            typeof item.metadata === "object" &&
+            typeof (item.metadata as { iconName?: unknown }).iconName === "string"
+              ? (item.metadata as { iconName?: string }).iconName ?? null
+              : null,
           isRead: Boolean(item?.is_read),
           kind: typeof item?.kind === "string" ? item.kind : "admin-broadcast",
           scope: loginCode,
@@ -209,6 +217,7 @@ export function NotificationsProvider({
       createdAt,
       href = null,
       id,
+      iconName = null,
       kind,
       loginCode: nextLoginCode,
       title,
@@ -230,6 +239,7 @@ export function NotificationsProvider({
             action,
             body,
             href,
+            iconName,
             kind,
             title,
           };
@@ -245,6 +255,7 @@ export function NotificationsProvider({
             createdAt: createdAt ?? new Date().toISOString(),
             href,
             id,
+            iconName,
             isRead: false,
             kind,
             scope,

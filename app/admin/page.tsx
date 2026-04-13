@@ -130,6 +130,7 @@ export default function AdminPage() {
     useState<AdminNotificationTarget>("all");
   const [composerTargetLoginCode, setComposerTargetLoginCode] = useState("");
   const [composerTargetSearch, setComposerTargetSearch] = useState("");
+  const [isComposerTargetMenuOpen, setIsComposerTargetMenuOpen] = useState(false);
   const [composerHref, setComposerHref] = useState("");
   const [composerIconName, setComposerIconName] = useState<PushIconName>("bell");
   const [composerInApp, setComposerInApp] = useState(true);
@@ -142,6 +143,7 @@ export default function AdminPage() {
     useState<AdminNotificationTarget>("no_recovery_email");
   const [scheduleTargetLoginCode, setScheduleTargetLoginCode] = useState("");
   const [scheduleTargetSearch, setScheduleTargetSearch] = useState("");
+  const [isScheduleTargetMenuOpen, setIsScheduleTargetMenuOpen] = useState(false);
   const [scheduleHref, setScheduleHref] = useState("");
   const [scheduleIconName, setScheduleIconName] = useState<PushIconName>("calendar-days");
   const [scheduleInApp, setScheduleInApp] = useState(true);
@@ -482,6 +484,7 @@ export default function AdminPage() {
     setComposerTargetType("all");
     setComposerTargetLoginCode("");
     setComposerTargetSearch("");
+    setIsComposerTargetMenuOpen(false);
     setComposerHref("");
     setComposerIconName("bell");
     setComposerInApp(true);
@@ -494,6 +497,7 @@ export default function AdminPage() {
     setScheduleTargetType("no_recovery_email");
     setScheduleTargetLoginCode("");
     setScheduleTargetSearch("");
+    setIsScheduleTargetMenuOpen(false);
     setScheduleHref("");
     setScheduleIconName("calendar-days");
     setScheduleInApp(true);
@@ -1190,34 +1194,44 @@ export default function AdminPage() {
                             const value = event.target.value.toUpperCase();
                             setComposerTargetSearch(value);
                             setComposerTargetLoginCode(value);
+                            setIsComposerTargetMenuOpen(true);
+                          }}
+                          onFocus={() => setIsComposerTargetMenuOpen(true)}
+                          onBlur={() => {
+                            window.setTimeout(() => {
+                              setIsComposerTargetMenuOpen(false);
+                            }, 120);
                           }}
                           placeholder="Search player..."
                         />
-                        <div className="absolute z-20 mt-2 max-h-52 w-full overflow-auto rounded-xl border border-muted bg-background p-2 shadow-lg">
-                          {filteredComposerTargets.length === 0 ? (
-                            <p className="px-2 py-1 text-xs text-muted-foreground">
-                              No player found
-                            </p>
-                          ) : (
-                            filteredComposerTargets.map((username) => (
-                              <button
-                                key={`composer-${username}`}
-                                type="button"
-                                className={`flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-sm transition ${
-                                  composerTargetLoginCode === username
-                                    ? "bg-accent font-semibold"
-                                    : "hover:bg-muted/60"
-                                }`}
-                                onClick={() => {
-                                  setComposerTargetLoginCode(username);
-                                  setComposerTargetSearch(username);
-                                }}
-                              >
-                                <span>{username}</span>
-                              </button>
-                            ))
-                          )}
-                        </div>
+                        {isComposerTargetMenuOpen ? (
+                          <div className="absolute z-20 mt-2 max-h-52 w-full overflow-auto rounded-xl border border-muted bg-background p-2 shadow-lg">
+                            {filteredComposerTargets.length === 0 ? (
+                              <p className="px-2 py-1 text-xs text-muted-foreground">
+                                No player found
+                              </p>
+                            ) : (
+                              filteredComposerTargets.map((username) => (
+                                <button
+                                  key={`composer-${username}`}
+                                  type="button"
+                                  className={`flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-sm transition ${
+                                    composerTargetLoginCode === username
+                                      ? "bg-accent font-semibold"
+                                      : "hover:bg-muted/60"
+                                  }`}
+                                  onClick={() => {
+                                    setComposerTargetLoginCode(username);
+                                    setComposerTargetSearch(username);
+                                    setIsComposerTargetMenuOpen(false);
+                                  }}
+                                >
+                                  <span>{username}</span>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   ) : null}
@@ -1459,34 +1473,44 @@ export default function AdminPage() {
                             const value = event.target.value.toUpperCase();
                             setScheduleTargetSearch(value);
                             setScheduleTargetLoginCode(value);
+                            setIsScheduleTargetMenuOpen(true);
+                          }}
+                          onFocus={() => setIsScheduleTargetMenuOpen(true)}
+                          onBlur={() => {
+                            window.setTimeout(() => {
+                              setIsScheduleTargetMenuOpen(false);
+                            }, 120);
                           }}
                           placeholder="Search player..."
                         />
-                        <div className="absolute z-20 mt-2 max-h-52 w-full overflow-auto rounded-xl border border-muted bg-background p-2 shadow-lg">
-                          {filteredScheduleTargets.length === 0 ? (
-                            <p className="px-2 py-1 text-xs text-muted-foreground">
-                              No player found
-                            </p>
-                          ) : (
-                            filteredScheduleTargets.map((username) => (
-                              <button
-                                key={`schedule-${username}`}
-                                type="button"
-                                className={`flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-sm transition ${
-                                  scheduleTargetLoginCode === username
-                                    ? "bg-accent font-semibold"
-                                    : "hover:bg-muted/60"
-                                }`}
-                                onClick={() => {
-                                  setScheduleTargetLoginCode(username);
-                                  setScheduleTargetSearch(username);
-                                }}
-                              >
-                                <span>{username}</span>
-                              </button>
-                            ))
-                          )}
-                        </div>
+                        {isScheduleTargetMenuOpen ? (
+                          <div className="absolute z-20 mt-2 max-h-52 w-full overflow-auto rounded-xl border border-muted bg-background p-2 shadow-lg">
+                            {filteredScheduleTargets.length === 0 ? (
+                              <p className="px-2 py-1 text-xs text-muted-foreground">
+                                No player found
+                              </p>
+                            ) : (
+                              filteredScheduleTargets.map((username) => (
+                                <button
+                                  key={`schedule-${username}`}
+                                  type="button"
+                                  className={`flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-sm transition ${
+                                    scheduleTargetLoginCode === username
+                                      ? "bg-accent font-semibold"
+                                      : "hover:bg-muted/60"
+                                  }`}
+                                  onClick={() => {
+                                    setScheduleTargetLoginCode(username);
+                                    setScheduleTargetSearch(username);
+                                    setIsScheduleTargetMenuOpen(false);
+                                  }}
+                                >
+                                  <span>{username}</span>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   ) : null}

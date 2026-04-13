@@ -247,6 +247,7 @@ export async function deliverAdminCampaign(campaign: AdminCampaignRecord) {
       login_code: recipient.username,
       metadata: {
         campaignId: campaign.id,
+        iconName: campaign.icon_name,
         templateKey: campaign.template_key,
       },
       title: campaign.title,
