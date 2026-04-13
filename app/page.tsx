@@ -15,6 +15,11 @@ import { useLanguage } from "@/contexts/language-context";
 import { isAlphanumericOnly } from "@/lib/utils/username-validation";
 import { AccountMenuOverlay } from "@/components/account/account-menu-overlay";
 import { AccountNotificationSettings } from "@/components/account/account-notification-settings";
+import { useNotifications } from "@/contexts/notifications-context";
+import {
+  getPromoCopy,
+  getRecoveryEmailCopy,
+} from "@/lib/notifications/inbox-copy";
 
 // Componentes refatorados
 import { HomeHeader } from "@/components/home/home-header";
@@ -33,6 +38,7 @@ const buildTime = process.env.NEXT_PUBLIC_BUILD_TIME?.trim() || "";
 export default function Home() {
   const router = useRouter();
   const { t, language } = useLanguage();
+  const { removeNotification, upsertNotification } = useNotifications();
   const uiText = {
     create_account_success: {
       pt: "Conta criada com sucesso!",
@@ -491,6 +497,55 @@ export default function Home() {
     });
     recoveryReminderShownForLoginRef.current = loginCode;
   }, [loginCode, recoveryEmailState]);
+
+  useEffect(() => {
+    const normalizedLogin = loginCode?.trim().toUpperCase() ?? null;
+
+    if (!normalizedLogin || recoveryEmailState !== "missing") {
+      removeNotification("recovery-email", normalizedLogin);
+      return;
+    }
+
+    const notification = getRecoveryEmailCopy(language);
+    upsertNotification({
+      action: "open-account",
+      body: notification.body,
+      id: "recovery-email",
+      kind: "recovery-email",
+      loginCode: normalizedLogin,
+      title: notification.title,
+    });
+  }, [language, loginCode, recoveryEmailState, removeNotification, upsertNotification]);
+
+  useEffect(() => {
+    const normalizedLogin = loginCode?.trim().toUpperCase() ?? null;
+    const promoNotification = getPromoCopy(language, {
+      credits: Math.max(0, availablePremiumCredits ?? 0),
+      promoCount: promoPermissions.length,
+    });
+
+    if (!normalizedLogin || !promoNotification) {
+      removeNotification("promo", normalizedLogin);
+      return;
+    }
+
+    upsertNotification({
+      body: promoNotification.body,
+      href: promoPermissions.length > 0 ? "/codigos-promocionais" : null,
+      id: "promo",
+      kind: "promo",
+      loginCode: normalizedLogin,
+      title: promoNotification.title,
+      triggerBrowserNotification: true,
+    });
+  }, [
+    availablePremiumCredits,
+    language,
+    loginCode,
+    promoPermissions.length,
+    removeNotification,
+    upsertNotification,
+  ]);
 
   const handleSaveRecoveryEmail = async () => {
     if (!loginCode || !recoveryEmailInput.trim()) {
@@ -1377,6 +1432,7 @@ export default function Home() {
         <div className="space-y-3">
           <HomeHeader
             isCompact={flow !== null || accountFlow !== null}
+            onOpenAccountMenu={loginCode ? toggleAccountOverlay : undefined}
             accountPill={
               loginCode ? (
                 <button

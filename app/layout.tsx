@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/language-context";
+import { NotificationsProvider } from "@/contexts/notifications-context";
 import { SonnerProvider } from "@/components/sonner-provider";
 import "./globals.css";
 
@@ -126,7 +127,9 @@ export default function RootLayout({
         className={`${_geist.variable} ${_geistMono.variable} font-sans antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <LanguageProvider>{children}</LanguageProvider>
+          <LanguageProvider>
+            <NotificationsProvider>{children}</NotificationsProvider>
+          </LanguageProvider>
         </ThemeProvider>
         <SonnerProvider />
         <Analytics />

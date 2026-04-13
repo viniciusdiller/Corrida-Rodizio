@@ -1,13 +1,19 @@
 import type { ReactNode } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
+import { NotificationCenter } from "@/components/notifications/notification-center";
 
 interface HomeHeaderProps {
   isCompact?: boolean;
   accountPill?: ReactNode;
+  onOpenAccountMenu?: () => void;
 }
 
-export function HomeHeader({ isCompact, accountPill }: HomeHeaderProps) {
+export function HomeHeader({
+  isCompact,
+  accountPill,
+  onOpenAccountMenu,
+}: HomeHeaderProps) {
   const logoSize = isCompact ? "h-28 md:h-32" : "h-44 md:h-56";
 
   return (
@@ -17,6 +23,7 @@ export function HomeHeader({ isCompact, accountPill }: HomeHeaderProps) {
         <div className="flex items-center gap-2">
           <LanguageToggle />
           <ThemeToggle />
+          <NotificationCenter onOpenAccountMenu={onOpenAccountMenu} />
         </div>
       </div>
       <div

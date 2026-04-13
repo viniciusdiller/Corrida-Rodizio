@@ -16,9 +16,8 @@ type SupportState = "checking" | "ready" | "unsupported" | "unavailable";
 const copy = {
   pt: {
     title: "Notificacoes",
-    enable: "Ativar notificacoes",
-    disable: "Desativar notificacoes",
-    active: "Ativas",
+    enable: "Ativar",
+    disable: "Desativar",
     blocked: "A permissao de notificacao esta bloqueada no navegador.",
     unavailable: "Notificacoes indisponiveis neste ambiente.",
     enabledToast: "Notificacoes ativadas.",
@@ -27,9 +26,8 @@ const copy = {
   },
   en: {
     title: "Notifications",
-    enable: "Enable notifications",
-    disable: "Disable notifications",
-    active: "Active",
+    enable: "Enable",
+    disable: "Disable",
     blocked: "Notification permission is blocked in the browser.",
     unavailable: "Notifications are unavailable in this environment.",
     enabledToast: "Notifications enabled.",
@@ -38,9 +36,8 @@ const copy = {
   },
   es: {
     title: "Notificaciones",
-    enable: "Activar notificaciones",
-    disable: "Desactivar notificaciones",
-    active: "Activas",
+    enable: "Activar",
+    disable: "Desactivar",
     blocked: "El permiso de notificaciones esta bloqueado en el navegador.",
     unavailable: "Las notificaciones no estan disponibles en este entorno.",
     enabledToast: "Notificaciones activadas.",
@@ -49,9 +46,8 @@ const copy = {
   },
   fr: {
     title: "Notifications",
-    enable: "Activer les notifications",
-    disable: "Desactiver les notifications",
-    active: "Actives",
+    enable: "Activer",
+    disable: "Desactiver",
     blocked: "L'autorisation de notification est bloquee dans le navigateur.",
     unavailable: "Les notifications ne sont pas disponibles dans cet environnement.",
     enabledToast: "Notifications activees.",
@@ -231,9 +227,6 @@ export function AccountNotificationSettings({
             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               {ui.title}
             </p>
-            {isSubscribed && supportState === "ready" ? (
-              <p className="text-xs font-semibold text-green-600">{ui.active}</p>
-            ) : null}
           </div>
         </div>
 
@@ -263,7 +256,7 @@ export function AccountNotificationSettings({
         ) : null}
       </div>
 
-      <div className="mt-2 min-h-4">
+      <div className="mt-2">
         {supportState === "checking" ? (
           <span className="text-xs font-medium text-muted-foreground">
             {ui.checking}
@@ -276,9 +269,7 @@ export function AccountNotificationSettings({
           <span className="text-xs font-medium text-muted-foreground">
             {ui.blocked}
           </span>
-        ) : (
-          <span className="sr-only">{ui.title}</span>
-        )}
+        ) : null}
       </div>
     </div>
   );

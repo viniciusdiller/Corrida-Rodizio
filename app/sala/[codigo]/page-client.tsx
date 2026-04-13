@@ -45,9 +45,14 @@ import { Card } from "@/components/ui/card";
 import type { Race, Participant } from "@/types/database";
 import { TeamSelection } from "@/components/room/team-selection";
 import { useLanguage } from "@/contexts/language-context";
+import { useNotifications } from "@/contexts/notifications-context";
 import { getFoodTypeUnit } from "@/lib/utils/food-type";
 import { AccountMenuOverlay } from "@/components/account/account-menu-overlay";
 import { AccountNotificationSettings } from "@/components/account/account-notification-settings";
+import {
+  getPromoCopy,
+  getRecoveryEmailCopy,
+} from "@/lib/notifications/inbox-copy";
 import {
   isAlphanumericOnly,
   sanitizeAlphanumeric,
@@ -60,6 +65,7 @@ import {
 
 export default function RoomPage() {
   const { t, language } = useLanguage();
+  const { removeNotification, upsertNotification } = useNotifications();
   const uiText = {
     fill_all_fields: {
       pt: "Preencha todos os campos.",
@@ -1435,6 +1441,62 @@ export default function RoomPage() {
     loadRecoveryEmail();
   }, [loggedUsername]);
 
+  useEffect(() => {
+    const normalizedLogin = loggedUsername?.trim().toUpperCase() ?? null;
+
+    if (!normalizedLogin || savedRecoveryEmail) {
+      removeNotification("recovery-email", normalizedLogin);
+      return;
+    }
+
+    const notification = getRecoveryEmailCopy(language);
+    upsertNotification({
+      action: "open-account",
+      body: notification.body,
+      id: "recovery-email",
+      kind: "recovery-email",
+      loginCode: normalizedLogin,
+      title: notification.title,
+    });
+  }, [
+    language,
+    loggedUsername,
+    removeNotification,
+    savedRecoveryEmail,
+    upsertNotification,
+  ]);
+
+  useEffect(() => {
+    const normalizedLogin = loggedUsername?.trim().toUpperCase() ?? null;
+    const promoNotification = getPromoCopy(language, {
+      credits: Math.max(0, premiumClaimCredits - premiumClaimedCount),
+      promoCount: promoPermissions.length,
+    });
+
+    if (!normalizedLogin || !promoNotification) {
+      removeNotification("promo", normalizedLogin);
+      return;
+    }
+
+    upsertNotification({
+      body: promoNotification.body,
+      href: promoPermissions.length > 0 ? "/codigos-promocionais" : null,
+      id: "promo",
+      kind: "promo",
+      loginCode: normalizedLogin,
+      title: promoNotification.title,
+      triggerBrowserNotification: true,
+    });
+  }, [
+    language,
+    loggedUsername,
+    premiumClaimCredits,
+    premiumClaimedCount,
+    promoPermissions.length,
+    removeNotification,
+    upsertNotification,
+  ]);
+
   const currentParticipant = participants.find(
     (p) => p.id === currentParticipantId,
   );
@@ -1710,6 +1772,7 @@ export default function RoomPage() {
       <div className="mx-auto max-w-2xl space-y-6">
         <RoomHeader
           onExit={() => router.push("/")}
+          onOpenAccountMenu={loggedUsername ? toggleAccountOverlay : undefined}
           accountPill={
             loggedUsername ? (
               <button
