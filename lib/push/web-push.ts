@@ -44,6 +44,7 @@ export type PushMessage = {
   title: string;
   body: string;
   url: string;
+  icon?: string;
   tag?: string;
 };
 
@@ -93,9 +94,9 @@ export async function sendPushToSubscriptions(
           JSON.stringify({
             title: message.title,
             body: message.body,
+            icon: message.icon || "/icon-light-32x32.png",
             url: message.url,
             tag: message.tag,
-            icon: "/icon-light-32x32.png",
             badge: "/icon-light-32x32.png",
           }),
         );

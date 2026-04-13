@@ -50,7 +50,8 @@ import { getFoodTypeUnit } from "@/lib/utils/food-type";
 import { AccountMenuOverlay } from "@/components/account/account-menu-overlay";
 import { AccountNotificationSettings } from "@/components/account/account-notification-settings";
 import {
-  getPromoCopy,
+  getAvatarCodeAccessCopy,
+  getAvatarRewardCopy,
   getRecoveryEmailCopy,
 } from "@/lib/notifications/inbox-copy";
 import {
@@ -1468,24 +1469,40 @@ export default function RoomPage() {
 
   useEffect(() => {
     const normalizedLogin = loggedUsername?.trim().toUpperCase() ?? null;
-    const promoNotification = getPromoCopy(language, {
-      credits: Math.max(0, premiumClaimCredits - premiumClaimedCount),
-      promoCount: promoPermissions.length,
-    });
+    const avatarCodeNotification = getAvatarCodeAccessCopy(
+      language,
+      promoPermissions.length,
+    );
+    const avatarRewardNotification = getAvatarRewardCopy(
+      language,
+      Math.max(0, premiumClaimCredits - premiumClaimedCount),
+    );
 
-    if (!normalizedLogin || !promoNotification) {
-      removeNotification("promo", normalizedLogin);
+    if (!normalizedLogin || !avatarCodeNotification) {
+      removeNotification("avatar-code-access", normalizedLogin);
+    } else {
+      upsertNotification({
+        body: avatarCodeNotification.body,
+        href: "/codigos-promocionais",
+        id: "avatar-code-access",
+        kind: "avatar-code-access",
+        loginCode: normalizedLogin,
+        title: avatarCodeNotification.title,
+      });
+    }
+
+    if (!normalizedLogin || !avatarRewardNotification) {
+      removeNotification("avatar-reward", normalizedLogin);
       return;
     }
 
     upsertNotification({
-      body: promoNotification.body,
-      href: promoPermissions.length > 0 ? "/codigos-promocionais" : null,
-      id: "promo",
-      kind: "promo",
+      body: avatarRewardNotification.body,
+      href: null,
+      id: "avatar-reward",
+      kind: "avatar-reward",
       loginCode: normalizedLogin,
-      title: promoNotification.title,
-      triggerBrowserNotification: true,
+      title: avatarRewardNotification.title,
     });
   }, [
     language,

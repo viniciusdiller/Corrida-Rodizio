@@ -28,7 +28,7 @@ type NotificationCenterProps = {
 const copy = {
   pt: {
     empty: "Nada novo por aqui.",
-    markAll: "Marcar tudo",
+    markAll: "Lido",
     title: "Central",
   },
   en: {

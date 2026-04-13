@@ -39,6 +39,7 @@ export async function POST(request: Request) {
     const deliverInApp = Boolean(body?.deliverInApp);
     const deliverPush = Boolean(body?.deliverPush);
     const href = String(body?.href ?? "").trim();
+    const iconName = String(body?.iconName ?? "").trim();
     const repeatType = String(body?.repeatType ?? "").trim();
     const repeatStartAt = String(body?.repeatStartAt ?? "").trim();
     const repeatEndAt = String(body?.repeatEndAt ?? "").trim();
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
       deliverInApp,
       deliverPush,
       href,
+      iconName: iconName || null,
       repeatDayOfMonth: Number.isFinite(repeatDayOfMonth) && repeatDayOfMonth > 0
         ? repeatDayOfMonth
         : null,

@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +12,10 @@ import {
   isExclusiveAvatar,
   isImageAvatar,
 } from "@/lib/utils/avatars";
+import {
+  pushIconOptions,
+  type PushIconName,
+} from "@/lib/notifications/push-icons";
 
 type AdminUser = {
   username: string;
@@ -46,6 +50,7 @@ type AdminCampaign = {
   deliver_push: boolean;
   href: string | null;
   id: string;
+  icon_name: string | null;
   in_app_count: number;
   matched_count: number;
   push_count: number;
@@ -124,7 +129,9 @@ export default function AdminPage() {
   const [composerTargetType, setComposerTargetType] =
     useState<AdminNotificationTarget>("all");
   const [composerTargetLoginCode, setComposerTargetLoginCode] = useState("");
+  const [composerTargetSearch, setComposerTargetSearch] = useState("");
   const [composerHref, setComposerHref] = useState("");
+  const [composerIconName, setComposerIconName] = useState<PushIconName>("bell");
   const [composerInApp, setComposerInApp] = useState(true);
   const [composerPush, setComposerPush] = useState(false);
   const [composerStatus, setComposerStatus] = useState<string | null>(null);
@@ -134,7 +141,9 @@ export default function AdminPage() {
   const [scheduleTargetType, setScheduleTargetType] =
     useState<AdminNotificationTarget>("no_recovery_email");
   const [scheduleTargetLoginCode, setScheduleTargetLoginCode] = useState("");
+  const [scheduleTargetSearch, setScheduleTargetSearch] = useState("");
   const [scheduleHref, setScheduleHref] = useState("");
+  const [scheduleIconName, setScheduleIconName] = useState<PushIconName>("calendar-days");
   const [scheduleInApp, setScheduleInApp] = useState(true);
   const [schedulePush, setSchedulePush] = useState(false);
   const [scheduleAt, setScheduleAt] = useState("");
@@ -181,6 +190,20 @@ export default function AdminPage() {
         .filter((avatar) => avatar.startsWith("avatar-premium"))
         .filter((avatar) => !user.unlockedPremiumAvatars.includes(avatar))
     : [];
+  const filteredComposerTargets = useMemo(() => {
+    const query = composerTargetSearch.trim().toUpperCase();
+    if (!query) return allUsernames.slice(0, 8);
+    return allUsernames
+      .filter((username) => username.includes(query))
+      .slice(0, 8);
+  }, [allUsernames, composerTargetSearch]);
+  const filteredScheduleTargets = useMemo(() => {
+    const query = scheduleTargetSearch.trim().toUpperCase();
+    if (!query) return allUsernames.slice(0, 8);
+    return allUsernames
+      .filter((username) => username.includes(query))
+      .slice(0, 8);
+  }, [allUsernames, scheduleTargetSearch]);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -458,7 +481,9 @@ export default function AdminPage() {
     setComposerMessage("");
     setComposerTargetType("all");
     setComposerTargetLoginCode("");
+    setComposerTargetSearch("");
     setComposerHref("");
+    setComposerIconName("bell");
     setComposerInApp(true);
     setComposerPush(false);
   };
@@ -468,7 +493,9 @@ export default function AdminPage() {
     setScheduleMessage("");
     setScheduleTargetType("no_recovery_email");
     setScheduleTargetLoginCode("");
+    setScheduleTargetSearch("");
     setScheduleHref("");
+    setScheduleIconName("calendar-days");
     setScheduleInApp(true);
     setSchedulePush(false);
     setScheduleAt("");
@@ -489,6 +516,7 @@ export default function AdminPage() {
 
   const submitCampaign = async ({
     href,
+    iconName,
     message,
     repeatDayOfMonth,
     repeatEndAt,
@@ -505,6 +533,7 @@ export default function AdminPage() {
     deliverInApp: boolean;
     deliverPush: boolean;
     href: string;
+    iconName?: PushIconName;
     message: string;
     repeatDayOfMonth?: number;
     repeatEndAt?: string;
@@ -523,6 +552,7 @@ export default function AdminPage() {
         deliverInApp,
         deliverPush,
         href,
+        iconName,
         message,
         repeatDayOfMonth,
         repeatEndAt,
@@ -563,6 +593,7 @@ export default function AdminPage() {
         deliverInApp: composerInApp,
         deliverPush: composerPush,
         href: composerHref,
+        iconName: composerIconName,
         message: composerMessage,
         targetLoginCode: composerTargetLoginCode,
         targetType: composerTargetType,
@@ -605,6 +636,7 @@ export default function AdminPage() {
         deliverInApp: scheduleInApp,
         deliverPush: schedulePush,
         href: scheduleHref,
+        iconName: scheduleIconName,
         message: scheduleMessage,
         repeatDayOfMonth:
           scheduleRepeatType === "day_of_month"
@@ -1151,14 +1183,42 @@ export default function AdminPage() {
                       <Label className="text-xs text-muted-foreground">
                         Player code
                       </Label>
-                      <Input
-                        value={composerTargetLoginCode}
-                        onChange={(event) =>
-                          setComposerTargetLoginCode(event.target.value.toUpperCase())
-                        }
-                        placeholder="USERNAME"
-                        list="admin-usernames"
-                      />
+                      <div className="relative">
+                        <Input
+                          value={composerTargetSearch}
+                          onChange={(event) => {
+                            const value = event.target.value.toUpperCase();
+                            setComposerTargetSearch(value);
+                            setComposerTargetLoginCode(value);
+                          }}
+                          placeholder="Search player..."
+                        />
+                        <div className="absolute z-20 mt-2 max-h-52 w-full overflow-auto rounded-xl border border-muted bg-background p-2 shadow-lg">
+                          {filteredComposerTargets.length === 0 ? (
+                            <p className="px-2 py-1 text-xs text-muted-foreground">
+                              No player found
+                            </p>
+                          ) : (
+                            filteredComposerTargets.map((username) => (
+                              <button
+                                key={`composer-${username}`}
+                                type="button"
+                                className={`flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-sm transition ${
+                                  composerTargetLoginCode === username
+                                    ? "bg-accent font-semibold"
+                                    : "hover:bg-muted/60"
+                                }`}
+                                onClick={() => {
+                                  setComposerTargetLoginCode(username);
+                                  setComposerTargetSearch(username);
+                                }}
+                              >
+                                <span>{username}</span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
                     </div>
                   ) : null}
                 </div>
@@ -1180,6 +1240,30 @@ export default function AdminPage() {
                     />
                     Push notification
                   </label>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Push icon</Label>
+                  <div className="grid grid-cols-4 gap-2 md:grid-cols-5">
+                    {pushIconOptions.map((option) => {
+                      const Icon = option.icon;
+                      return (
+                        <button
+                          key={`composer-icon-${option.value}`}
+                          type="button"
+                          className={`flex flex-col items-center justify-center gap-2 rounded-xl border px-2 py-3 text-[11px] transition ${
+                            composerIconName === option.value
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-muted bg-background hover:bg-muted/50"
+                          }`}
+                          onClick={() => setComposerIconName(option.value)}
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span className="text-center leading-tight">{option.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {composerStatus && (
@@ -1368,14 +1452,42 @@ export default function AdminPage() {
                       <Label className="text-xs text-muted-foreground">
                         Player code
                       </Label>
-                      <Input
-                        value={scheduleTargetLoginCode}
-                        onChange={(event) =>
-                          setScheduleTargetLoginCode(event.target.value.toUpperCase())
-                        }
-                        placeholder="USERNAME"
-                        list="admin-usernames"
-                      />
+                      <div className="relative">
+                        <Input
+                          value={scheduleTargetSearch}
+                          onChange={(event) => {
+                            const value = event.target.value.toUpperCase();
+                            setScheduleTargetSearch(value);
+                            setScheduleTargetLoginCode(value);
+                          }}
+                          placeholder="Search player..."
+                        />
+                        <div className="absolute z-20 mt-2 max-h-52 w-full overflow-auto rounded-xl border border-muted bg-background p-2 shadow-lg">
+                          {filteredScheduleTargets.length === 0 ? (
+                            <p className="px-2 py-1 text-xs text-muted-foreground">
+                              No player found
+                            </p>
+                          ) : (
+                            filteredScheduleTargets.map((username) => (
+                              <button
+                                key={`schedule-${username}`}
+                                type="button"
+                                className={`flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-sm transition ${
+                                  scheduleTargetLoginCode === username
+                                    ? "bg-accent font-semibold"
+                                    : "hover:bg-muted/60"
+                                }`}
+                                onClick={() => {
+                                  setScheduleTargetLoginCode(username);
+                                  setScheduleTargetSearch(username);
+                                }}
+                              >
+                                <span>{username}</span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
                     </div>
                   ) : null}
                 </div>
@@ -1397,6 +1509,30 @@ export default function AdminPage() {
                     />
                     Push notification
                   </label>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Push icon</Label>
+                  <div className="grid grid-cols-4 gap-2 md:grid-cols-5">
+                    {pushIconOptions.map((option) => {
+                      const Icon = option.icon;
+                      return (
+                        <button
+                          key={`schedule-icon-${option.value}`}
+                          type="button"
+                          className={`flex flex-col items-center justify-center gap-2 rounded-xl border px-2 py-3 text-[11px] transition ${
+                            scheduleIconName === option.value
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-muted bg-background hover:bg-muted/50"
+                          }`}
+                          onClick={() => setScheduleIconName(option.value)}
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span className="text-center leading-tight">{option.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {scheduleStatus && (
@@ -1445,9 +1581,9 @@ export default function AdminPage() {
                                 <p className="text-[11px] text-muted-foreground">
                                   Target: {campaign.target_type}
                                   {campaign.target_login_code
-                                    ? ` · ${campaign.target_login_code}`
+                                    ? ` Â· ${campaign.target_login_code}`
                                     : ""}
-                                  {" · "}
+                                  {" Â· "}
                                   {campaign.deliver_in_app ? "in-app" : ""}
                                   {campaign.deliver_in_app && campaign.deliver_push
                                     ? " + "
@@ -1509,52 +1645,7 @@ export default function AdminPage() {
                   )}
                 </div>
 
-                <div className="space-y-2 border-t border-muted/40 pt-4">
-                  <Label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">
-                    Campaign history
-                  </Label>
-                  {campaigns.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">
-                      No notification campaigns yet.
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {campaigns.map((campaign) => (
-                        <div
-                          key={`history-${campaign.id}`}
-                          className="rounded-xl border border-muted/60 bg-background/70 px-4 py-3"
-                        >
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-bold">{campaign.title}</p>
-                            <Badge
-                              className={
-                                campaign.status === "sent"
-                                  ? "bg-emerald-500/15 text-emerald-700 border-none"
-                                  : campaign.status === "scheduled"
-                                    ? "bg-amber-500/15 text-amber-700 border-none"
-                                    : campaign.status === "cancelled"
-                                      ? "bg-zinc-500/15 text-zinc-700 border-none"
-                                      : "bg-muted text-muted-foreground border-none"
-                              }
-                            >
-                              {campaign.status}
-                            </Badge>
-                          </div>
-                          <p className="mt-1 text-xs text-muted-foreground">{campaign.body}</p>
-                          <p className="mt-1 text-[11px] text-muted-foreground">
-                            Created: {formatCampaignDate(campaign.created_at)} · Scheduled:{" "}
-                            {formatCampaignDate(campaign.scheduled_for)} · Sent:{" "}
-                            {formatCampaignDate(campaign.sent_at)}
-                          </p>
-                          <p className="mt-1 text-[11px] text-muted-foreground">
-                            Matched: {campaign.matched_count ?? 0} · Inbox:{" "}
-                            {campaign.in_app_count ?? 0} · Push: {campaign.push_count ?? 0}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+
               </CardContent>
             </Card>
             ) : null}
@@ -1657,7 +1748,7 @@ export default function AdminPage() {
                             </span>
                           )}
                           <span className="text-xs text-muted-foreground">
-                            {showExclusiveMenu ? "▲" : "▼"}
+                            {showExclusiveMenu ? "â–²" : "â–¼"}
                           </span>
                         </button>
                         {showExclusiveMenu && (
@@ -1788,7 +1879,7 @@ export default function AdminPage() {
                             </span>
                           )}
                           <span className="text-xs text-muted-foreground">
-                            {showPremiumMenu ? "▲" : "▼"}
+                            {showPremiumMenu ? "â–²" : "â–¼"}
                           </span>
                         </button>
                         {showPremiumMenu && (
@@ -1898,7 +1989,7 @@ export default function AdminPage() {
                             </span>
                           )}
                           <span className="text-xs text-muted-foreground">
-                            {showPromoMenu ? "▲" : "▼"}
+                            {showPromoMenu ? "â–²" : "â–¼"}
                           </span>
                         </button>
                         {showPromoMenu && (

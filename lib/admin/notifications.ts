@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendPushToSubscriptions } from "@/lib/push/web-push";
+import { buildPushIconDataUri, type PushIconName } from "@/lib/notifications/push-icons";
 
 export type AdminNotificationTarget =
   | "specific_player"
@@ -20,6 +21,7 @@ export type AdminCampaignRecord = {
   deliver_push: boolean;
   href: string | null;
   id: string;
+  icon_name: string | null;
   matched_count: number | null;
   push_count: number | null;
   repeat_day_of_month: number | null;
@@ -42,6 +44,7 @@ export type CreateAdminCampaignInput = {
   deliverInApp: boolean;
   deliverPush: boolean;
   href?: string | null;
+  iconName?: PushIconName | null;
   repeatDayOfMonth?: number | null;
   repeatEndAt?: string | null;
   repeatStartAt?: string | null;
@@ -204,6 +207,7 @@ export async function createAdminCampaign(input: CreateAdminCampaignInput) {
       deliver_in_app: input.deliverInApp,
       deliver_push: input.deliverPush,
       href: input.href?.trim() || null,
+      icon_name: input.iconName?.trim() || null,
       repeat_day_of_month: input.repeatDayOfMonth ?? null,
       repeat_end_at: input.repeatEndAt?.trim() || null,
       repeat_start_at: input.repeatStartAt?.trim() || null,
@@ -216,7 +220,7 @@ export async function createAdminCampaign(input: CreateAdminCampaignInput) {
       title: input.title,
     })
     .select(
-      "id, title, body, href, target_type, target_login_code, deliver_in_app, deliver_push, status, scheduled_for, created_at, sent_at, matched_count, in_app_count, push_count, template_key, repeat_type, repeat_start_at, repeat_end_at, repeat_day_of_month",
+      "id, title, body, href, icon_name, target_type, target_login_code, deliver_in_app, deliver_push, status, scheduled_for, created_at, sent_at, matched_count, in_app_count, push_count, template_key, repeat_type, repeat_start_at, repeat_end_at, repeat_day_of_month",
     )
     .single();
 
@@ -279,6 +283,7 @@ export async function deliverAdminCampaign(campaign: AdminCampaignRecord) {
       })),
       () => ({
         body: campaign.body,
+        icon: buildPushIconDataUri(campaign.icon_name),
         title: campaign.title,
         url: campaign.href || "/",
         tag: `admin-campaign-${campaign.id}`,
@@ -304,7 +309,7 @@ export async function deliverAdminCampaign(campaign: AdminCampaignRecord) {
     })
     .eq("id", campaign.id)
     .select(
-      "id, title, body, href, target_type, target_login_code, deliver_in_app, deliver_push, status, scheduled_for, created_at, sent_at, matched_count, in_app_count, push_count, template_key, repeat_type, repeat_start_at, repeat_end_at, repeat_day_of_month",
+      "id, title, body, href, icon_name, target_type, target_login_code, deliver_in_app, deliver_push, status, scheduled_for, created_at, sent_at, matched_count, in_app_count, push_count, template_key, repeat_type, repeat_start_at, repeat_end_at, repeat_day_of_month",
     )
     .single();
 
@@ -320,7 +325,7 @@ export async function listAdminCampaigns() {
   const { data, error } = await supabase
     .from("admin_notification_campaigns")
     .select(
-      "id, title, body, href, target_type, target_login_code, deliver_in_app, deliver_push, status, scheduled_for, created_at, sent_at, matched_count, in_app_count, push_count, template_key, repeat_type, repeat_start_at, repeat_end_at, repeat_day_of_month",
+      "id, title, body, href, icon_name, target_type, target_login_code, deliver_in_app, deliver_push, status, scheduled_for, created_at, sent_at, matched_count, in_app_count, push_count, template_key, repeat_type, repeat_start_at, repeat_end_at, repeat_day_of_month",
     )
     .order("created_at", { ascending: false })
     .limit(50);
@@ -338,7 +343,7 @@ export async function sendDueAdminCampaigns() {
   const { data, error } = await supabase
     .from("admin_notification_campaigns")
     .select(
-      "id, title, body, href, target_type, target_login_code, deliver_in_app, deliver_push, status, scheduled_for, created_at, sent_at, matched_count, in_app_count, push_count, template_key, repeat_type, repeat_start_at, repeat_end_at, repeat_day_of_month",
+      "id, title, body, href, icon_name, target_type, target_login_code, deliver_in_app, deliver_push, status, scheduled_for, created_at, sent_at, matched_count, in_app_count, push_count, template_key, repeat_type, repeat_start_at, repeat_end_at, repeat_day_of_month",
     )
     .eq("status", "scheduled")
     .lte("scheduled_for", now)
@@ -370,7 +375,7 @@ export async function cancelAdminCampaign(campaignId: string) {
     .eq("id", campaignId)
     .eq("status", "scheduled")
     .select(
-      "id, title, body, href, target_type, target_login_code, deliver_in_app, deliver_push, status, scheduled_for, created_at, sent_at, matched_count, in_app_count, push_count, template_key, repeat_type, repeat_start_at, repeat_end_at, repeat_day_of_month",
+      "id, title, body, href, icon_name, target_type, target_login_code, deliver_in_app, deliver_push, status, scheduled_for, created_at, sent_at, matched_count, in_app_count, push_count, template_key, repeat_type, repeat_start_at, repeat_end_at, repeat_day_of_month",
     )
     .single();
 
@@ -386,7 +391,7 @@ export async function getAdminCampaign(campaignId: string) {
   const { data, error } = await supabase
     .from("admin_notification_campaigns")
     .select(
-      "id, title, body, href, target_type, target_login_code, deliver_in_app, deliver_push, status, scheduled_for, created_at, sent_at, matched_count, in_app_count, push_count, template_key, repeat_type, repeat_start_at, repeat_end_at, repeat_day_of_month",
+      "id, title, body, href, icon_name, target_type, target_login_code, deliver_in_app, deliver_push, status, scheduled_for, created_at, sent_at, matched_count, in_app_count, push_count, template_key, repeat_type, repeat_start_at, repeat_end_at, repeat_day_of_month",
     )
     .eq("id", campaignId)
     .single();
