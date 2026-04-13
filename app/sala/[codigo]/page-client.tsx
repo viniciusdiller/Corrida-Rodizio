@@ -50,7 +50,6 @@ import { getFoodTypeUnit } from "@/lib/utils/food-type";
 import { AccountMenuOverlay } from "@/components/account/account-menu-overlay";
 import { AccountNotificationSettings } from "@/components/account/account-notification-settings";
 import {
-  getAvatarCodeAccessCopy,
   getAvatarRewardCopy,
   getRecoveryEmailCopy,
 } from "@/lib/notifications/inbox-copy";
@@ -331,7 +330,6 @@ export default function RoomPage() {
     null,
   );
   const [promoPermissions, setPromoPermissions] = useState<string[]>([]);
-  const [hasLoadedPromoPermissions, setHasLoadedPromoPermissions] = useState(false);
   const [hasLoadedPremiumCredits, setHasLoadedPremiumCredits] = useState(false);
   const [needsJoinPrompt, setNeedsJoinPrompt] = useState(true);
   const [raceView, setRaceView] = useState<"live" | "photos">("live");
@@ -438,11 +436,9 @@ export default function RoomPage() {
   const loadPromoPermissions = async () => {
     if (!loggedUsername) {
       setPromoPermissions([]);
-      setHasLoadedPromoPermissions(false);
       return;
     }
     setIsLoadingPermissions(true);
-    setHasLoadedPromoPermissions(false);
     try {
       const response = await fetch(
         `/api/promo-codes/permissions?loginCode=${encodeURIComponent(
@@ -456,7 +452,6 @@ export default function RoomPage() {
       setPromoPermissions([]);
     } finally {
       setIsLoadingPermissions(false);
-      setHasLoadedPromoPermissions(true);
     }
   };
 
@@ -1474,31 +1469,14 @@ export default function RoomPage() {
 
   useEffect(() => {
     const normalizedLogin = loggedUsername?.trim().toUpperCase() ?? null;
-    const canSyncAvatarCodeNotification =
-      !normalizedLogin || hasLoadedPromoPermissions;
     const canSyncAvatarRewardNotification =
       !normalizedLogin || hasLoadedPremiumCredits;
-    const avatarCodeNotification = getAvatarCodeAccessCopy(
-      language,
-      promoPermissions.length,
-    );
     const avatarRewardNotification = getAvatarRewardCopy(
       language,
       Math.max(0, premiumClaimCredits - premiumClaimedCount),
     );
 
-    if (canSyncAvatarCodeNotification && (!normalizedLogin || !avatarCodeNotification)) {
-      removeNotification("avatar-code-access", normalizedLogin);
-    } else if (canSyncAvatarCodeNotification) {
-      upsertNotification({
-        body: avatarCodeNotification.body,
-        href: "/codigos-promocionais",
-        id: "avatar-code-access",
-        kind: "avatar-code-access",
-        loginCode: normalizedLogin,
-        title: avatarCodeNotification.title,
-      });
-    }
+    removeNotification("avatar-code-access", normalizedLogin);
 
     if (canSyncAvatarRewardNotification && (!normalizedLogin || !avatarRewardNotification)) {
       removeNotification("avatar-reward", normalizedLogin);
@@ -1517,12 +1495,10 @@ export default function RoomPage() {
     }
   }, [
     hasLoadedPremiumCredits,
-    hasLoadedPromoPermissions,
     language,
     loggedUsername,
     premiumClaimCredits,
     premiumClaimedCount,
-    promoPermissions.length,
     removeNotification,
     upsertNotification,
   ]);

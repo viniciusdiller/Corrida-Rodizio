@@ -17,7 +17,6 @@ import { AccountMenuOverlay } from "@/components/account/account-menu-overlay";
 import { AccountNotificationSettings } from "@/components/account/account-notification-settings";
 import { useNotifications } from "@/contexts/notifications-context";
 import {
-  getAvatarCodeAccessCopy,
   getAvatarRewardCopy,
   getRecoveryEmailCopy,
 } from "@/lib/notifications/inbox-copy";
@@ -284,7 +283,6 @@ export default function Home() {
   const [promoPermissions, setPromoPermissions] = useState<string[]>([]);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
   const [availablePremiumCredits, setAvailablePremiumCredits] = useState<number | null>(null);
-  const [hasLoadedPromoPermissions, setHasLoadedPromoPermissions] = useState(false);
   const [hasLoadedPremiumCredits, setHasLoadedPremiumCredits] = useState(false);
   const recoveryReminderShownForLoginRef = useRef<string | null>(null);
 
@@ -384,11 +382,9 @@ export default function Home() {
   const loadPromoPermissions = async () => {
     if (!loginCode) {
       setPromoPermissions([]);
-      setHasLoadedPromoPermissions(false);
       return;
     }
     setIsLoadingPermissions(true);
-    setHasLoadedPromoPermissions(false);
     try {
       const response = await fetch(
         `/api/promo-codes/permissions?loginCode=${encodeURIComponent(
@@ -402,7 +398,6 @@ export default function Home() {
       setPromoPermissions([]);
     } finally {
       setIsLoadingPermissions(false);
-      setHasLoadedPromoPermissions(true);
     }
   };
 
@@ -529,31 +524,14 @@ export default function Home() {
 
   useEffect(() => {
     const normalizedLogin = loginCode?.trim().toUpperCase() ?? null;
-    const canSyncAvatarCodeNotification =
-      !normalizedLogin || hasLoadedPromoPermissions;
     const canSyncAvatarRewardNotification =
       !normalizedLogin || hasLoadedPremiumCredits;
-    const avatarCodeNotification = getAvatarCodeAccessCopy(
-      language,
-      promoPermissions.length,
-    );
     const avatarRewardNotification = getAvatarRewardCopy(
       language,
       Math.max(0, availablePremiumCredits ?? 0),
     );
 
-    if (canSyncAvatarCodeNotification && (!normalizedLogin || !avatarCodeNotification)) {
-      removeNotification("avatar-code-access", normalizedLogin);
-    } else if (canSyncAvatarCodeNotification) {
-      upsertNotification({
-        body: avatarCodeNotification.body,
-        href: "/codigos-promocionais",
-        id: "avatar-code-access",
-        kind: "avatar-code-access",
-        loginCode: normalizedLogin,
-        title: avatarCodeNotification.title,
-      });
-    }
+    removeNotification("avatar-code-access", normalizedLogin);
 
     if (canSyncAvatarRewardNotification && (!normalizedLogin || !avatarRewardNotification)) {
       removeNotification("avatar-reward", normalizedLogin);
@@ -573,10 +551,8 @@ export default function Home() {
   }, [
     availablePremiumCredits,
     hasLoadedPremiumCredits,
-    hasLoadedPromoPermissions,
     language,
     loginCode,
-    promoPermissions.length,
     removeNotification,
     upsertNotification,
   ]);

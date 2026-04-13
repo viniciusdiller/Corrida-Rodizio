@@ -43,43 +43,6 @@ const recoveryCopy: Record<Language, NotificationCopy> = {
   },
 };
 
-const avatarCodeCopy = {
-  pt: {
-    body: (count: number) =>
-      count === 1
-        ? "Voce ganhou permissao para distribuir 1 avatar promocional."
-        : `Voce ganhou permissao para distribuir ${count} avatares promocionais.`,
-    title: "Permissao de avatar",
-  },
-  en: {
-    body: (count: number) =>
-      count === 1
-        ? "You can now give 1 promotional avatar code."
-        : `You can now give ${count} promotional avatar codes.`,
-    title: "Avatar code access",
-  },
-  es: {
-    body: (count: number) =>
-      count === 1
-        ? "Ahora puedes dar 1 codigo de avatar promocional."
-        : `Ahora puedes dar ${count} codigos de avatar promocional.`,
-    title: "Permiso de avatar",
-  },
-  fr: {
-    body: (count: number) =>
-      count === 1
-        ? "Vous pouvez maintenant offrir 1 code d'avatar promotionnel."
-        : `Vous pouvez maintenant offrir ${count} codes d'avatar promotionnel.`,
-    title: "Acces avatar",
-  },
-} satisfies Record<
-  Language,
-  {
-    body: (count: number) => string;
-    title: string;
-  }
->;
-
 const avatarRewardCopy = {
   pt: {
     body: (count: number) =>
@@ -131,18 +94,6 @@ export function getBuildUpdateCopy(language: Language, versionLabel?: string): N
 
 export function getRecoveryEmailCopy(language: Language): NotificationCopy {
   return recoveryCopy[language] ?? recoveryCopy.pt;
-}
-
-export function getAvatarCodeAccessCopy(
-  language: Language,
-  count: number,
-): NotificationCopy | null {
-  if (count <= 0) return null;
-  const localized = avatarCodeCopy[language] ?? avatarCodeCopy.pt;
-  return {
-    title: localized.title,
-    body: localized.body(count),
-  };
 }
 
 export function getAvatarRewardCopy(

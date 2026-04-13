@@ -122,7 +122,9 @@ export function NotificationsProvider({
   children: import("react").ReactNode;
 }) {
   const { language } = useLanguage();
-  const [localNotifications, setLocalNotifications] = useState<InboxNotification[]>([]);
+  const [localNotifications, setLocalNotifications] = useState<InboxNotification[]>(
+    () => readStoredNotifications(),
+  );
   const [remoteNotifications, setRemoteNotifications] = useState<InboxNotification[]>([]);
   const [loginCode, setLoginCode] = useState<string | null>(null);
 
@@ -147,7 +149,6 @@ export function NotificationsProvider({
   }, []);
 
   useEffect(() => {
-    setLocalNotifications(readStoredNotifications());
     syncLoginCode();
 
     window.addEventListener("storage", syncLoginCode);
