@@ -331,6 +331,8 @@ export default function RoomPage() {
     null,
   );
   const [promoPermissions, setPromoPermissions] = useState<string[]>([]);
+  const [hasLoadedPromoPermissions, setHasLoadedPromoPermissions] = useState(false);
+  const [hasLoadedPremiumCredits, setHasLoadedPremiumCredits] = useState(false);
   const [needsJoinPrompt, setNeedsJoinPrompt] = useState(true);
   const [raceView, setRaceView] = useState<"live" | "photos">("live");
   const [hasPhotoTimeline, setHasPhotoTimeline] = useState(false);
@@ -436,9 +438,11 @@ export default function RoomPage() {
   const loadPromoPermissions = async () => {
     if (!loggedUsername) {
       setPromoPermissions([]);
+      setHasLoadedPromoPermissions(false);
       return;
     }
     setIsLoadingPermissions(true);
+    setHasLoadedPromoPermissions(false);
     try {
       const response = await fetch(
         `/api/promo-codes/permissions?loginCode=${encodeURIComponent(
@@ -452,6 +456,7 @@ export default function RoomPage() {
       setPromoPermissions([]);
     } finally {
       setIsLoadingPermissions(false);
+      setHasLoadedPromoPermissions(true);
     }
   };
 
@@ -1469,6 +1474,10 @@ export default function RoomPage() {
 
   useEffect(() => {
     const normalizedLogin = loggedUsername?.trim().toUpperCase() ?? null;
+    const canSyncAvatarCodeNotification =
+      !normalizedLogin || hasLoadedPromoPermissions;
+    const canSyncAvatarRewardNotification =
+      !normalizedLogin || hasLoadedPremiumCredits;
     const avatarCodeNotification = getAvatarCodeAccessCopy(
       language,
       promoPermissions.length,
@@ -1478,9 +1487,9 @@ export default function RoomPage() {
       Math.max(0, premiumClaimCredits - premiumClaimedCount),
     );
 
-    if (!normalizedLogin || !avatarCodeNotification) {
+    if (canSyncAvatarCodeNotification && (!normalizedLogin || !avatarCodeNotification)) {
       removeNotification("avatar-code-access", normalizedLogin);
-    } else {
+    } else if (canSyncAvatarCodeNotification) {
       upsertNotification({
         body: avatarCodeNotification.body,
         href: "/codigos-promocionais",
@@ -1491,20 +1500,24 @@ export default function RoomPage() {
       });
     }
 
-    if (!normalizedLogin || !avatarRewardNotification) {
+    if (canSyncAvatarRewardNotification && (!normalizedLogin || !avatarRewardNotification)) {
       removeNotification("avatar-reward", normalizedLogin);
       return;
     }
 
-    upsertNotification({
-      body: avatarRewardNotification.body,
-      href: null,
-      id: "avatar-reward",
-      kind: "avatar-reward",
-      loginCode: normalizedLogin,
-      title: avatarRewardNotification.title,
-    });
+    if (canSyncAvatarRewardNotification) {
+      upsertNotification({
+        body: avatarRewardNotification.body,
+        href: null,
+        id: "avatar-reward",
+        kind: "avatar-reward",
+        loginCode: normalizedLogin,
+        title: avatarRewardNotification.title,
+      });
+    }
   }, [
+    hasLoadedPremiumCredits,
+    hasLoadedPromoPermissions,
     language,
     loggedUsername,
     premiumClaimCredits,
@@ -1529,6 +1542,7 @@ export default function RoomPage() {
           setUnlockedPremiumAvatars([]);
           setPremiumClaimedCount(0);
           setPremiumClaimCredits(1);
+          setHasLoadedPremiumCredits(false);
         }
         return;
       }
@@ -1578,6 +1592,7 @@ export default function RoomPage() {
             : [];
           setUnlockedPremiumAvatars(unlocks);
           setPremiumClaimedCount(unlocks.length);
+          setHasLoadedPremiumCredits(true);
         }
       } catch (error) {
         console.error(error);
@@ -1587,6 +1602,7 @@ export default function RoomPage() {
           setUnlockedPremiumAvatars([]);
           setPremiumClaimedCount(0);
           setPremiumClaimCredits(1);
+          setHasLoadedPremiumCredits(true);
         }
       }
     };
@@ -1601,6 +1617,7 @@ export default function RoomPage() {
     setUnlockedPremiumAvatars([]);
     setPremiumClaimedCount(0);
     setPremiumClaimCredits(1);
+    setHasLoadedPremiumCredits(false);
     setWelcomePremiumOptions([]);
     setShowWelcomePremiumGrid(false);
     setPendingWelcomePremiumAvatar(null);
