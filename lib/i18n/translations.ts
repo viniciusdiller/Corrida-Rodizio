@@ -516,6 +516,7 @@ export const translations = {
       terms: "Termos",
       privacy: "Política",
       about: "Quem somos nós",
+      buy_me_a_coffee: "Me pague um café",
     },
   },
   en: {
@@ -1028,6 +1029,7 @@ export const translations = {
       terms: "Terms",
       privacy: "Privacy",
       about: "Who we are",
+      buy_me_a_coffee: "Buy me a coffee",
     },
   },
   fr: {
@@ -1543,6 +1545,7 @@ export const translations = {
       terms: "Conditions",
       privacy: "Confidentialité",
       about: "Qui sommes-nous",
+      buy_me_a_coffee: "Offrez-moi un café",
     },
   },
   es: {
@@ -1869,6 +1872,7 @@ export const translations = {
       terms: "Términos",
       privacy: "Política",
       about: "Quiénes somos",
+      buy_me_a_coffee: "Invítame un café",
     },
     join_room_via_link: {
       join_room_error: "Error al entrar a la sala. Inténtalo de nuevo.",
