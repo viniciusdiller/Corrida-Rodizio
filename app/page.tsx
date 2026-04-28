@@ -1607,14 +1607,6 @@ export default function Home() {
           >
             {t.footer.about}
           </Link>
-          <a
-            href="https://ko-fi.com/rodiziorace"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition hover:text-foreground/80"
-          >
-            Buy me a coffee
-          </a>
         </nav>
         <p>
           {t.footer.copyright.replace(
