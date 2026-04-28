@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 import { NotificationCenter } from "@/components/notifications/notification-center";
+import { DonateButton } from "@/components/donate-button";
 
 interface HomeHeaderProps {
   isCompact?: boolean;
@@ -21,6 +22,7 @@ export function HomeHeader({
       <div className="flex flex-wrap items-center justify-between gap-2 pt-4 md:pt-6">
         <div className="min-w-0">{accountPill}</div>
         <div className="flex items-center gap-2">
+          <DonateButton />
           <LanguageToggle />
           <ThemeToggle />
           <NotificationCenter onOpenAccountMenu={onOpenAccountMenu} />
