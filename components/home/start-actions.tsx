@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Rocket, Swords } from "lucide-react";
+import { Rocket, Swords, Heart } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 
 interface StartActionsProps {
@@ -30,6 +30,15 @@ export function StartActions({ onSetFlow }: StartActionsProps) {
         {t.home.join_race}
         <Swords className="ml-2 h-5 w-5" />
       </Button>
+      <a
+        href="https://ko-fi.com/rodiziorace"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-2 w-full h-10 rounded-xl font-medium text-sm text-muted-foreground hover:text-rose-500 transition-colors duration-200"
+      >
+        <Heart className="h-4 w-4 text-rose-400" />
+        {t.home.support_project}
+      </a>
     </div>
   );
 }
