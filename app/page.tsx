@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pizza, Fish, Beef, Beer, Settings } from "lucide-react";
+import { Pizza, Fish, Beef, Beer, Settings, Heart } from "lucide-react";
 import type { FoodType, Race } from "@/types/database";
 import { generateRoomCode } from "@/lib/utils/room-code";
 import { getParticipantStorageKey } from "@/lib/utils/participant-storage";
@@ -1607,6 +1607,15 @@ export default function Home() {
           >
             {t.footer.about}
           </Link>
+          <a
+            href="https://ko-fi.com/rodiziorace"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 transition hover:text-foreground/80"
+          >
+            Me compre um café
+            <Heart className="h-3 w-3" />
+          </a>
         </nav>
         <p>
           {t.footer.copyright.replace(
