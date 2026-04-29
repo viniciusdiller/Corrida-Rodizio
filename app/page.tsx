@@ -20,8 +20,7 @@ import {
   getAvatarRewardCopy,
   getRecoveryEmailCopy,
 } from "@/lib/notifications/inbox-copy";
-
-// Componentes refatorados
+import { Footer } from "@/components/footer";
 import { HomeHeader } from "@/components/home/home-header";
 import { AccountSection } from "@/components/home/account-section";
 import { CreateRaceForm } from "@/components/home/create-race-form";
@@ -234,9 +233,9 @@ export default function Home() {
   );
 
   // ESTADOS DE CONTA
-  const [accountFlow, setAccountFlow] = useState<"login" | "create" | "reset" | null>(
-    null,
-  );
+  const [accountFlow, setAccountFlow] = useState<
+    "login" | "create" | "reset" | null
+  >(null);
   const [accountCodeInput, setAccountCodeInput] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
   const [accountConfirmPassword, setAccountConfirmPassword] = useState("");
@@ -248,7 +247,9 @@ export default function Home() {
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [accountLoading, setAccountLoading] = useState(false);
   const [passwordResetLoading, setPasswordResetLoading] = useState(false);
-  const [passwordResetStatus, setPasswordResetStatus] = useState<string | null>(null);
+  const [passwordResetStatus, setPasswordResetStatus] = useState<string | null>(
+    null,
+  );
   const [myGroups, setMyGroups] = useState<Race[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [groupsError, setGroupsError] = useState<string | null>(null);
@@ -276,13 +277,21 @@ export default function Home() {
   const [claimStatus, setClaimStatus] = useState<string | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const [recoveryEmailInput, setRecoveryEmailInput] = useState("");
-  const [savedRecoveryEmail, setSavedRecoveryEmail] = useState<string | null>(null);
-  const [recoveryEmailState, setRecoveryEmailState] = useState<"unknown" | "present" | "missing" | "error">("unknown");
+  const [savedRecoveryEmail, setSavedRecoveryEmail] = useState<string | null>(
+    null,
+  );
+  const [recoveryEmailState, setRecoveryEmailState] = useState<
+    "unknown" | "present" | "missing" | "error"
+  >("unknown");
   const [isSavingRecoveryEmail, setIsSavingRecoveryEmail] = useState(false);
-  const [recoveryEmailStatus, setRecoveryEmailStatus] = useState<string | null>(null);
+  const [recoveryEmailStatus, setRecoveryEmailStatus] = useState<string | null>(
+    null,
+  );
   const [promoPermissions, setPromoPermissions] = useState<string[]>([]);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
-  const [availablePremiumCredits, setAvailablePremiumCredits] = useState<number | null>(null);
+  const [availablePremiumCredits, setAvailablePremiumCredits] = useState<
+    number | null
+  >(null);
   const [hasLoadedPremiumCredits, setHasLoadedPremiumCredits] = useState(false);
   const recoveryReminderShownForLoginRef = useRef<string | null>(null);
 
@@ -422,7 +431,9 @@ export default function Home() {
       const claimCredits = Number(data?.claimCredits);
       const claimedCount = Number(data?.claimedCount);
       if (Number.isFinite(claimCredits) && Number.isFinite(claimedCount)) {
-        setAvailablePremiumCredits(Math.max(0, Math.floor(claimCredits - claimedCount)));
+        setAvailablePremiumCredits(
+          Math.max(0, Math.floor(claimCredits - claimedCount)),
+        );
         return;
       }
       setAvailablePremiumCredits(0);
@@ -447,10 +458,11 @@ export default function Home() {
       const normalized = loginCode.trim().toUpperCase();
       try {
         const response = await fetch(
-          `/api/account/referral-code?loginCode=${encodeURIComponent(normalized)}`
+          `/api/account/referral-code?loginCode=${encodeURIComponent(normalized)}`,
         );
         const data = await response.json().catch(() => ({}));
-        const referralCode = typeof data?.referralCode === "string" ? data.referralCode : null;
+        const referralCode =
+          typeof data?.referralCode === "string" ? data.referralCode : null;
         setInvitationCode(referralCode ?? normalized);
       } catch {
         setInvitationCode(normalized);
@@ -520,7 +532,13 @@ export default function Home() {
       loginCode: normalizedLogin,
       title: notification.title,
     });
-  }, [language, loginCode, recoveryEmailState, removeNotification, upsertNotification]);
+  }, [
+    language,
+    loginCode,
+    recoveryEmailState,
+    removeNotification,
+    upsertNotification,
+  ]);
 
   useEffect(() => {
     const normalizedLogin = loginCode?.trim().toUpperCase() ?? null;
@@ -533,7 +551,10 @@ export default function Home() {
 
     removeNotification("avatar-code-access", normalizedLogin);
 
-    if (canSyncAvatarRewardNotification && (!normalizedLogin || !avatarRewardNotification)) {
+    if (
+      canSyncAvatarRewardNotification &&
+      (!normalizedLogin || !avatarRewardNotification)
+    ) {
       removeNotification("avatar-reward", normalizedLogin);
       return;
     }
@@ -586,7 +607,6 @@ export default function Home() {
       setIsSavingRecoveryEmail(false);
     }
   };
-
 
   useEffect(() => {
     let isMounted = true;
@@ -759,7 +779,10 @@ export default function Home() {
         .from("player_profiles")
         .upsert(profilePayload);
 
-      if (profileError && isMissingColumn(profileError, "premium_avatar_claim_credits")) {
+      if (
+        profileError &&
+        isMissingColumn(profileError, "premium_avatar_claim_credits")
+      ) {
         const fallback = await supabase.from("player_profiles").upsert({
           login_code: data,
           terms_accepted_at: profilePayload.terms_accepted_at,
@@ -772,27 +795,32 @@ export default function Home() {
 
       if (accountEmail.trim()) {
         const normalizedEmail = accountEmail.trim().toLowerCase();
-        const { data: savedRecoveryEmail } = await supabase.rpc("set_login_recovery_email", {
-          p_username: data,
-          p_email: normalizedEmail,
-        });
+        const { data: savedRecoveryEmail } = await supabase.rpc(
+          "set_login_recovery_email",
+          {
+            p_username: data,
+            p_email: normalizedEmail,
+          },
+        );
 
         if (savedRecoveryEmail) {
           await fetch("/api/account/welcome", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: data, email: normalizedEmail, language }),
+            body: JSON.stringify({
+              username: data,
+              email: normalizedEmail,
+              language,
+            }),
           }).catch(() => null);
         }
 
         if (savedRecoveryEmail && accountReferralCode.trim()) {
-          const { data: referralApplied, error: referralError } = await supabase.rpc(
-            "apply_login_referral",
-            {
+          const { data: referralApplied, error: referralError } =
+            await supabase.rpc("apply_login_referral", {
               p_referred_login_code: data,
               p_referral_code: accountReferralCode.trim().toUpperCase(),
-            },
-          );
+            });
 
           if (referralError || !referralApplied) {
             toast.error(tx("referral_applied_error"));
@@ -880,8 +908,10 @@ export default function Home() {
     }
   };
 
-
-  const handleRequestPasswordReset = async (username: string, email: string) => {
+  const handleRequestPasswordReset = async (
+    username: string,
+    email: string,
+  ) => {
     const normalizedName = username.trim().toUpperCase();
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedName || !normalizedEmail) {
@@ -895,13 +925,18 @@ export default function Home() {
       const response = await fetch("/api/account/password-reset/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: normalizedName, email: normalizedEmail }),
+        body: JSON.stringify({
+          username: normalizedName,
+          email: normalizedEmail,
+        }),
       });
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         if (data?.reason === "username_email_mismatch") {
-          toast.error(tx("reset_username_email_mismatch"), { position: "bottom-center" });
+          toast.error(tx("reset_username_email_mismatch"), {
+            position: "bottom-center",
+          });
           setPasswordResetStatus(tx("reset_username_email_mismatch"));
           return;
         }
@@ -925,7 +960,12 @@ export default function Home() {
   }) => {
     const normalizedName = payload.username.trim().toUpperCase();
     const normalizedCode = payload.code.trim().toUpperCase();
-    if (!normalizedName || !normalizedCode || !payload.newPassword.trim() || !payload.confirmPassword.trim()) {
+    if (
+      !normalizedName ||
+      !normalizedCode ||
+      !payload.newPassword.trim() ||
+      !payload.confirmPassword.trim()
+    ) {
       setPasswordResetStatus(tx("fill_all_fields"));
       return;
     }
@@ -1408,7 +1448,9 @@ export default function Home() {
           showAddToHome={isIosDevice && !isStandalone}
           onAddToHome={() => setShowAddToHomeHelp(true)}
           notificationSection={
-            loginCode ? <AccountNotificationSettings loginCode={loginCode} /> : null
+            loginCode ? (
+              <AccountNotificationSettings loginCode={loginCode} />
+            ) : null
           }
           recoveryEmail={{
             value: recoveryEmailInput,
@@ -1587,46 +1629,7 @@ export default function Home() {
         setAccountFlow={setAccountFlow}
         loginCode={loginCode}
       />
-      <footer className="mt-8 mb-4 space-y-3 text-center text-[10px] text-muted-foreground/60 uppercase font-medium tracking-widest">
-        <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-          <Link
-            href="/terms"
-            className="transition hover:text-foreground/80"
-          >
-            {t.footer.terms}
-          </Link>
-          <Link
-            href="/privacy"
-            className="transition hover:text-foreground/80"
-          >
-            {t.footer.privacy}
-          </Link>
-          <Link
-            href="/quem-somos"
-            className="transition hover:text-foreground/80"
-          >
-            {t.footer.about}
-          </Link>
-          <a
-            href="https://ko-fi.com/rodiziorace"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 transition hover:text-foreground/80"
-          >
-            <Heart className="h-3.5 w-3.5 text-red-500" aria-hidden="true" />
-            <span>{t.footer.buy_me_a_coffee}</span>
-          </a>
-        </nav>
-        <p>
-          {t.footer.copyright.replace(
-            "{{year}}",
-            new Date().getFullYear().toString(),
-          )}
-          {[buildBranch, buildSha, buildTime].filter(Boolean).length > 0
-            ? ` · ${[buildBranch, buildSha, buildTime].filter(Boolean).join(" · ")}`
-            : ""}
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/language-context";
 import { NotificationsProvider } from "@/contexts/notifications-context";
 import { SonnerProvider } from "@/components/sonner-provider";
+import { Footer } from "@/components/footer";
 import "./globals.css";
 
 // Adicione isto para corrigir o comportamento de zoom no iPhone
@@ -124,11 +125,14 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body
-        className={`${_geist.variable} ${_geistMono.variable} font-sans antialiased`}
+        className={`${_geist.variable} ${_geistMono.variable} font-sans antialiased flex flex-col min-h-screen`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <LanguageProvider>
-            <NotificationsProvider>{children}</NotificationsProvider>
+            <NotificationsProvider>
+              <div className="flex-grow">{children}</div>
+              <Footer />
+            </NotificationsProvider>
           </LanguageProvider>
         </ThemeProvider>
         <SonnerProvider />

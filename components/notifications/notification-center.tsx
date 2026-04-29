@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bell,
@@ -126,7 +126,11 @@ export function NotificationCenter({
   const ui = copy[language] ?? copy.pt;
   const { markAllAsRead, markAsRead, notifications, unreadCount } =
     useNotifications();
+  const [isMounted, setIsMounted] = useState(false);
 
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const badgeLabel = useMemo(() => {
     if (unreadCount <= 0) return "";
     if (unreadCount > 9) return "9+";
@@ -157,7 +161,7 @@ export function NotificationCenter({
           className="relative rounded-full border-border bg-background/90 shadow-sm hover:bg-accent/30"
         >
           <Bell className="h-5 w-5" />
-          {badgeLabel ? (
+          {isMounted && badgeLabel ? (
             <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-black text-primary-foreground shadow-sm">
               {badgeLabel}
             </span>
@@ -187,7 +191,9 @@ export function NotificationCenter({
         </div>
 
         {notifications.length === 0 ? (
-          <div className="px-4 py-6 text-sm text-muted-foreground">{ui.empty}</div>
+          <div className="px-4 py-6 text-sm text-muted-foreground">
+            {ui.empty}
+          </div>
         ) : (
           <div className="max-h-[24rem] space-y-2 overflow-y-auto p-3">
             {notifications.map((notification) => (
@@ -208,7 +214,9 @@ export function NotificationCenter({
                       : "bg-primary text-primary-foreground"
                   }`}
                 >
-                  {getNotificationIcon(notification.iconName || notification.kind)}
+                  {getNotificationIcon(
+                    notification.iconName || notification.kind,
+                  )}
                 </div>
 
                 <div className="min-w-0 flex-1">

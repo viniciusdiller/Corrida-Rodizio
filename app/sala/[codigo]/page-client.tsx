@@ -401,7 +401,11 @@ export default function RoomPage() {
     const lang = normalizeInviteLanguage(
       language ?? localStorage.getItem("rodizio-lang"),
     );
-    const inviteUrl = buildRoomInviteUrl(window.location.origin, roomCode, lang);
+    const inviteUrl = buildRoomInviteUrl(
+      window.location.origin,
+      roomCode,
+      lang,
+    );
     navigator.clipboard.writeText(inviteUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -554,7 +558,10 @@ export default function RoomPage() {
         if (!isSpectator) {
           const loginCode = localStorage.getItem(LOGIN_STORAGE_KEY);
           const normalizedLogin = loginCode?.trim().toUpperCase();
-          const storageKey = getParticipantStorageKey(roomCode, normalizedLogin);
+          const storageKey = getParticipantStorageKey(
+            roomCode,
+            normalizedLogin,
+          );
           const legacyStorageKey = getLegacyParticipantStorageKey(roomCode);
           const scopedStoredId = localStorage.getItem(storageKey);
           const legacyStoredId = localStorage.getItem(legacyStorageKey);
@@ -565,7 +572,8 @@ export default function RoomPage() {
             );
             if (!storedParticipant) return false;
 
-            const storedLogin = storedParticipant.login_code?.trim().toUpperCase() ?? null;
+            const storedLogin =
+              storedParticipant.login_code?.trim().toUpperCase() ?? null;
             if (normalizedLogin) {
               return storedLogin === normalizedLogin;
             }
@@ -1404,10 +1412,11 @@ export default function RoomPage() {
       const normalized = loggedUsername.trim().toUpperCase();
       try {
         const response = await fetch(
-          `/api/account/referral-code?loginCode=${encodeURIComponent(normalized)}`
+          `/api/account/referral-code?loginCode=${encodeURIComponent(normalized)}`,
         );
         const data = await response.json().catch(() => ({}));
-        const referralCode = typeof data?.referralCode === "string" ? data.referralCode : null;
+        const referralCode =
+          typeof data?.referralCode === "string" ? data.referralCode : null;
         setInvitationCode(referralCode ?? normalized);
       } catch {
         setInvitationCode(normalized);
@@ -1478,7 +1487,10 @@ export default function RoomPage() {
 
     removeNotification("avatar-code-access", normalizedLogin);
 
-    if (canSyncAvatarRewardNotification && (!normalizedLogin || !avatarRewardNotification)) {
+    if (
+      canSyncAvatarRewardNotification &&
+      (!normalizedLogin || !avatarRewardNotification)
+    ) {
       removeNotification("avatar-reward", normalizedLogin);
       return;
     }
@@ -1778,7 +1790,7 @@ export default function RoomPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-background to-orange-100 dark:from-black dark:via-zinc-950 dark:to-[#12061a] p-4 md:p-8 text-[15px] md:text-base">
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-orange-50 via-background to-orange-100 dark:from-black dark:via-zinc-950 dark:to-[#12061a] p-4 sm:p-6 md:p-8 text-[15px] md:text-base">
       <div className="mx-auto max-w-2xl space-y-6">
         <RoomHeader
           onExit={() => router.push("/")}
@@ -2142,59 +2154,63 @@ export default function RoomPage() {
         )}
       </div>
 
-      {currentParticipant && (
-        <div className="fixed right-6 flex flex-col items-end gap-2 pb-[env(safe-area-inset-bottom)] bottom-6 z-50">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={handlePhotoSelected}
-          />
+      <div className="sticky bottom-4 sm:bottom-6 z-40 mt-10 flex w-full items-end justify-between pointer-events-none pb-[env(safe-area-inset-bottom)]">
+        {/* Lado Esquerdo: Botão de Sair */}
+        <div className="pointer-events-auto">
           <Button
-            size="icon"
-            className={`relative h-14 w-14 overflow-hidden rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/90 via-primary to-primary/70 text-white shadow-[0_16px_35px_rgba(0,0,0,0.22)] backdrop-blur transition-all duration-200 hover:scale-105 active:scale-95 ${
-              isAddCooldownActive || isUploadingPhoto
-                ? "opacity-50 grayscale"
-                : ""
-            }`}
-            onClick={(event) =>
-              isPhotoRequired
-                ? handlePhotoIncrement(currentParticipant.id, event)
-                : handleUpdateCount(currentParticipant.id, 1, event)
-            }
-            disabled={isUploadingPhoto}
+            variant="outline"
+            onClick={handleExit}
+            className="rounded-xl font-semibold gap-2 shadow-sm bg-background/90 backdrop-blur"
           >
-            {isAddCooldownActive && (
-              <span
-                className="pointer-events-none absolute inset-0 bg-white/20 cooldown-fill"
-                style={{ "--cooldown-duration": `${addCooldownMs}ms` }}
-              />
-            )}
-            {isPhotoRequired ? (
-              <div className="relative z-10 flex flex-col items-center leading-none">
-                <Camera className="h-5 w-5" />
-                <span className="text-[10px] font-black">+1</span>
-              </div>
-            ) : (
-              <span className="relative z-10 text-lg font-black leading-none">
-                +1
-              </span>
-            )}
+            <ChevronLeft className="h-4 w-4" />
+            {t.common.exit}
           </Button>
         </div>
-      )}
 
-      <div className="fixed left-4 bottom-4 sm:left-6 sm:bottom-6 pb-[env(safe-area-inset-bottom)] z-40">
-        <Button
-          variant="outline"
-          onClick={handleExit}
-          className="rounded-xl font-semibold gap-2 shadow-sm bg-background/90 backdrop-blur"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          {t.common.exit}
-        </Button>
+        {/* Lado Direito: Botão +1 e Câmera */}
+        {currentParticipant && (
+          <div className="pointer-events-auto flex flex-col items-end gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handlePhotoSelected}
+            />
+            <Button
+              size="icon"
+              className={`relative h-14 w-14 overflow-hidden rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/90 via-primary to-primary/70 text-white shadow-[0_16px_35px_rgba(0,0,0,0.22)] backdrop-blur transition-all duration-200 hover:scale-105 active:scale-95 ${
+                isAddCooldownActive || isUploadingPhoto
+                  ? "opacity-50 grayscale"
+                  : ""
+              }`}
+              onClick={(event) =>
+                isPhotoRequired
+                  ? handlePhotoIncrement(currentParticipant.id, event)
+                  : handleUpdateCount(currentParticipant.id, 1, event)
+              }
+              disabled={isUploadingPhoto}
+            >
+              {isAddCooldownActive && (
+                <span
+                  className="pointer-events-none absolute inset-0 bg-white/20 cooldown-fill"
+                  style={{ "--cooldown-duration": `${addCooldownMs}ms` }}
+                />
+              )}
+              {isPhotoRequired ? (
+                <div className="relative z-10 flex flex-col items-center leading-none">
+                  <Camera className="h-5 w-5" />
+                  <span className="text-[10px] font-black">+1</span>
+                </div>
+              ) : (
+                <span className="relative z-10 text-lg font-black leading-none">
+                  +1
+                </span>
+              )}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* OVERLAYS E MODAIS (Settings, Logout, etc) */}
@@ -2456,7 +2472,10 @@ export default function RoomPage() {
             update: tx("update_btn"),
             updatePassword: t.account.update_password,
             updatingPassword: t.account.updating,
-            premiumCreditsAvailable: tx("premium_credits_available").replace("{count}", String(Math.max(premiumClaimCredits - premiumClaimedCount, 0))),
+            premiumCreditsAvailable: tx("premium_credits_available").replace(
+              "{count}",
+              String(Math.max(premiumClaimCredits - premiumClaimedCount, 0)),
+            ),
             invitationCodeLabel: tx("invitation_code_label"),
           }}
           showPasswordForm={showPasswordForm}
