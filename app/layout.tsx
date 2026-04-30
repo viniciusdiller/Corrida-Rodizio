@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/language-context";
 import { NotificationsProvider } from "@/contexts/notifications-context";
 import { SonnerProvider } from "@/components/sonner-provider";
-import { Footer } from "@/components/footer";
+import { ConditionalFooter } from "@/components/conditional-footer";
 import "./globals.css";
 
 // Adicione isto para corrigir o comportamento de zoom no iPhone
@@ -131,7 +131,7 @@ export default function RootLayout({
           <LanguageProvider>
             <NotificationsProvider>
               <div className="flex-grow">{children}</div>
-              <Footer />
+              <ConditionalFooter />
             </NotificationsProvider>
           </LanguageProvider>
         </ThemeProvider>
