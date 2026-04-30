@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/language-context";
 import { TourDemoRace } from "@/components/tour/tour-demo-race";
+import { tourCopy } from "@/components/tour/tour-copy";
 
 type HomeFlow = "create" | "join" | null;
 type AccountFlow = "login" | "create" | "reset" | null;
@@ -43,237 +44,6 @@ type BubblePlacement = "right" | "left" | "bottom" | "top" | "floating";
 
 const TOUR_STORAGE_KEY = "rodizio-app-tour-v1";
 
-const copy = {
-  pt: {
-    button: "Conhecer o app",
-    skip: "Pular",
-    back: "Voltar",
-    next: "Próximo",
-    finish: "Finalizar",
-    liveBadge: "Primeiros passos",
-    progress: "Passo {current} de {total}",
-    introTitle: "Bem-vindo ao Rodizio Race",
-    introBody:
-      "Somos a pista de corrida oficial da comilança competitiva: crie salas, acompanhe a disputa ao vivo e transforme um rodízio em jogo compartilhável.",
-    accountTitle: "Crie uma conta quando quiser salvar progresso",
-    accountBody:
-      "A conta não é obrigatória para entrar numa sala, mas libera recursos como câmera, histórico, recuperação de acesso e atalhos para voltar às suas corridas.",
-    createTitle: "Criar sala leva poucos toques",
-    createBody:
-      "O botão principal abre a criação da corrida. É o ponto de partida para o VIP, que será a pessoa com controle de encerrar e reabrir a disputa.",
-    createRoomTitle: "Escolha o tipo de rodízio e os modos da sala",
-    createRoomBody:
-      "Aqui você define codinome, categoria, equipes e o modo foto. O tipo de rodízio muda o tema da corrida, o contador e o clima do jogo.",
-    joinTitle: "Entrar em uma sala é o caminho mais rápido",
-    joinBody:
-      "Quem recebe um código ou link entra por aqui, com nome próprio ou como espectador. É assim que os amigos chegam à mesma corrida em segundos.",
-    demoTitle: "Agora vamos para uma corrida de exemplo",
-    demoBody:
-      "A partir daqui tudo é simulado para mostrar o que o app sabe fazer sem mexer em dados reais.",
-    trackTitle: "A corrida aparece aqui",
-    trackBody:
-      "Esta é a pista ao vivo da sala. Conforme os jogadores marcam pontos, os avatares avançam e a disputa fica fácil de entender num relance.",
-    roomTitle: "Toda sala tem código, status e contexto",
-    roomBody:
-      "O cabeçalho mostra o tipo de disputa, quantos jogadores estão correndo e o código da sala para compartilhar com a mesa inteira.",
-    teamTitle: "No modo times, os pontos ficam aqui",
-    teamBody:
-      "Quando a corrida usa equipes, este bloco mostra a barra geral, o total de cada time e os jogadores que estão puxando a pontuação.",
-    progressTitle: "Cada jogador controla o próprio placar",
-    progressBody:
-      "O contador pessoal é onde você soma partes, acompanha a pontuação e enxerga se está liderando ou ficando para trás.",
-    avatarTitle: "Avatar e nome podem mudar durante a corrida",
-    avatarBody:
-      "Cada participante pode trocar o avatar e ajustar o codinome sem reiniciar a sala. Isso ajuda a personalizar a experiência na hora.",
-    cameraTitle: "Modo câmera registra cada ponto com foto",
-    cameraBody:
-      "Quando o modo foto está ligado, a câmera entra no fluxo do +1. Esse recurso fica disponível somente para usuários registrados.",
-    timelineTitle: "A linha do tempo deixa a corrida mais viva",
-    timelineBody:
-      "As fotos aparecem em sequência para contar a história da disputa. Enquanto isso, jogadores fictícios seguem marcando pontos em tempo real.",
-    vipTitle: "O VIP é quem abriu a corrida",
-    vipBody:
-      "Esse jogador pode encerrar a sala, gerenciar participantes e, depois, reabrir a disputa se a mesa quiser continuar.",
-    hallTitle: "No fim, a corrida vira Hall of Fame",
-    hallBody:
-      "Quando a disputa fecha, o app mostra um placar final celebrando os vencedores e mantém a opção de restaurar a sala para o VIP.",
-    doneTitle: "Tour encerrado",
-    doneBody:
-      "Você já viu o fluxo completo: criar conta, abrir ou entrar numa sala, jogar ao vivo, usar fotos e fechar a corrida com Hall of Fame.",
-  },
-  en: {
-    button: "Take a tour",
-    skip: "Skip",
-    back: "Back",
-    next: "Next",
-    finish: "Finish",
-    liveBadge: "Getting started",
-    progress: "Step {current} of {total}",
-    introTitle: "Welcome to Rodizio Race",
-    introBody:
-      "We turn all-you-can-eat nights into live games: create rooms, track the race in real time, and make the whole table part of the fun.",
-    accountTitle: "Create an account whenever you want to save progress",
-    accountBody:
-      "An account is optional for joining a room, but it unlocks camera access, history, recovery, and faster returns to your races.",
-    createTitle: "Creating a room takes just a few taps",
-    createBody:
-      "This main action opens the race setup. It is also where the future VIP starts, the player who can close and reopen the race.",
-    createRoomTitle: "Pick the rodizio type and room modifiers",
-    createRoomBody:
-      "Here you choose a codename, food category, team mode, and photo mode. The selected type shapes the whole race vibe.",
-    joinTitle: "Joining a room is the fastest path in",
-    joinBody:
-      "Anyone with a code or invite link joins here, either with a nickname or as a spectator. That keeps the table synced in seconds.",
-    demoTitle: "Now let’s enter a sample race",
-    demoBody:
-      "From here on, everything is simulated so we can show the app’s capabilities without touching real data.",
-    trackTitle: "The live race happens here",
-    trackBody:
-      "This is the room’s live track. As players score, avatars move forward so the race is easy to read at a glance.",
-    roomTitle: "Every room shows code, status, and context",
-    roomBody:
-      "The header tells players what kind of race this is, how many people are inside, and which room code to share.",
-    teamTitle: "Team mode points live here",
-    teamBody:
-      "When the room runs in teams, this section shows the overall bar, each team total, and who is pushing the score.",
-    progressTitle: "Each player owns their own score",
-    progressBody:
-      "Your personal control card is where you add pieces, watch your total, and feel the race pressure in real time.",
-    avatarTitle: "Avatar and codename can change mid-race",
-    avatarBody:
-      "Players can swap avatars and update their display name without resetting the room, which keeps the race personal and playful.",
-    cameraTitle: "Camera mode turns every point into proof",
-    cameraBody:
-      "When photo mode is enabled, the camera becomes part of the +1 flow. This feature is available only for registered users.",
-    timelineTitle: "The photo timeline makes the race feel alive",
-    timelineBody:
-      "Photos stack into a running story of the match while dummy players keep scoring in the background to show the live rhythm.",
-    vipTitle: "The VIP is the person who opened the race",
-    vipBody:
-      "That player can close the room, manage participants, and later restore the race if the table wants another round.",
-    hallTitle: "When it ends, the race becomes a Hall of Fame",
-    hallBody:
-      "Closing the race reveals a celebration screen with the final ranking, while the VIP still gets the power to reopen it.",
-    doneTitle: "Tour complete",
-    doneBody:
-      "You’ve seen the full flow: create an account, open or join a room, play live, use photos, and end with a Hall of Fame.",
-  },
-  es: {
-    button: "Conocer la app",
-    skip: "Saltar",
-    back: "Volver",
-    next: "Siguiente",
-    finish: "Finalizar",
-    liveBadge: "Primeros pasos",
-    progress: "Paso {current} de {total}",
-    introTitle: "Bienvenido a Rodizio Race",
-    introBody:
-      "Convertimos el rodizio en un juego en vivo: crea salas, sigue la carrera en tiempo real y haz que toda la mesa participe.",
-    accountTitle: "Crea una cuenta cuando quieras guardar progreso",
-    accountBody:
-      "La cuenta no es obligatoria para entrar, pero desbloquea cámara, historial, recuperación y regreso rápido a tus carreras.",
-    createTitle: "Crear una sala toma pocos toques",
-    createBody:
-      "Este botón principal abre la configuración de la carrera. También define quién será el VIP con control para cerrar y reabrir.",
-    createRoomTitle: "Elige el tipo de rodizio y los modos de la sala",
-    createRoomBody:
-      "Aquí defines apodo, categoría, equipos y modo foto. El tipo seleccionado cambia el tono completo de la carrera.",
-    joinTitle: "Entrar a una sala es el camino más rápido",
-    joinBody:
-      "Quien tenga código o enlace entra por aquí, con nombre propio o como espectador. Así todos llegan a la misma carrera enseguida.",
-    demoTitle: "Ahora entremos a una carrera de ejemplo",
-    demoBody:
-      "Desde aquí todo es simulado para mostrar lo que la app puede hacer sin tocar datos reales.",
-    trackTitle: "La carrera en vivo aparece aquí",
-    trackBody:
-      "Esta es la pista en vivo de la sala. A medida que los jugadores suman puntos, los avatares avanzan y la carrera se entiende de un vistazo.",
-    roomTitle: "Cada sala muestra código, estado y contexto",
-    roomBody:
-      "La cabecera explica qué tipo de carrera es, cuántas personas están dentro y qué código compartir.",
-    teamTitle: "Aquí ves los puntos del modo equipos",
-    teamBody:
-      "Cuando la carrera usa equipos, este bloque muestra la barra general, el total de cada equipo y quiénes están empujando la puntuación.",
-    progressTitle: "Cada jugador controla su propio marcador",
-    progressBody:
-      "Tu tarjeta personal es donde sumas partes, ves tu total y sientes la presión de la carrera en vivo.",
-    avatarTitle: "Avatar y nombre pueden cambiar durante la carrera",
-    avatarBody:
-      "Los participantes pueden cambiar avatar y apodo sin reiniciar la sala, manteniendo la experiencia flexible y divertida.",
-    cameraTitle: "El modo cámara convierte cada punto en prueba",
-    cameraBody:
-      "Cuando el modo foto está activado, la cámara entra en el flujo del +1. Esta función solo está disponible para usuarios registrados.",
-    timelineTitle: "La línea del tiempo hace la carrera más viva",
-    timelineBody:
-      "Las fotos cuentan la historia de la partida mientras los jugadores ficticios siguen sumando puntos en segundo plano.",
-    vipTitle: "El VIP es quien abrió la carrera",
-    vipBody:
-      "Esa persona puede cerrar la sala, gestionar jugadores y después restaurar la carrera si la mesa quiere seguir.",
-    hallTitle: "Al final, la carrera se convierte en Hall of Fame",
-    hallBody:
-      "Cerrar la carrera muestra una pantalla final para celebrar el ranking y permite que el VIP la reabra.",
-    doneTitle: "Tour finalizado",
-    doneBody:
-      "Ya viste el flujo completo: crear cuenta, abrir o entrar a una sala, jugar en vivo, usar fotos y terminar con Hall of Fame.",
-  },
-  fr: {
-    button: "Decouvrir l'app",
-    skip: "Passer",
-    back: "Retour",
-    next: "Suivant",
-    finish: "Terminer",
-    liveBadge: "Premiers pas",
-    progress: "Étape {current} sur {total}",
-    introTitle: "Bienvenue sur Rodizio Race",
-    introBody:
-      "Nous transformons le rodizio en jeu en direct : créez des salles, suivez la course en temps réel et impliquez toute la table.",
-    accountTitle: "Créez un compte quand vous voulez sauver votre progression",
-    accountBody:
-      "Le compte n’est pas obligatoire pour entrer dans une salle, mais il débloque la caméra, l’historique, la récupération et le retour rapide.",
-    createTitle: "Créer une salle prend seulement quelques gestes",
-    createBody:
-      "Cette action principale ouvre la création de course. C’est aussi là que naît le VIP, la personne qui peut fermer et rouvrir la partie.",
-    createRoomTitle: "Choisissez le type de rodizio et les modes de salle",
-    createRoomBody:
-      "Ici, vous définissez pseudo, catégorie, équipes et mode photo. Le type choisi change toute l’ambiance de la course.",
-    joinTitle: "Rejoindre une salle est le chemin le plus rapide",
-    joinBody:
-      "Toute personne avec un code ou un lien d’invitation entre ici, avec pseudo ou comme spectateur. Toute la table rejoint la même course très vite.",
-    demoTitle: "Passons maintenant à une course d’exemple",
-    demoBody:
-      "À partir d’ici, tout est simulé pour montrer les capacités de l’application sans toucher aux vraies données.",
-    trackTitle: "La course en direct se lit ici",
-    trackBody:
-      "Voici la piste en direct de la salle. Quand les joueurs marquent des points, les avatars avancent et la course devient lisible en un coup d’œil.",
-    roomTitle: "Chaque salle montre code, statut et contexte",
-    roomBody:
-      "L’en-tête indique le type de course, le nombre de joueurs présents et le code à partager.",
-    teamTitle: "Les points du mode équipe sont ici",
-    teamBody:
-      "Quand la course se joue en équipes, ce bloc montre la barre globale, le total de chaque équipe et les joueurs qui tirent le score.",
-    progressTitle: "Chaque joueur gère son propre score",
-    progressBody:
-      "La carte personnelle sert à ajouter des parts, suivre son total et ressentir la pression de la course en direct.",
-    avatarTitle: "Avatar et pseudo peuvent changer pendant la course",
-    avatarBody:
-      "Les participants peuvent modifier leur avatar et leur nom sans réinitialiser la salle, pour une expérience plus personnelle.",
-    cameraTitle: "Le mode caméra transforme chaque point en preuve",
-    cameraBody:
-      "Quand le mode photo est activé, la caméra fait partie du flux du +1. Cette fonction est réservée aux utilisateurs inscrits.",
-    timelineTitle: "La timeline photo rend la course plus vivante",
-    timelineBody:
-      "Les photos racontent la partie pendant que les joueurs fictifs continuent à marquer des points en arrière-plan.",
-    vipTitle: "Le VIP est la personne qui a ouvert la course",
-    vipBody:
-      "Cette personne peut fermer la salle, gérer les participants puis restaurer la course si la table veut continuer.",
-    hallTitle: "À la fin, la course devient un Hall of Fame",
-    hallBody:
-      "La fermeture de la course affiche un classement final prêt à célébrer les gagnants, avec option de réouverture pour le VIP.",
-    doneTitle: "Tour terminé",
-    doneBody:
-      "Vous avez vu tout le parcours : créer un compte, ouvrir ou rejoindre une salle, jouer en direct, utiliser les photos et finir en Hall of Fame.",
-  },
-} as const;
-
 export function AppTour({
   flow,
   setFlow,
@@ -282,7 +52,7 @@ export function AppTour({
   loginCode,
 }: AppTourProps) {
   const { language } = useLanguage();
-  const ui = copy[language] ?? copy.pt;
+  const ui = tourCopy[language] ?? tourCopy.pt;
   const [showButton, setShowButton] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);

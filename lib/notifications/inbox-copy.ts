@@ -7,39 +7,39 @@ type NotificationCopy = {
 
 const buildCopy: Record<Language, NotificationCopy> = {
   pt: {
-    title: "Atualizacao importante no app",
-    body: "Tem novidade no Rodizio Race. Veja a versao mais recente do app.",
+    title: "Atualização importante no app",
+    body: "Tem novidade no Rodízio Race. Veja a versão mais recente do app.",
   },
   en: {
     title: "Important app update",
     body: "There is something new in Rodizio Race. Check the latest app version.",
   },
   es: {
-    title: "Actualizacion importante de la app",
-    body: "Hay novedades en Rodizio Race. Mira la version mas reciente de la app.",
+    title: "Actualización importante de la app",
+    body: "Hay novedades en Rodizio Race. Mira la versión más reciente de la app.",
   },
   fr: {
-    title: "Mise a jour importante de l'app",
-    body: "Il y a du nouveau dans Rodizio Race. Consultez la derniere version.",
+    title: "Mise à jour importante de l'app",
+    body: "Il y a du nouveau dans Rodizio Race. Consultez la dernière version.",
   },
 };
 
 const recoveryCopy: Record<Language, NotificationCopy> = {
   pt: {
-    title: "Adicione um e-mail de recuperacao",
-    body: "Proteja sua conta adicionando um e-mail de recuperacao nas configuracoes.",
+    title: "Adicione um e-mail de recuperação",
+    body: "Proteja sua conta adicionando um e-mail de recuperação nas configurações.",
   },
   en: {
     title: "Add a recovery email",
     body: "Protect your account by adding a recovery email in settings.",
   },
   es: {
-    title: "Agrega un correo de recuperacion",
-    body: "Protege tu cuenta agregando un correo de recuperacion en ajustes.",
+    title: "Agrega un correo de recuperación",
+    body: "Protege tu cuenta agregando un correo de recuperación en ajustes.",
   },
   fr: {
-    title: "Ajoutez un e-mail de recuperation",
-    body: "Protegez votre compte en ajoutant un e-mail de recuperation dans les reglages.",
+    title: "Ajoutez un e-mail de récupération",
+    body: "Protégez votre compte en ajoutant un e-mail de récupération dans les réglages.",
   },
 };
 
@@ -47,8 +47,8 @@ const avatarRewardCopy = {
   pt: {
     body: (count: number) =>
       count === 1
-        ? "Voce recebeu 1 avatar ou credito premium para usar."
-        : `Voce recebeu ${count} avatares ou creditos premium para usar.`,
+        ? "Você recebeu 1 avatar ou crédito premium para usar."
+        : `Você recebeu ${count} avatares ou créditos premium para usar.`,
     title: "Novo avatar recebido",
   },
   en: {
@@ -61,16 +61,16 @@ const avatarRewardCopy = {
   es: {
     body: (count: number) =>
       count === 1
-        ? "Recibiste 1 avatar o credito premium para usar."
-        : `Recibiste ${count} avatares o creditos premium para usar.`,
+        ? "Recibiste 1 avatar o crédito premium para usar."
+        : `Recibiste ${count} avatares o créditos premium para usar.`,
     title: "Nuevo avatar recibido",
   },
   fr: {
     body: (count: number) =>
       count === 1
-        ? "Vous avez recu 1 avatar ou credit premium a utiliser."
-        : `Vous avez recu ${count} avatars ou credits premium a utiliser.`,
-    title: "Nouvel avatar recu",
+        ? "Vous avez reçu 1 avatar ou crédit premium à utiliser."
+        : `Vous avez reçu ${count} avatars ou crédits premium à utiliser.`,
+    title: "Nouvel avatar reçu",
   },
 } satisfies Record<
   Language,

@@ -8,8 +8,32 @@ import {
   listAdminCampaigns,
   sendDueAdminCampaigns,
 } from "@/lib/admin/notifications";
+import type { PushIconName } from "@/lib/notifications/push-icons";
 
 export const runtime = "nodejs";
+
+const pushIconNames = new Set<string>([
+  "bell",
+  "megaphone",
+  "gift",
+  "sparkles",
+  "calendar-days",
+  "mail",
+  "party-popper",
+  "pizza",
+  "trophy",
+  "crown",
+  "users",
+  "rocket",
+  "flag",
+  "flame",
+  "medal",
+  "message-circle",
+  "circle-alert",
+  "heart-handshake",
+  "star",
+  "book-open",
+]);
 
 export async function GET(request: Request) {
   if (!isAdminAuthenticated(request)) {
@@ -39,7 +63,10 @@ export async function POST(request: Request) {
     const deliverInApp = Boolean(body?.deliverInApp);
     const deliverPush = Boolean(body?.deliverPush);
     const href = String(body?.href ?? "").trim();
-    const iconName = String(body?.iconName ?? "").trim();
+    const iconNameInput = String(body?.iconName ?? "").trim();
+    const iconName = pushIconNames.has(iconNameInput)
+      ? (iconNameInput as PushIconName)
+      : null;
     const repeatType = String(body?.repeatType ?? "").trim();
     const repeatStartAt = String(body?.repeatStartAt ?? "").trim();
     const repeatEndAt = String(body?.repeatEndAt ?? "").trim();
@@ -56,7 +83,7 @@ export async function POST(request: Request) {
       deliverInApp,
       deliverPush,
       href,
-      iconName: iconName || null,
+      iconName,
       repeatDayOfMonth: Number.isFinite(repeatDayOfMonth) && repeatDayOfMonth > 0
         ? repeatDayOfMonth
         : null,
