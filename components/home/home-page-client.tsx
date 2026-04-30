@@ -39,7 +39,8 @@ export function HomePageClient() {
   const router = useRouter();
   const { t, language } = useLanguage();
   const { removeNotification, upsertNotification } = useNotifications();
-  const tx = <K extends keyof typeof homeUiText>(key: K) => homeUiText[key][language];
+  const tx = <K extends keyof typeof homeUiText>(key: K) =>
+    homeUiText[key][language];
 
   // ESTADOS PRINCIPAIS
   const [playerName, setPlayerName] = useState("");
@@ -1222,7 +1223,7 @@ export function HomePageClient() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-background to-orange-100 dark:from-black dark:via-zinc-950 dark:to-[#12061a] px-6 pb-4 pt-0 md:px-12 md:pb-12 md:pt-8 transition-colors duration-500">
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-background to-orange-100 dark:from-black dark:via-zinc-950 dark:to-[#12061a] px-6 pb-4 pt-0 md:px-12 md:pb-12 md:pt-8 transition-colors duration-500 h-screen overflow-y-hidden">
       {loginCode && (
         <AccountMenuOverlay
           invitationCode={invitationCode}
