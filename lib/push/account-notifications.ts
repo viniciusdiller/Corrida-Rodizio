@@ -55,14 +55,14 @@ const copy: Record<
       body: ({ roomCode }) => `La sala ${roomCode} acaba de cerrarse.`,
     },
     fr: {
-      title: () => "Course terminee",
-      body: ({ roomCode }) => `La salle ${roomCode} vient d'etre fermee.`,
+      title: () => "Course terminée",
+      body: ({ roomCode }) => `La salle ${roomCode} vient d'être fermée.`,
     },
   },
   "race-reopened": {
     pt: {
       title: () => "Corrida reaberta",
-      body: ({ roomCode }) => `A sala ${roomCode} esta valendo de novo.`,
+      body: ({ roomCode }) => `A sala ${roomCode} está valendo de novo.`,
     },
     en: {
       title: () => "Race reopened",
@@ -80,29 +80,29 @@ const copy: Record<
   "photo-added": {
     pt: {
       title: () => "Nova foto na timeline",
-      body: ({ actorName, roomCode }) =>
-        `${actorName} acabou de mandar uma foto na sala ${roomCode}.`,
+      body: (payload) =>
+        `${payload.type === "photo-added" ? payload.actorName : ""} acabou de mandar uma foto na sala ${payload.roomCode}.`,
     },
     en: {
       title: () => "New timeline photo",
-      body: ({ actorName, roomCode }) =>
-        `${actorName} just added a photo in room ${roomCode}.`,
+      body: (payload) =>
+        `${payload.type === "photo-added" ? payload.actorName : ""} just added a photo in room ${payload.roomCode}.`,
     },
     es: {
       title: () => "Nueva foto en la timeline",
-      body: ({ actorName, roomCode }) =>
-        `${actorName} acaba de enviar una foto en la sala ${roomCode}.`,
+      body: (payload) =>
+        `${payload.type === "photo-added" ? payload.actorName : ""} acaba de enviar una foto en la sala ${payload.roomCode}.`,
     },
     fr: {
       title: () => "Nouvelle photo dans la timeline",
-      body: ({ actorName, roomCode }) =>
-        `${actorName} vient d'ajouter une photo dans la salle ${roomCode}.`,
+      body: (payload) =>
+        `${payload.type === "photo-added" ? payload.actorName : ""} vient d'ajouter une photo dans la salle ${payload.roomCode}.`,
     },
   },
   "lead-gained": {
     pt: {
-      title: () => "Voce assumiu a lideranca",
-      body: ({ roomCode }) => `Agora voce esta na frente na sala ${roomCode}.`,
+      title: () => "Você assumiu a liderança",
+      body: ({ roomCode }) => `Agora você está na frente na sala ${roomCode}.`,
     },
     en: {
       title: () => "You took the lead",
@@ -113,14 +113,14 @@ const copy: Record<
       body: ({ roomCode }) => `Ahora lideras la sala ${roomCode}.`,
     },
     fr: {
-      title: () => "Vous avez pris la tete",
-      body: ({ roomCode }) => `Vous etes maintenant en tete dans la salle ${roomCode}.`,
+      title: () => "Vous avez pris la tête",
+      body: ({ roomCode }) => `Vous êtes maintenant en tête dans la salle ${roomCode}.`,
     },
   },
   "lead-lost": {
     pt: {
-      title: () => "Voce perdeu a lideranca",
-      body: ({ roomCode }) => `Outro jogador passou voce na sala ${roomCode}.`,
+      title: () => "Você perdeu a liderança",
+      body: ({ roomCode }) => `Outro jogador passou você na sala ${roomCode}.`,
     },
     en: {
       title: () => "You lost the lead",
@@ -128,11 +128,11 @@ const copy: Record<
     },
     es: {
       title: () => "Perdiste la delantera",
-      body: ({ roomCode }) => `Otro jugador te supero en la sala ${roomCode}.`,
+      body: ({ roomCode }) => `Otro jugador te superó en la sala ${roomCode}.`,
     },
     fr: {
-      title: () => "Vous avez perdu la tete",
-      body: ({ roomCode }) => `Un autre joueur vous a depasse dans la salle ${roomCode}.`,
+      title: () => "Vous avez perdu la tête",
+      body: ({ roomCode }) => `Un autre joueur vous a dépassé dans la salle ${roomCode}.`,
     },
   },
 };

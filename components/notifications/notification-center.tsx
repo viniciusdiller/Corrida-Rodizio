@@ -54,14 +54,14 @@ const copy = {
     title: "Inbox",
   },
   es: {
-    empty: "No hay nada nuevo por aqui.",
+    empty: "No hay nada nuevo por aquí.",
     markAll: "Marcar todo",
     title: "Bandeja",
   },
   fr: {
     empty: "Rien de nouveau ici.",
     markAll: "Tout lire",
-    title: "Boite",
+    title: "Boîte",
   },
 } as const;
 

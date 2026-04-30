@@ -15,14 +15,14 @@ type SupportState = "checking" | "ready" | "unsupported" | "unavailable";
 
 const copy = {
   pt: {
-    title: "Notificacoes",
+    title: "Notificações",
     enable: "Ativar",
     disable: "Desativar",
-    blocked: "A permissao de notificacao esta bloqueada no navegador.",
-    unavailable: "Notificacoes indisponiveis neste ambiente.",
-    enabledToast: "Notificacoes ativadas.",
-    disabledToast: "Notificacoes desativadas.",
-    checking: "Preparando notificacoes...",
+    blocked: "A permissão de notificação está bloqueada no navegador.",
+    unavailable: "Notificações indisponíveis neste ambiente.",
+    enabledToast: "Notificações ativadas.",
+    disabledToast: "Notificações desativadas.",
+    checking: "Preparando notificações...",
   },
   en: {
     title: "Notifications",
@@ -38,8 +38,8 @@ const copy = {
     title: "Notificaciones",
     enable: "Activar",
     disable: "Desactivar",
-    blocked: "El permiso de notificaciones esta bloqueado en el navegador.",
-    unavailable: "Las notificaciones no estan disponibles en este entorno.",
+    blocked: "El permiso de notificaciones está bloqueado en el navegador.",
+    unavailable: "Las notificaciones no están disponibles en este entorno.",
     enabledToast: "Notificaciones activadas.",
     disabledToast: "Notificaciones desactivadas.",
     checking: "Preparando notificaciones...",
@@ -47,12 +47,12 @@ const copy = {
   fr: {
     title: "Notifications",
     enable: "Activer",
-    disable: "Desactiver",
-    blocked: "L'autorisation de notification est bloquee dans le navigateur.",
+    disable: "Désactiver",
+    blocked: "L'autorisation de notification est bloquée dans le navigateur.",
     unavailable: "Les notifications ne sont pas disponibles dans cet environnement.",
-    enabledToast: "Notifications activees.",
-    disabledToast: "Notifications desactivees.",
-    checking: "Preparation des notifications...",
+    enabledToast: "Notifications activées.",
+    disabledToast: "Notifications désactivées.",
+    checking: "Préparation des notifications...",
   },
 } as const;
 

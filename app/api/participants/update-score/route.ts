@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyLogins } from "@/lib/push/account-notifications";
 
@@ -109,20 +109,22 @@ export async function POST(request: Request) {
       .map((row) => row.login_code)
       .filter((value): value is string => !!value);
 
-    await Promise.all([
-      tryNotify("lead-gained", () =>
-        notifyLogins(gainedLeaderLogins, {
-          type: "lead-gained",
-          roomCode: race.room_code,
-        }),
-      ),
-      tryNotify("lead-lost", () =>
-        notifyLogins(lostLeaderLogins, {
-          type: "lead-lost",
-          roomCode: race.room_code,
-        }),
-      ),
-    ]);
+    after(() =>
+      Promise.all([
+        tryNotify("lead-gained", () =>
+          notifyLogins(gainedLeaderLogins, {
+            type: "lead-gained",
+            roomCode: race.room_code,
+          }),
+        ),
+        tryNotify("lead-lost", () =>
+          notifyLogins(lostLeaderLogins, {
+            type: "lead-lost",
+            roomCode: race.room_code,
+          }),
+        ),
+      ]),
+    );
 
     return NextResponse.json({ ok: true, itemsEaten: nextCount });
   } catch (error) {
