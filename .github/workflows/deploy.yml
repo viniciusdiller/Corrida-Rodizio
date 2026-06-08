@@ -1,4 +1,4 @@
-name: Deploy Dominio Mechama
+name: Deploy Corrida Rodizio
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-dominio-mechama
+  group: deploy-corrida-rodizio
   cancel-in-progress: false
 
 jobs:
@@ -32,4 +32,4 @@ jobs:
             -i ~/.ssh/vps_key \
             -p "${{ secrets.VPS_PORT }}" \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-            "/opt/docker/scripts/deploy-mechamaeu-dominio.sh main"
+            "/opt/docker/scripts/deploy-mechamaeu-rodizio-app.sh main"
