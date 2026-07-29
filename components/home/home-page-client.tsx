@@ -1223,7 +1223,7 @@ export function HomePageClient() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-background to-orange-100 dark:from-black dark:via-zinc-950 dark:to-[#12061a] px-6 pb-4 pt-0 md:px-12 md:pb-12 md:pt-8 transition-colors duration-500 h-screen overflow-y-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-orange-50 via-background to-orange-100 dark:from-black dark:via-zinc-950 dark:to-[#12061a] px-6 pb-4 pt-0 md:px-12 md:pb-12 md:pt-8 transition-colors duration-500">
       {loginCode && (
         <AccountMenuOverlay
           invitationCode={invitationCode}
