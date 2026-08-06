@@ -71,7 +71,8 @@ export const translations = {
       login_tab: "Entrar",
       create_tab: "Criar",
       invalid_credentials: "Usuário ou senha inválidos.",
-      username_format_invalid: "Use apenas letras e números, sem espaços ou caracteres especiais.",
+      username_format_invalid:
+        "Use apenas letras e números, sem espaços ou caracteres especiais.",
       connect_error: "Não foi possível conectar a conta.",
       create_error: "Não foi possível criar a conta.",
       password_too_short: "A senha precisa ter pelo menos 6 caracteres.",
@@ -111,7 +112,8 @@ export const translations = {
       recovery_email_optional_label: "E-mail de recuperação (opcional)",
       referral_code_optional_label: "Código de indicação (opcional)",
       referral_code_placeholder: "Ex: AMIGO123",
-      referral_code_hint: "Disponível quando você informar um e-mail de recuperação.",
+      referral_code_hint:
+        "Disponível quando você informar um e-mail de recuperação.",
       recovery_email_placeholder: "voce@email.com",
       reset_username_label: "Usuário",
       send_reset_code_btn: "Enviar código",
@@ -586,7 +588,8 @@ export const translations = {
       login_tab: "Login",
       create_tab: "Create",
       invalid_credentials: "Invalid username or password.",
-      username_format_invalid: "Use only letters and numbers, without spaces or special characters.",
+      username_format_invalid:
+        "Use only letters and numbers, without spaces or special characters.",
       connect_error: "Unable to connect the account.",
       create_error: "Unable to create the account.",
       password_too_short: "Password must be at least 6 characters.",
@@ -1100,7 +1103,8 @@ export const translations = {
       login_tab: "Connexion",
       create_tab: "Créer",
       invalid_credentials: "Nom d’utilisateur ou mot de passe invalide.",
-      username_format_invalid: "Utilisez uniquement des lettres et des chiffres, sans espaces ni caractères spéciaux.",
+      username_format_invalid:
+        "Utilisez uniquement des lettres et des chiffres, sans espaces ni caractères spéciaux.",
       connect_error: "Impossible de connecter le compte.",
       create_error: "Impossible de créer le compte.",
       password_too_short: "Le mot de passe doit contenir 6 caractères minimum.",
@@ -1140,7 +1144,8 @@ export const translations = {
       recovery_email_optional_label: "E-mail de récupération (optionnel)",
       referral_code_optional_label: "Code de parrainage (optionnel)",
       referral_code_placeholder: "Ex : AMI123",
-      referral_code_hint: "Disponible lorsque vous ajoutez un e-mail de récupération.",
+      referral_code_hint:
+        "Disponible lorsque vous ajoutez un e-mail de récupération.",
       recovery_email_placeholder: "vous@email.com",
       reset_username_label: "Nom d'utilisateur",
       send_reset_code_btn: "Envoyer le code",
@@ -1616,7 +1621,8 @@ export const translations = {
       login_tab: "Entrar",
       create_tab: "Crear",
       invalid_credentials: "Usuario o contraseña inválidos.",
-      username_format_invalid: "Usa solo letras y números, sin espacios ni caracteres especiales.",
+      username_format_invalid:
+        "Usa solo letras y números, sin espacios ni caracteres especiales.",
       connect_error: "No se pudo conectar la cuenta.",
       create_error: "No se pudo crear la cuenta.",
       password_too_short: "La contraseña debe tener al menos 6 caracteres.",
@@ -1656,7 +1662,8 @@ export const translations = {
       recovery_email_optional_label: "Correo de recuperación (opcional)",
       referral_code_optional_label: "Código de referencia (opcional)",
       referral_code_placeholder: "Ej: AMIGO123",
-      referral_code_hint: "Disponible cuando ingresas un correo de recuperación.",
+      referral_code_hint:
+        "Disponible cuando ingresas un correo de recuperación.",
       recovery_email_placeholder: "tu@email.com",
       reset_username_label: "Usuario",
       send_reset_code_btn: "Enviar código",
