@@ -1,4 +1,4 @@
-﻿// lib/i18n/translations.ts
+// lib/i18n/translations.ts
 
 export type Language = "pt" | "en" | "es" | "fr";
 
