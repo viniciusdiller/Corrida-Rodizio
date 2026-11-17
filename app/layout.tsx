@@ -151,11 +151,6 @@ export default function RootLayout({
               },
               description:
                 "Aplicativo contador de pizzas e sushi para competições de rodízio entre amigos.",
-              aggregateRating: {
-                "@type": "AggregateRating",
-                ratingValue: "5",
-                ratingCount: "100",
-              },
             }),
           }}
         />
