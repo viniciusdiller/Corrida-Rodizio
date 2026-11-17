@@ -28,9 +28,20 @@ import { CreateRaceForm } from "@/components/home/create-race-form";
 import { JoinRaceForm } from "@/components/home/join-race-form";
 import { StartActions } from "@/components/home/start-actions";
 import { AppTour } from "@/components/tour/app-tour";
+import { HomeInfoSection } from "@/components/home/home-info-section";
 import { toast } from "sonner";
 
 const LOGIN_STORAGE_KEY = "rodizio-race-login";
+const publicLinkLabels = {
+  how: {
+    pt: "Como funciona",
+    en: "How it works",
+    es: "Cómo funciona",
+    fr: "Comment ça marche",
+  },
+  guides: { pt: "Guias", en: "Guides", es: "Guías", fr: "Guides" },
+  contact: { pt: "Contato", en: "Contact", es: "Contacto", fr: "Contact" },
+} as const;
 const buildBranch = process.env.NEXT_PUBLIC_GIT_BRANCH?.trim() || "";
 const buildSha = process.env.NEXT_PUBLIC_GIT_SHA?.trim() || "";
 const buildTime = process.env.NEXT_PUBLIC_BUILD_TIME?.trim() || "";
@@ -1587,6 +1598,7 @@ export default function Home() {
         setAccountFlow={setAccountFlow}
         loginCode={loginCode}
       />
+      <HomeInfoSection />
       <footer className="mt-8 mb-4 space-y-3 text-center text-[10px] text-muted-foreground/60 uppercase font-medium tracking-widest">
         <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           <Link
@@ -1606,6 +1618,30 @@ export default function Home() {
             className="transition hover:text-foreground/80"
           >
             {t.footer.about}
+          </Link>
+          <Link
+            href="/como-funciona"
+            className="transition hover:text-foreground/80"
+          >
+            {publicLinkLabels.how[language]}
+          </Link>
+          <Link
+            href="/guia"
+            className="transition hover:text-foreground/80"
+          >
+            {publicLinkLabels.guides[language]}
+          </Link>
+          <Link
+            href="/faq"
+            className="transition hover:text-foreground/80"
+          >
+            FAQ
+          </Link>
+          <Link
+            href="/contato"
+            className="transition hover:text-foreground/80"
+          >
+            {publicLinkLabels.contact[language]}
           </Link>
           <a
             href="https://ko-fi.com/rodiziorace"
